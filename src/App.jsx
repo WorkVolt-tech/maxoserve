@@ -1,9 +1,47 @@
+import { Routes, Route } from 'react-router-dom'
+import Login from './pages/Login'
+import CreateBusiness from './pages/CreateBusiness'
+import ProtectedRoute from './components/ProtectedRoute'
+import AdminLayout from './layouts/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminTables from './pages/admin/AdminTables'
+import AdminFloorPlan from './pages/admin/AdminFloorPlan'
+import AdminMenu from './pages/admin/AdminMenu'
+import AdminStaff from './pages/admin/AdminStaff'
+import AdminOrders from './pages/admin/AdminOrders'
+import AdminRequests from './pages/admin/AdminRequests'
+
 export default function App() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'system-ui, sans-serif' }}>
-      <h1>MaxoServe</h1>
-      <p>Scan. Request. Served.</p>
-      <p>Foundation is live — routing and real pages coming next.</p>
-    </div>
+    <Routes>
+      <Route path="/" element={<Login />} />
+      <Route path="/login" element={<Login />} />
+
+      <Route
+        path="/admin/create-business"
+        element={
+          <ProtectedRoute>
+            <CreateBusiness />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="tables" element={<AdminTables />} />
+        <Route path="floor-plan" element={<AdminFloorPlan />} />
+        <Route path="menu" element={<AdminMenu />} />
+        <Route path="staff" element={<AdminStaff />} />
+        <Route path="orders" element={<AdminOrders />} />
+        <Route path="requests" element={<AdminRequests />} />
+      </Route>
+    </Routes>
   )
 }
