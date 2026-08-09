@@ -4,6 +4,7 @@ import CreateBusiness from './pages/CreateBusiness'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminLocations from './pages/admin/AdminLocations'
 import AdminTables from './pages/admin/AdminTables'
 import AdminFloorPlan from './pages/admin/AdminFloorPlan'
 import AdminMenu from './pages/admin/AdminMenu'
@@ -35,6 +36,7 @@ export default function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="locations" element={<AdminLocations />} />
         <Route path="tables" element={<AdminTables />} />
         <Route path="floor-plan" element={<AdminFloorPlan />} />
         <Route path="menu" element={<AdminMenu />} />
