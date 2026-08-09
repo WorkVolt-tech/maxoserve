@@ -120,6 +120,24 @@ export default function AdminTables() {
       return
     }
 
+    // Spread new tables out in a grid instead of stacking at (0,0)
+    const column = tables.length % 5
+    const row = Math.floor(tables.length / 5)
+    const startX = 60 + column * 130
+    const startY = 60 + row * 130
+
+    // Give rectangles a non-square default size
+    const defaultSizes = {
+      round: { width: 80, height: 80 },
+      square: { width: 80, height: 80 },
+      rectangle: { width: 130, height: 70 },
+      booth: { width: 110, height: 70 },
+      bar_seat: { width: 60, height: 60 },
+      vip_section: { width: 150, height: 100 },
+      custom: { width: 80, height: 80 },
+    }
+    const size = defaultSizes[shape] || { width: 80, height: 80 }
+
     const { error: insertError } = await supabase.from('tables').insert({
       business_id: businessId,
       location_id: selectedLocationId,
@@ -128,6 +146,10 @@ export default function AdminTables() {
       table_number: tableNumber || null,
       capacity: capacity ? parseInt(capacity) : null,
       shape,
+      pos_x: startX,
+      pos_y: startY,
+      width: size.width,
+      height: size.height,
     })
 
     if (insertError) {
