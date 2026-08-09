@@ -169,7 +169,7 @@ export default function AdminFloorPlan() {
         <p style={{ color: '#888' }}>No tables in this area yet. Add some in the Tables tab.</p>
       ) : (
         <div ref={containerRef} style={styles.canvasWrap}>
-          <Stage width={stageWidth} height={650}>
+          <Stage width={stageWidth} height={800}>
             <Layer>
               {tables.map((t) => (
                 <Group
@@ -177,6 +177,14 @@ export default function AdminFloorPlan() {
                   x={t.pos_x}
                   y={t.pos_y}
                   draggable
+                  dragBoundFunc={(pos) => {
+                    const halfW = (t.width || 80) / 2
+                    const halfH = (t.height || 80) / 2
+                    return {
+                      x: Math.max(halfW, Math.min(stageWidth - halfW, pos.x)),
+                      y: Math.max(halfH, Math.min(800 - halfH, pos.y)),
+                    }
+                  }}
                   onDragMove={(e) => handleDragMove(t.id, e.target.x(), e.target.y())}
                   onClick={() => setSelectedTableId(t.id)}
                   onTap={() => setSelectedTableId(t.id)}
@@ -249,8 +257,6 @@ const styles = {
     border: '1px solid #e2e4e9',
     borderRadius: '8px',
     overflow: 'hidden',
-    maxWidth: '900px',
-    margin: '0 auto',
   },
   flipButton: {
     marginLeft: 'auto',
