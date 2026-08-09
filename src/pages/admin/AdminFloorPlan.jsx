@@ -111,11 +111,20 @@ export default function AdminFloorPlan() {
     for (const t of tables) {
       await supabase
         .from('tables')
-        .update({ pos_x: t.pos_x, pos_y: t.pos_y })
+        .update({ pos_x: t.pos_x, pos_y: t.pos_y, width: t.width, height: t.height })
         .eq('id', t.id)
     }
     setSaving(false)
     setDirty(false)
+  }
+
+  function handleFlipOrientation(tableId) {
+    setTables((prev) =>
+      prev.map((t) =>
+        t.id === tableId ? { ...t, width: t.height, height: t.width } : t
+      )
+    )
+    setDirty(true)
   }
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
