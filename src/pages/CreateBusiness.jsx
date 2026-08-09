@@ -21,12 +21,14 @@ export default function CreateBusiness() {
 
     setLoading(true)
 
+    // Generate the business ID ourselves so we don't need to "read it back"
+    // from Supabase before the user has a membership row (RLS would block that read).
+    const businessId = crypto.randomUUID()
+
     // Step 1: create the business
-    const { data: business, error: businessError } = await supabase
+    const { error: businessError } = await supabase
       .from('businesses')
-      .insert({ name })
-      .select()
-      .single()
+      .insert({ id: businessId, name })
 
     if (businessError) {
       setError(businessError.message)
@@ -38,7 +40,7 @@ export default function CreateBusiness() {
     const { error: memberError } = await supabase
       .from('business_members')
       .insert({
-        business_id: business.id,
+        business_id: businessId,
         user_id: user.id,
         role: 'owner',
       })
@@ -51,7 +53,7 @@ export default function CreateBusiness() {
 
     // Step 3: create default settings for this business
     await supabase.from('business_settings').insert({
-      business_id: business.id,
+      business_id: businessId,
     })
 
     navigate('/admin')
