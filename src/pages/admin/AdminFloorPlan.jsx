@@ -169,7 +169,7 @@ export default function AdminFloorPlan() {
         <p style={{ color: '#888' }}>No tables in this area yet. Add some in the Tables tab.</p>
       ) : (
         <div ref={containerRef} style={styles.canvasWrap}>
-          <Stage width={stageWidth} height={500}>
+          <Stage width={stageWidth} height={650}>
             <Layer>
               {tables.map((t) => (
                 <Group
@@ -221,6 +221,10 @@ export default function AdminFloorPlan() {
           <strong>{selectedTable.name}</strong>
           <span style={styles.meta}>Status: {selectedTable.status}</span>
           <span style={styles.meta}>Capacity: {selectedTable.capacity || '—'}</span>
+          <span style={styles.meta}>{Math.round(selectedTable.width)} × {Math.round(selectedTable.height)}</span>
+          <button onClick={() => handleFlipOrientation(selectedTable.id)} style={styles.flipButton}>
+            Flip Orientation
+          </button>
         </div>
       )}
     </div>
@@ -245,6 +249,17 @@ const styles = {
     border: '1px solid #e2e4e9',
     borderRadius: '8px',
     overflow: 'hidden',
+    maxWidth: '900px',
+    margin: '0 auto',
+  },
+  flipButton: {
+    marginLeft: 'auto',
+    padding: '0.4rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid #e2e4e9',
+    background: '#f5f6f8',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
   },
   infoBar: {
     marginTop: '1rem',
