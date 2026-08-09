@@ -42,15 +42,17 @@ export default function AdminFloorPlan() {
   }, [selectedAreaId])
 
   useEffect(() => {
-    function handleResize() {
-      if (containerRef.current) {
-        setStageWidth(containerRef.current.offsetWidth)
+    if (!containerRef.current) return
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setStageWidth(entry.contentRect.width)
       }
-    }
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    })
+    observer.observe(containerRef.current)
+
+    return () => observer.disconnect()
+  }, [tables])
 
   async function loadInitial() {
     setLoading(true)
