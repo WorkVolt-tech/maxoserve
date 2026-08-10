@@ -198,6 +198,14 @@ export default function AdminFloorPlan() {
                       stroke={selectedTableId === t.id ? '#4c8dff' : '#333'}
                       strokeWidth={selectedTableId === t.id ? 3 : 1}
                     />
+                  ) : t.shape === 'oval' ? (
+                    <Circle
+                      radiusX={(t.width || 120) / 2}
+                      radiusY={(t.height || 70) / 2}
+                      fill={STATUS_COLORS[t.status] || '#4caf50'}
+                      stroke={selectedTableId === t.id ? '#4c8dff' : '#333'}
+                      strokeWidth={selectedTableId === t.id ? 3 : 1}
+                    />
                   ) : (
                     <Rect
                       width={t.width || 80}
@@ -212,11 +220,12 @@ export default function AdminFloorPlan() {
                   )}
                   <Text
                     text={t.name}
-                    fontSize={13}
-                    fill="#fff"
-                    width={t.width || 80}
-                    offsetX={(t.width || 80) / 2}
-                    offsetY={-((t.height || 80) / 2) + 8}
+                    fontSize={12}
+                    fontStyle="bold"
+                    fill="#1a1d23"
+                    width={Math.max(t.width || 80, 60)}
+                    offsetX={Math.max(t.width || 80, 60) / 2}
+                    offsetY={-((t.height || 80) / 2) - 16}
                     align="center"
                   />
                 </Group>
