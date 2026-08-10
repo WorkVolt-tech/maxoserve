@@ -12,6 +12,7 @@ import AdminMenu from './pages/admin/AdminMenu'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequests from './pages/admin/AdminRequests'
+import TablePage from './pages/customer/TablePage'
 
 export default function App() {
   return (
@@ -46,6 +47,8 @@ export default function App() {
         <Route path="orders" element={<AdminOrders />} />
         <Route path="requests" element={<AdminRequests />} />
       </Route>
+
+      <Route path="/t/:token" element={<TablePage />} />
     </Routes>
   )
 }
