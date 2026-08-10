@@ -1,8 +1,17 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import QrCodeModal from '../../components/QrCodeModal'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
+
+function generateToken() {
+  // Generates a secure random 12-character token, e.g. "7KX9PQ42FM3A"
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  const bytes = new Uint8Array(12)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('')
+}
 
 export default function AdminTables() {
   const { user } = useAuth()
@@ -12,6 +21,7 @@ export default function AdminTables() {
   const [selectedLocationId, setSelectedLocationId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
+  const [qrTokens, setQrTokens] = useState({}) // table_id -> active token row
 
   const [name, setName] = useState('')
   const [tableNumber, setTableNumber] = useState('')
@@ -20,6 +30,9 @@ export default function AdminTables() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [qrModalTable, setQrModalTable] = useState(null)
+  const [regenerating, setRegenerating] = useState(false)
 
   useEffect(() => {
     loadInitial()
@@ -106,9 +119,35 @@ export default function AdminTables() {
 
     if (tablesError) {
       setError(tablesError.message)
-    } else {
-      setTables(data)
+      return
     }
+
+    setTables(data)
+    loadQrTokensForTables(data.map((t) => t.id))
+  }
+
+  async function loadQrTokensForTables(tableIds) {
+    if (!tableIds || tableIds.length === 0) {
+      setQrTokens({})
+      return
+    }
+
+    const { data, error: qrError } = await supabase
+      .from('table_qr_tokens')
+      .select('*')
+      .in('table_id', tableIds)
+      .eq('is_active', true)
+
+    if (qrError) {
+      setError(qrError.message)
+      return
+    }
+
+    const map = {}
+    for (const row of data) {
+      map[row.table_id] = row
+    }
+    setQrTokens(map)
   }
 
   async function handleAdd(e) {
@@ -120,13 +159,11 @@ export default function AdminTables() {
       return
     }
 
-    // Spread new tables out in a grid instead of stacking at (0,0)
     const column = tables.length % 5
     const row = Math.floor(tables.length / 5)
     const startX = 60 + column * 130
     const startY = 60 + row * 130
 
-    // Give rectangles a non-square default size
     const defaultSizes = {
       round: { width: 80, height: 80 },
       square: { width: 80, height: 80 },
@@ -171,6 +208,65 @@ export default function AdminTables() {
     loadTables(selectedAreaId)
   }
 
+  async function handleGenerateQr(table) {
+    setError('')
+    const token = generateToken()
+
+    const { data, error: insertError } = await supabase
+      .from('table_qr_tokens')
+      .insert({
+        business_id: businessId,
+        table_id: table.id,
+        token,
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      setError(insertError.message)
+      return
+    }
+
+    setQrTokens((prev) => ({ ...prev, [table.id]: data }))
+    setQrModalTable(table)
+  }
+
+  async function handleRegenerate(table) {
+    setRegenerating(true)
+    setError('')
+
+    const existing = qrTokens[table.id]
+
+    // Disable the old token
+    if (existing) {
+      await supabase
+        .from('table_qr_tokens')
+        .update({ is_active: false, disabled_at: new Date().toISOString() })
+        .eq('id', existing.id)
+    }
+
+    // Create a new one
+    const token = generateToken()
+    const { data, error: insertError } = await supabase
+      .from('table_qr_tokens')
+      .insert({
+        business_id: businessId,
+        table_id: table.id,
+        token,
+      })
+      .select()
+      .single()
+
+    setRegenerating(false)
+
+    if (insertError) {
+      setError(insertError.message)
+      return
+    }
+
+    setQrTokens((prev) => ({ ...prev, [table.id]: data }))
+  }
+
   if (loading) return <div><h2>Tables</h2><p>Loading...</p></div>
 
   if (locations.length === 0) {
@@ -181,6 +277,9 @@ export default function AdminTables() {
       </div>
     )
   }
+
+  const activeQrTable = qrModalTable ? qrTokens[qrModalTable.id] : null
+  const qrUrl = activeQrTable ? `${window.location.origin}/t/${activeQrTable.token}` : ''
 
   return (
     <div>
@@ -256,22 +355,46 @@ export default function AdminTables() {
 
           <div style={styles.list}>
             {tables.length === 0 && <p style={{ color: '#888' }}>No tables yet in this area.</p>}
-            {tables.map((t) => (
-              <div key={t.id} style={styles.card}>
-                <div>
-                  <strong>{t.name}</strong>
-                  {t.table_number && <span style={styles.meta}> · #{t.table_number}</span>}
-                  {t.capacity && <span style={styles.meta}> · seats {t.capacity}</span>}
-                  <span style={styles.meta}> · {t.shape.replace('_', ' ')}</span>
-                  <span style={styles.statusBadge}>{t.status}</span>
+            {tables.map((t) => {
+              const hasQr = !!qrTokens[t.id]
+              return (
+                <div key={t.id} style={styles.card}>
+                  <div>
+                    <strong>{t.name}</strong>
+                    {t.table_number && <span style={styles.meta}> · #{t.table_number}</span>}
+                    {t.capacity && <span style={styles.meta}> · seats {t.capacity}</span>}
+                    <span style={styles.meta}> · {t.shape.replace('_', ' ')}</span>
+                    <span style={styles.statusBadge}>{t.status}</span>
+                  </div>
+                  <div style={styles.cardActions}>
+                    {hasQr ? (
+                      <button onClick={() => setQrModalTable(t)} style={styles.qrButton}>
+                        View QR
+                      </button>
+                    ) : (
+                      <button onClick={() => handleGenerateQr(t)} style={styles.qrButton}>
+                        Generate QR
+                      </button>
+                    )}
+                    <button onClick={() => handleDelete(t.id)} style={styles.deleteButton}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
-                <button onClick={() => handleDelete(t.id)} style={styles.deleteButton}>
-                  Delete
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </>
+      )}
+
+      {qrModalTable && activeQrTable && (
+        <QrCodeModal
+          table={qrModalTable}
+          url={qrUrl}
+          onClose={() => setQrModalTable(null)}
+          onRegenerate={() => handleRegenerate(qrModalTable)}
+          regenerating={regenerating}
+        />
       )}
     </div>
   )
@@ -318,23 +441,5 @@ const styles = {
     padding: '1rem',
     borderRadius: '8px',
     border: '1px solid #e2e4e9',
-  },
-  meta: { color: '#888', fontSize: '0.85rem', marginLeft: '0.4rem' },
-  statusBadge: {
-    marginLeft: '0.6rem',
-    fontSize: '0.75rem',
-    padding: '0.15rem 0.5rem',
-    borderRadius: '999px',
-    background: '#e8f5e9',
-    color: '#2e7d32',
-  },
-  deleteButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#d33',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-}
+    flexWrap: 'wrap',
+    gap:
