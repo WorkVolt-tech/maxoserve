@@ -2,23 +2,64 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabaseClient'
 
+const STATUS_LABELS = {
+  pending: 'Request sent',
+  accepted: 'Accepted',
+  on_the_way: 'On the way',
+  completed: 'Completed',
+  rejected: 'Unable to assist',
+  cancelled: 'Cancelled',
+}
+
 export default function TablePage() {
   const { token } = useParams()
-  const [status, setStatus] = useState('loading') // loading | invalid | ready | error
+  const [status, setStatus] = useState('loading')
   const [business, setBusiness] = useState(null)
   const [table, setTable] = useState(null)
   const [area, setArea] = useState(null)
   const [session, setSession] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
 
+  const [requestTypes, setRequestTypes] = useState([])
+  const [myRequests, setMyRequests] = useState([])
+  const [sendingTypeId, setSendingTypeId] = useState(null)
+  const [requestError, setRequestError] = useState('')
+
   useEffect(() => {
     initSession()
   }, [token])
 
+  // Once we have a session, load buttons + this session's requests, and subscribe to updates
+  useEffect(() => {
+    if (!session) return
+
+    loadRequestTypes(session.business_id)
+    loadMyRequests(session.id)
+
+    const channel = supabase
+      .channel(`session-requests-${session.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'service_requests',
+          filter: `session_id=eq.${session.id}`,
+        },
+        () => {
+          loadMyRequests(session.id)
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session])
+
   async function initSession() {
     setStatus('loading')
 
-    // Step 1: look up the QR token (RLS only allows active ones to be publicly visible)
     const { data: qrToken, error: qrError } = await supabase
       .from('table_qr_tokens')
       .select('*')
@@ -31,7 +72,6 @@ export default function TablePage() {
       return
     }
 
-    // Step 2: load the table
     const { data: tableData, error: tableError } = await supabase
       .from('tables')
       .select('*')
@@ -44,7 +84,6 @@ export default function TablePage() {
     }
     setTable(tableData)
 
-    // Step 3: load the area (for display, e.g. "VIP Room")
     const { data: areaData } = await supabase
       .from('areas')
       .select('*')
@@ -52,7 +91,6 @@ export default function TablePage() {
       .single()
     setArea(areaData)
 
-    // Step 4: load the business (for branding)
     const { data: businessData } = await supabase
       .from('businesses')
       .select('*')
@@ -60,8 +98,6 @@ export default function TablePage() {
       .single()
     setBusiness(businessData)
 
-    // Step 5: reuse an existing local session for this table if we already have one,
-    // otherwise create a new anonymous session
     const storageKey = `maxoserve_session_${tableData.id}`
     const existingSessionId = localStorage.getItem(storageKey)
 
@@ -75,7 +111,6 @@ export default function TablePage() {
 
       if (existingSession) {
         setSession(existingSession)
-        // touch last_activity_at
         await supabase
           .from('table_sessions')
           .update({ last_activity_at: new Date().toISOString() })
@@ -85,7 +120,6 @@ export default function TablePage() {
       }
     }
 
-    // No valid existing session — create a new one
     const { data: newSession, error: sessionError } = await supabase
       .from('table_sessions')
       .insert({
@@ -105,6 +139,61 @@ export default function TablePage() {
     localStorage.setItem(storageKey, newSession.id)
     setSession(newSession)
     setStatus('ready')
+  }
+
+  async function loadRequestTypes(businessId) {
+    const { data } = await supabase
+      .from('service_request_types')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    setRequestTypes(data || [])
+  }
+
+  async function loadMyRequests(sessionId) {
+    const { data } = await supabase
+      .from('service_requests')
+      .select('*')
+      .eq('session_id', sessionId)
+      .order('created_at', { ascending: false })
+
+    setMyRequests(data || [])
+  }
+
+  function activeRequestForType(typeId) {
+    return myRequests.find(
+      (r) => r.request_type_id === typeId && ['pending', 'accepted', 'on_the_way'].includes(r.status)
+    )
+  }
+
+  async function handleRequest(type) {
+    setRequestError('')
+
+    const existing = activeRequestForType(type.id)
+    if (existing) {
+      setRequestError('You already have an active request for this.')
+      return
+    }
+
+    setSendingTypeId(type.id)
+
+    const { error: insertError } = await supabase.from('service_requests').insert({
+      business_id: session.business_id,
+      table_id: session.table_id,
+      session_id: session.id,
+      request_type_id: type.id,
+    })
+
+    setSendingTypeId(null)
+
+    if (insertError) {
+      setRequestError('You already have an active request for this.')
+      return
+    }
+
+    loadMyRequests(session.id)
   }
 
   if (status === 'loading') {
@@ -139,6 +228,10 @@ export default function TablePage() {
     )
   }
 
+  const activeRequests = myRequests.filter((r) =>
+    ['pending', 'accepted', 'on_the_way'].includes(r.status)
+  )
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
@@ -149,10 +242,44 @@ export default function TablePage() {
         {area && <p style={styles.areaName}>{area.name}</p>}
         <div style={styles.tableBadge}>{table?.name}</div>
 
-        <div style={styles.placeholder}>
-          <p style={{ color: '#888', margin: 0 }}>
-            Service request buttons and menu will appear here next.
-          </p>
+        {activeRequests.length > 0 && (
+          <div style={styles.activeRequestsBox}>
+            {activeRequests.map((r) => {
+              const type = requestTypes.find((t) => t.id === r.request_type_id)
+              return (
+                <div key={r.id} style={styles.activeRequestRow}>
+                  <span>{type?.label || 'Request'}</span>
+                  <span style={styles.statusPill}>{STATUS_LABELS[r.status]}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {requestError && <p style={styles.requestError}>{requestError}</p>}
+
+        <div style={styles.buttonGrid}>
+          {requestTypes.length === 0 && (
+            <p style={{ color: '#888', gridColumn: '1 / -1' }}>
+              No service buttons have been set up yet.
+            </p>
+          )}
+          {requestTypes.map((type) => {
+            const isActive = !!activeRequestForType(type.id)
+            return (
+              <button
+                key={type.id}
+                onClick={() => handleRequest(type)}
+                disabled={isActive || sendingTypeId === type.id}
+                style={{
+                  ...styles.requestButton,
+                  ...(isActive ? styles.requestButtonActive : {}),
+                }}
+              >
+                {sendingTypeId === type.id ? '...' : type.label}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -163,7 +290,7 @@ const styles = {
   page: {
     minHeight: '100vh',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     backgroundColor: '#12161c',
     fontFamily: 'system-ui, sans-serif',
@@ -175,8 +302,9 @@ const styles = {
     borderRadius: '16px',
     padding: '2rem',
     width: '100%',
-    maxWidth: '420px',
+    maxWidth: '460px',
     textAlign: 'center',
+    marginTop: '2rem',
   },
   logo: { maxWidth: '120px', maxHeight: '80px', marginBottom: '1rem' },
   businessName: { margin: '0 0 0.25rem', fontSize: '1.6rem' },
@@ -191,9 +319,49 @@ const styles = {
     fontSize: '1.1rem',
     marginBottom: '1.5rem',
   },
-  placeholder: {
-    padding: '1.5rem',
-    background: '#f5f6f8',
+  activeRequestsBox: {
+    background: '#eef4ff',
+    border: '1px solid #cfe0ff',
+    borderRadius: '10px',
+    padding: '0.75rem 1rem',
+    marginBottom: '1rem',
+    textAlign: 'left',
+  },
+  activeRequestRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.35rem 0',
+    fontSize: '0.9rem',
+  },
+  statusPill: {
+    background: '#4c8dff',
+    color: '#fff',
+    padding: '0.15rem 0.6rem',
+    borderRadius: '999px',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+  },
+  requestError: { color: '#d33', fontSize: '0.85rem', marginBottom: '0.75rem' },
+  buttonGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '0.75rem',
+  },
+  requestButton: {
+    padding: '1rem 0.5rem',
     borderRadius: '12px',
+    border: '2px solid #4c8dff',
+    background: '#fff',
+    color: '#4c8dff',
+    fontSize: '1rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+  },
+  requestButtonActive: {
+    background: '#e8f5e9',
+    borderColor: '#4caf50',
+    color: '#2e7d32',
+    cursor: 'default',
   },
 }
