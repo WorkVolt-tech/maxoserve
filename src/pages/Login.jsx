@@ -142,7 +142,14 @@ const styles = {
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
   title: { margin: 0, fontSize: '1.5rem' },
-  logo: { width: '96px', height: '96px', marginBottom: '0.5rem' },
+  logo: {
+    width: '160px',
+    height: '160px',
+    marginBottom: '0.5rem',
+    display: 'block',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+  },
   subtitle: { margin: '0.25rem 0 1.5rem', color: '#666' },
   toggleRow: {
     display: 'flex',
