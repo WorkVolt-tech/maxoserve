@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Stage, Layer, Rect, Circle, Text, Group } from 'react-konva'
+import { Stage, Layer, Rect, Circle, Ellipse, Text, Group } from 'react-konva'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -199,7 +199,7 @@ export default function AdminFloorPlan() {
                       strokeWidth={selectedTableId === t.id ? 3 : 1}
                     />
                   ) : t.shape === 'oval' ? (
-                    <Circle
+                    <Ellipse
                       radiusX={(t.width || 120) / 2}
                       radiusY={(t.height || 70) / 2}
                       fill={STATUS_COLORS[t.status] || '#4caf50'}
