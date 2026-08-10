@@ -11,6 +11,7 @@ const navItems = [
   { to: '/admin/staff', label: 'Staff' },
   { to: '/admin/orders', label: 'Orders' },
   { to: '/admin/requests', label: 'Requests' },
+  { to: '/admin/request-types', label: 'Request Buttons' },
 ]
 
 export default function AdminLayout() {
