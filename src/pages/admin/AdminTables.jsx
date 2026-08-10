@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 
-const SHAPES = ['round', 'square', 'rectangle', 'booth', 'bar_seat', 'vip_section', 'custom']
+const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
 export default function AdminTables() {
   const { user } = useAuth()
@@ -132,8 +132,9 @@ export default function AdminTables() {
       square: { width: 80, height: 80 },
       rectangle: { width: 130, height: 70 },
       booth: { width: 110, height: 70 },
-      bar_seat: { width: 60, height: 60 },
+      bar_seat: { width: 36, height: 36 },
       vip_section: { width: 150, height: 100 },
+      oval: { width: 120, height: 70 },
       custom: { width: 80, height: 80 },
     }
     const size = defaultSizes[shape] || { width: 80, height: 80 }
