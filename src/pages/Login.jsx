@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import logo from '../assets/maxoserve-logo.png'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -62,7 +63,7 @@ export default function Login() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>MaxoServe</h1>
+        <img src={logo} alt="MaxoServe" style={styles.logo} />
         <p style={styles.subtitle}>Scan. Request. Served.</p>
 
         <div style={styles.toggleRow}>
@@ -141,6 +142,7 @@ const styles = {
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
   title: { margin: 0, fontSize: '1.5rem' },
+  logo: { width: '96px', height: '96px', marginBottom: '0.5rem' },
   subtitle: { margin: '0.25rem 0 1.5rem', color: '#666' },
   toggleRow: {
     display: 'flex',
