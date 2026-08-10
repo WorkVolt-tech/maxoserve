@@ -6,7 +6,6 @@ import QrCodeModal from '../../components/QrCodeModal'
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
 function generateToken() {
-  // Generates a secure random 12-character token, e.g. "7KX9PQ42FM3A"
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const bytes = new Uint8Array(12)
   crypto.getRandomValues(bytes)
@@ -21,7 +20,7 @@ export default function AdminTables() {
   const [selectedLocationId, setSelectedLocationId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
-  const [qrTokens, setQrTokens] = useState({}) // table_id -> active token row
+  const [qrTokens, setQrTokens] = useState({})
 
   const [name, setName] = useState('')
   const [tableNumber, setTableNumber] = useState('')
@@ -237,7 +236,6 @@ export default function AdminTables() {
 
     const existing = qrTokens[table.id]
 
-    // Disable the old token
     if (existing) {
       await supabase
         .from('table_qr_tokens')
@@ -245,7 +243,6 @@ export default function AdminTables() {
         .eq('id', existing.id)
     }
 
-    // Create a new one
     const token = generateToken()
     const { data, error: insertError } = await supabase
       .from('table_qr_tokens')
@@ -442,4 +439,34 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #e2e4e9',
     flexWrap: 'wrap',
-    gap:
+    gap: '0.5rem',
+  },
+  meta: { color: '#888', fontSize: '0.85rem', marginLeft: '0.4rem' },
+  statusBadge: {
+    marginLeft: '0.6rem',
+    fontSize: '0.75rem',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '999px',
+    background: '#e8f5e9',
+    color: '#2e7d32',
+  },
+  cardActions: { display: 'flex', gap: '0.5rem' },
+  qrButton: {
+    padding: '0.4rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid #4c8dff',
+    background: '#fff',
+    color: '#4c8dff',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  },
+  deleteButton: {
+    padding: '0.4rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid #e2e4e9',
+    background: '#fff',
+    color: '#d33',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  },
+}
