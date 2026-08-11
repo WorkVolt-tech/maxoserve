@@ -36,6 +36,9 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
+        <a href="/staff" style={styles.staffLink}>
+          Live Requests →
+        </a>
         <button onClick={signOut} style={styles.signOut}>
           Sign Out
         </button>
@@ -75,6 +78,18 @@ const styles = {
     color: '#fff',
     borderLeft: '3px solid #4c8dff',
     paddingLeft: 'calc(1.25rem - 3px)',
+  },
+  staffLink: {
+    margin: '1rem 1rem 0',
+    padding: '0.6rem',
+    background: '#4c8dff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    textAlign: 'center',
+    textDecoration: 'none',
+    fontSize: '0.9rem',
+    fontWeight: 600,
   },
   signOut: {
     margin: '1rem',
