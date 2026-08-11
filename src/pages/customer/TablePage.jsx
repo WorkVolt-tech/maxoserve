@@ -69,6 +69,7 @@ export default function TablePage() {
 
     if (qrError || !qrToken) {
       setStatus('invalid')
+      setErrorMessage(qrError ? `${qrError.message} (code: ${qrError.code || 'none'})` : 'No token row returned')
       return
     }
 
@@ -211,6 +212,9 @@ export default function TablePage() {
           <h2>This QR code is no longer active</h2>
           <p style={{ color: '#666' }}>
             Please ask a staff member for a new code, or check with the venue.
+          </p>
+          <p style={{ color: '#d33', fontSize: '0.75rem', wordBreak: 'break-all' }}>
+            Debug: {errorMessage} · token: {token}
           </p>
         </div>
       </div>
