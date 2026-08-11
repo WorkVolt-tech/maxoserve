@@ -40,10 +40,10 @@ export default function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-       "locations" element={<AdminLocations />} />
-       "areas" element={<AdminAreas />} />
-       "tables" element={<AdminTables />} />
-       "floor-plan" element={<AdminFloorPlan />} />
+        <Route path="locations" element={<AdminLocations />} />
+        <Route path="areas" element={<AdminAreas />} />
+        <Route path="tables" element={<AdminTables />} />
+        <Route path="floor-plan" element={<AdminFloorPlan />} />
         <Route path="menu" element={<AdminMenu />} />
         <Route path="staff" element={<AdminStaff />} />
         <Route path="orders" element={<AdminOrders />} />
