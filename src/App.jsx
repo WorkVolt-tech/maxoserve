@@ -9,6 +9,7 @@ import AdminAreas from './pages/admin/AdminAreas'
 import AdminTables from './pages/admin/AdminTables'
 import AdminFloorPlan from './pages/admin/AdminFloorPlan'
 import AdminMenu from './pages/admin/AdminMenu'
+import AdminMenuItems from './pages/admin/AdminMenuItems'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequests from './pages/admin/AdminRequests'
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="tables" element={<AdminTables />} />
         <Route path="floor-plan" element={<AdminFloorPlan />} />
         <Route path="menu" element={<AdminMenu />} />
+        <Route path="menu/:categoryId" element={<AdminMenuItems />} />
         <Route path="staff" element={<AdminStaff />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="requests" element={<AdminRequests />} />
