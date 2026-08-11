@@ -13,6 +13,7 @@ import AdminStaff from './pages/admin/AdminStaff'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestTypes from './pages/admin/AdminRequestTypes'
+import StaffDashboard from './pages/staff/StaffDashboard'
 import TablePage from './pages/customer/TablePage'
 
 export default function App() {
@@ -39,16 +40,25 @@ export default function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="locations" element={<AdminLocations />} />
-        <Route path="areas" element={<AdminAreas />} />
-        <Route path="tables" element={<AdminTables />} />
-        <Route path="floor-plan" element={<AdminFloorPlan />} />
+       "locations" element={<AdminLocations />} />
+       "areas" element={<AdminAreas />} />
+       "tables" element={<AdminTables />} />
+       "floor-plan" element={<AdminFloorPlan />} />
         <Route path="menu" element={<AdminMenu />} />
         <Route path="staff" element={<AdminStaff />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="requests" element={<AdminRequests />} />
         <Route path="request-types" element={<AdminRequestTypes />} />
       </Route>
+
+      <Route
+        path="/staff"
+        element={
+          <ProtectedRoute>
+            <StaffDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="/t/:token" element={<TablePage />} />
     </Routes>
