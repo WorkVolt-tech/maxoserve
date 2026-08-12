@@ -11,6 +11,9 @@ export default function AdminMenuItems() {
   const [businessId, setBusinessId] = useState(null)
   const [category, setCategory] = useState(null)
   const [items, setItems] = useState([])
+  const [allModifierGroups, setAllModifierGroups] = useState([])
+  const [itemModifierLinks, setItemModifierLinks] = useState({}) // item_id -> [group_id]
+  const [expandedItemId, setExpandedItemId] = useState(null)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -48,6 +51,13 @@ export default function AdminMenuItems() {
       .single()
     setCategory(catData)
 
+    const { data: groupsData } = await supabase
+      .from('modifier_groups')
+      .select('*')
+      .eq('business_id', membership.business_id)
+      .order('display_order', { ascending: true })
+    setAllModifierGroups(groupsData || [])
+
     await loadItems()
     setLoading(false)
   }
@@ -61,8 +71,24 @@ export default function AdminMenuItems() {
 
     if (itemsError) {
       setError(itemsError.message)
-    } else {
-      setItems(data)
+      return
+    }
+
+    setItems(data)
+
+    if (data.length > 0) {
+      const itemIds = data.map((i) => i.id)
+      const { data: linksData } = await supabase
+        .from('menu_item_modifier_groups')
+        .select('*')
+        .in('menu_item_id', itemIds)
+
+      const map = {}
+      for (const link of linksData || []) {
+        if (!map[link.menu_item_id]) map[link.menu_item_id] = []
+        map[link.menu_item_id].push(link.modifier_group_id)
+      }
+      setItemModifierLinks(map)
     }
   }
 
@@ -103,6 +129,27 @@ export default function AdminMenuItems() {
   async function handleDelete(id) {
     if (!confirm('Delete this item?')) return
     await supabase.from('menu_items').delete().eq('id', id)
+    loadItems()
+  }
+
+  async function handleToggleModifierGroup(itemId, groupId) {
+    const currentLinks = itemModifierLinks[itemId] || []
+    const isLinked = currentLinks.includes(groupId)
+
+    if (isLinked) {
+      await supabase
+        .from('menu_item_modifier_groups')
+        .delete()
+        .eq('menu_item_id', itemId)
+        .eq('modifier_group_id', groupId)
+    } else {
+      await supabase.from('menu_item_modifier_groups').insert({
+        business_id: businessId,
+        menu_item_id: itemId,
+        modifier_group_id: groupId,
+      })
+    }
+
     loadItems()
   }
 
@@ -150,25 +197,67 @@ export default function AdminMenuItems() {
 
       <div style={styles.list}>
         {items.length === 0 && <p style={{ color: '#888' }}>No items yet in this category.</p>}
-        {items.map((item) => (
-          <div key={item.id} style={styles.card}>
-            <div>
-              <strong>{item.name}</strong>
-              <span style={styles.price}>${Number(item.price).toFixed(2)}</span>
-              {item.description && <p style={styles.description}>{item.description}</p>}
-              <span style={styles.meta}>{item.prep_location.replace('_', ' ')}</span>
-              {!item.is_available && <span style={styles.inactiveBadge}>unavailable</span>}
+        {items.map((item) => {
+          const linkedGroupIds = itemModifierLinks[item.id] || []
+          const isExpanded = expandedItemId === item.id
+
+          return (
+            <div key={item.id} style={styles.card}>
+              <div style={styles.cardTop}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span style={styles.price}>${Number(item.price).toFixed(2)}</span>
+                  {item.description && <p style={styles.description}>{item.description}</p>}
+                  <span style={styles.meta}>{item.prep_location.replace('_', ' ')}</span>
+                  {!item.is_available && <span style={styles.inactiveBadge}>unavailable</span>}
+                  {linkedGroupIds.length > 0 && (
+                    <span style={styles.meta}> · {linkedGroupIds.length} modifier group(s)</span>
+                  )}
+                </div>
+                <div style={styles.cardActions}>
+                  <button
+                    onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                    style={styles.toggleButton}
+                  >
+                    {isExpanded ? 'Close' : 'Modifiers'}
+                  </button>
+                  <button onClick={() => handleToggleAvailable(item)} style={styles.toggleButton}>
+                    {item.is_available ? 'Mark Unavailable' : 'Mark Available'}
+                  </button>
+                  <button onClick={() => handleDelete(item.id)} style={styles.deleteButton}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div style={styles.modifierBox}>
+                  {allModifierGroups.length === 0 ? (
+                    <p style={{ color: '#888', fontSize: '0.85rem', margin: 0 }}>
+                      No modifier groups exist yet. Create some on the Modifiers page first.
+                    </p>
+                  ) : (
+                    <>
+                      <p style={styles.modifierBoxLabel}>
+                        Attach modifier groups to this item:
+                      </p>
+                      {allModifierGroups.map((group) => (
+                        <label key={group.id} style={styles.modifierCheckboxRow}>
+                          <input
+                            type="checkbox"
+                            checked={linkedGroupIds.includes(group.id)}
+                            onChange={() => handleToggleModifierGroup(item.id, group.id)}
+                          />
+                          {group.name}
+                        </label>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={styles.cardActions}>
-              <button onClick={() => handleToggleAvailable(item)} style={styles.toggleButton}>
-                {item.is_available ? 'Mark Unavailable' : 'Mark Available'}
-              </button>
-              <button onClick={() => handleDelete(item.id)} style={styles.deleteButton}>
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -216,13 +305,15 @@ const styles = {
   },
   list: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
   card: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     background: '#fff',
     padding: '1rem',
     borderRadius: '8px',
     border: '1px solid #e2e4e9',
+  },
+  cardTop: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     flexWrap: 'wrap',
     gap: '0.5rem',
   },
@@ -236,7 +327,7 @@ const styles = {
     background: '#fce4ec',
     color: '#c2185b',
   },
-  cardActions: { display: 'flex', gap: '0.5rem', flexShrink: 0 },
+  cardActions: { display: 'flex', gap: '0.5rem', flexShrink: 0, flexWrap: 'wrap' },
   toggleButton: {
     padding: '0.4rem 0.8rem',
     borderRadius: '6px',
@@ -254,5 +345,20 @@ const styles = {
     color: '#d33',
     cursor: 'pointer',
     fontSize: '0.85rem',
+  },
+  modifierBox: {
+    marginTop: '0.75rem',
+    paddingTop: '0.75rem',
+    borderTop: '1px solid #e2e4e9',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+  },
+  modifierBoxLabel: { fontSize: '0.85rem', color: '#555', margin: '0 0 0.25rem' },
+  modifierCheckboxRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '0.9rem',
   },
 }
