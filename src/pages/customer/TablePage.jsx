@@ -25,16 +25,22 @@ export default function TablePage() {
   const [sendingTypeId, setSendingTypeId] = useState(null)
   const [requestError, setRequestError] = useState('')
 
+  const [activeTab, setActiveTab] = useState('service') // 'service' | 'menu'
+  const [categories, setCategories] = useState([])
+  const [menuItems, setMenuItems] = useState({}) // category_id -> [items]
+  const [modifierGroups, setModifierGroups] = useState({}) // item_id -> [groups with options]
+  const [expandedItemId, setExpandedItemId] = useState(null)
+
   useEffect(() => {
     initSession()
   }, [token])
 
-  // Once we have a session, load buttons + this session's requests, and subscribe to updates
   useEffect(() => {
     if (!session) return
 
     loadRequestTypes(session.business_id)
     loadMyRequests(session.id)
+    loadMenu(session.business_id)
 
     const channel = supabase
       .channel(`session-requests-${session.id}`)
@@ -162,6 +168,68 @@ export default function TablePage() {
     setMyRequests(data || [])
   }
 
+  async function loadMenu(businessId) {
+    const { data: catsData } = await supabase
+      .from('menu_categories')
+      .select('*')
+      .eq('business_id', businessId)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+
+    setCategories(catsData || [])
+
+    if (!catsData || catsData.length === 0) return
+
+    const catIds = catsData.map((c) => c.id)
+    const { data: itemsData } = await supabase
+      .from('menu_items')
+      .select('*')
+      .in('category_id', catIds)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true })
+
+    const itemsByCategory = {}
+    for (const item of itemsData || []) {
+      if (!itemsByCategory[item.category_id]) itemsByCategory[item.category_id] = []
+      itemsByCategory[item.category_id].push(item)
+    }
+    setMenuItems(itemsByCategory)
+
+    if (!itemsData || itemsData.length === 0) return
+
+    const itemIds = itemsData.map((i) => i.id)
+    const { data: linksData } = await supabase
+      .from('menu_item_modifier_groups')
+      .select('*, modifier_groups(*)')
+      .in('menu_item_id', itemIds)
+
+    if (!linksData || linksData.length === 0) return
+
+    const groupIds = [...new Set(linksData.map((l) => l.modifier_group_id))]
+    const { data: optionsData } = await supabase
+      .from('modifier_options')
+      .select('*')
+      .in('modifier_group_id', groupIds)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true })
+
+    const optionsByGroup = {}
+    for (const opt of optionsData || []) {
+      if (!optionsByGroup[opt.modifier_group_id]) optionsByGroup[opt.modifier_group_id] = []
+      optionsByGroup[opt.modifier_group_id].push(opt)
+    }
+
+    const groupsByItem = {}
+    for (const link of linksData) {
+      if (!groupsByItem[link.menu_item_id]) groupsByItem[link.menu_item_id] = []
+      groupsByItem[link.menu_item_id].push({
+        ...link.modifier_groups,
+        options: optionsByGroup[link.modifier_group_id] || [],
+      })
+    }
+    setModifierGroups(groupsByItem)
+  }
+
   function activeRequestForType(typeId) {
     return myRequests.find(
       (r) => r.request_type_id === typeId && ['pending', 'accepted', 'on_the_way'].includes(r.status)
@@ -212,7 +280,6 @@ export default function TablePage() {
           <p style={{ color: '#666' }}>
             Please ask a staff member for a new code, or check with the venue.
           </p>
-         
         </div>
       </div>
     )
@@ -257,31 +324,107 @@ export default function TablePage() {
           </div>
         )}
 
-        {requestError && <p style={styles.requestError}>{requestError}</p>}
-
-        <div style={styles.buttonGrid}>
-          {requestTypes.length === 0 && (
-            <p style={{ color: '#888', gridColumn: '1 / -1' }}>
-              No service buttons have been set up yet.
-            </p>
-          )}
-          {requestTypes.map((type) => {
-            const isActive = !!activeRequestForType(type.id)
-            return (
-              <button
-                key={type.id}
-                onClick={() => handleRequest(type)}
-                disabled={isActive || sendingTypeId === type.id}
-                style={{
-                  ...styles.requestButton,
-                  ...(isActive ? styles.requestButtonActive : {}),
-                }}
-              >
-                {sendingTypeId === type.id ? '...' : type.label}
-              </button>
-            )
-          })}
+        <div style={styles.tabRow}>
+          <button
+            onClick={() => setActiveTab('service')}
+            style={{ ...styles.tabButton, ...(activeTab === 'service' ? styles.tabButtonActive : {}) }}
+          >
+            Service
+          </button>
+          <button
+            onClick={() => setActiveTab('menu')}
+            style={{ ...styles.tabButton, ...(activeTab === 'menu' ? styles.tabButtonActive : {}) }}
+          >
+            Menu
+          </button>
         </div>
+
+        {activeTab === 'service' && (
+          <>
+            {requestError && <p style={styles.requestError}>{requestError}</p>}
+            <div style={styles.buttonGrid}>
+              {requestTypes.length === 0 && (
+                <p style={{ color: '#888', gridColumn: '1 / -1' }}>
+                  No service buttons have been set up yet.
+                </p>
+              )}
+              {requestTypes.map((type) => {
+                const isActive = !!activeRequestForType(type.id)
+                return (
+                  <button
+                    key={type.id}
+                    onClick={() => handleRequest(type)}
+                    disabled={isActive || sendingTypeId === type.id}
+                    style={{
+                      ...styles.requestButton,
+                      ...(isActive ? styles.requestButtonActive : {}),
+                    }}
+                  >
+                    {sendingTypeId === type.id ? '...' : type.label}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'menu' && (
+          <div style={styles.menuWrap}>
+            {categories.length === 0 && (
+              <p style={{ color: '#888' }}>The menu isn't available yet.</p>
+            )}
+            {categories.map((cat) => (
+              <div key={cat.id} style={styles.categoryBlock}>
+                <h3 style={styles.categoryTitle}>{cat.name}</h3>
+                {(menuItems[cat.id] || []).length === 0 && (
+                  <p style={{ color: '#aaa', fontSize: '0.85rem' }}>No items available.</p>
+                )}
+                {(menuItems[cat.id] || []).map((item) => {
+                  const isExpanded = expandedItemId === item.id
+                  const groups = modifierGroups[item.id] || []
+                  return (
+                    <div key={item.id} style={styles.menuItemRow}>
+                      <div
+                        style={styles.menuItemHeader}
+                        onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                      >
+                        <div style={{ textAlign: 'left' }}>
+                          <div style={styles.menuItemName}>{item.name}</div>
+                          {item.description && (
+                            <div style={styles.menuItemDesc}>{item.description}</div>
+                          )}
+                        </div>
+                        <div style={styles.menuItemPrice}>${Number(item.price).toFixed(2)}</div>
+                      </div>
+
+                      {isExpanded && groups.length > 0 && (
+                        <div style={styles.modifierPreview}>
+                          {groups.map((group) => (
+                            <div key={group.id} style={styles.modifierGroupPreview}>
+                              <div style={styles.modifierGroupName}>
+                                {group.name}
+                                {group.is_required && <span style={styles.requiredTag}> (required)</span>}
+                              </div>
+                              <div style={styles.modifierOptionsPreview}>
+                                {group.options.map((opt) => (
+                                  <span key={opt.id} style={styles.modifierOptionPill}>
+                                    {opt.name}
+                                    {opt.price_delta > 0 && ` +$${Number(opt.price_delta).toFixed(2)}`}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+            <p style={styles.menuFootnote}>Ordering is coming soon — ask your server for now.</p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -343,6 +486,27 @@ const styles = {
     fontSize: '0.75rem',
     fontWeight: 600,
   },
+  tabRow: {
+    display: 'flex',
+    border: '1px solid #e2e4e9',
+    borderRadius: '10px',
+    overflow: 'hidden',
+    marginBottom: '1.25rem',
+  },
+  tabButton: {
+    flex: 1,
+    padding: '0.6rem',
+    border: 'none',
+    background: '#fff',
+    color: '#555',
+    cursor: 'pointer',
+    fontSize: '0.95rem',
+    fontWeight: 600,
+  },
+  tabButtonActive: {
+    background: '#4c8dff',
+    color: '#fff',
+  },
   requestError: { color: '#d33', fontSize: '0.85rem', marginBottom: '0.75rem' },
   buttonGrid: {
     display: 'grid',
@@ -364,5 +528,51 @@ const styles = {
     borderColor: '#4caf50',
     color: '#2e7d32',
     cursor: 'default',
+  },
+  menuWrap: { textAlign: 'left' },
+  categoryBlock: { marginBottom: '1.5rem' },
+  categoryTitle: {
+    fontSize: '1.05rem',
+    borderBottom: '2px solid #f0f0f0',
+    paddingBottom: '0.4rem',
+    marginBottom: '0.5rem',
+  },
+  menuItemRow: {
+    borderBottom: '1px solid #f5f5f5',
+    padding: '0.6rem 0',
+  },
+  menuItemHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    cursor: 'pointer',
+    gap: '0.75rem',
+  },
+  menuItemName: { fontWeight: 600, fontSize: '0.95rem' },
+  menuItemDesc: { color: '#888', fontSize: '0.8rem', marginTop: '0.15rem' },
+  menuItemPrice: { color: '#4c8dff', fontWeight: 700, whiteSpace: 'nowrap' },
+  modifierPreview: {
+    marginTop: '0.6rem',
+    background: '#f9fafb',
+    borderRadius: '8px',
+    padding: '0.6rem',
+  },
+  modifierGroupPreview: { marginBottom: '0.5rem' },
+  modifierGroupName: { fontSize: '0.8rem', fontWeight: 600, color: '#555', marginBottom: '0.3rem' },
+  requiredTag: { color: '#d33', fontWeight: 400 },
+  modifierOptionsPreview: { display: 'flex', flexWrap: 'wrap', gap: '0.3rem' },
+  modifierOptionPill: {
+    background: '#fff',
+    border: '1px solid #e2e4e9',
+    borderRadius: '999px',
+    padding: '0.2rem 0.6rem',
+    fontSize: '0.75rem',
+    color: '#555',
+  },
+  menuFootnote: {
+    textAlign: 'center',
+    color: '#aaa',
+    fontSize: '0.8rem',
+    marginTop: '1rem',
   },
 }
