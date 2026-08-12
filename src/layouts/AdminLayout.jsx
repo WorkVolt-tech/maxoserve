@@ -8,6 +8,7 @@ const navItems = [
   { to: '/admin/tables', label: 'Tables' },
   { to: '/admin/floor-plan', label: 'Floor Plan' },
   { to: '/admin/menu', label: 'Menu' },
+  { to: '/admin/modifiers', label: 'Modifiers' },
   { to: '/admin/staff', label: 'Staff' },
   { to: '/admin/orders', label: 'Orders' },
   { to: '/admin/requests', label: 'Requests' },
