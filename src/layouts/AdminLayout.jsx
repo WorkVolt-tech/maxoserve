@@ -1,29 +1,40 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { canAccess } from '../lib/permissions'
 
 const navItems = [
-  { to: '/admin', label: 'Dashboard', end: true },
-  { to: '/admin/locations', label: 'Locations' },
-  { to: '/admin/areas', label: 'Areas' },
-  { to: '/admin/tables', label: 'Tables' },
-  { to: '/admin/floor-plan', label: 'Floor Plan' },
-  { to: '/admin/menu', label: 'Menu' },
-  { to: '/admin/modifiers', label: 'Modifiers' },
-  { to: '/admin/staff', label: 'Staff' },
-  { to: '/admin/orders', label: 'Orders' },
-  { to: '/admin/requests', label: 'Requests' },
-  { to: '/admin/request-types', label: 'Request Buttons' },
+  { to: '/admin', label: 'Dashboard', end: true, section: 'dashboard' },
+  { to: '/admin/locations', label: 'Locations', section: 'locations' },
+  { to: '/admin/areas', label: 'Areas', section: 'areas' },
+  { to: '/admin/tables', label: 'Tables', section: 'tables' },
+  { to: '/admin/floor-plan', label: 'Floor Plan', section: 'floorPlan' },
+  { to: '/admin/menu', label: 'Menu', section: 'menu' },
+  { to: '/admin/modifiers', label: 'Modifiers', section: 'modifiers' },
+  { to: '/admin/staff', label: 'Staff', section: 'staff' },
+  { to: '/admin/orders', label: 'Orders', section: 'orders' },
+  { to: '/admin/requests', label: 'Requests', section: 'requests' },
+  { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes' },
 ]
 
 export default function AdminLayout() {
-  const { signOut } = useAuth()
+  const { signOut, role, roleLoading } = useAuth()
+
+  if (roleLoading) {
+    return (
+      <div style={styles.shell}>
+        <div style={{ padding: '2rem', color: '#666' }}>Loading...</div>
+      </div>
+    )
+  }
+
+  const visibleItems = navItems.filter((item) => canAccess(role, item.section))
 
   return (
     <div style={styles.shell}>
       <aside style={styles.sidebar}>
         <div style={styles.brand}>MaxoServe</div>
         <nav style={styles.nav}>
-          {navItems.map((item) => (
+          {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
