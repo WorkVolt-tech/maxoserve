@@ -15,6 +15,7 @@ import AdminStaff from './pages/admin/AdminStaff'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestTypes from './pages/admin/AdminRequestTypes'
+import RequireRole from './components/RequireRole'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import TablePage from './pages/customer/TablePage'
 
@@ -42,17 +43,17 @@ export default function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="locations" element={<AdminLocations />} />
-        <Route path="areas" element={<AdminAreas />} />
-        <Route path="tables" element={<AdminTables />} />
-        <Route path="floor-plan" element={<AdminFloorPlan />} />
-        <Route path="menu" element={<AdminMenu />} />
-        <Route path="menu/:categoryId" element={<AdminMenuItems />} />
-        <Route path="modifiers" element={<AdminModifiers />} />
-        <Route path="staff" element={<AdminStaff />} />
-        <Route path="orders" element={<AdminOrders />} />
-        <Route path="requests" element={<AdminRequests />} />
-        <Route path="request-types" element={<AdminRequestTypes />} />
+        <Route path="locations" element={<RequireRole section="locations"><AdminLocations /></RequireRole>} />
+        <Route path="areas" element={<RequireRole section="areas"><AdminAreas /></RequireRole>} />
+        <Route path="tables" element={<RequireRole section="tables"><AdminTables /></RequireRole>} />
+        <Route path="floor-plan" element={<RequireRole section="floorPlan"><AdminFloorPlan /></RequireRole>} />
+        <Route path="menu" element={<RequireRole section="menu"><AdminMenu /></RequireRole>} />
+        <Route path="menu/:categoryId" element={<RequireRole section="menu"><AdminMenuItems /></RequireRole>} />
+        <Route path="modifiers" element={<RequireRole section="modifiers"><AdminModifiers /></RequireRole>} />
+        <Route path="staff" element={<RequireRole section="staff"><AdminStaff /></RequireRole>} />
+        <Route path="orders" element={<RequireRole section="orders"><AdminOrders /></RequireRole>} />
+        <Route path="requests" element={<RequireRole section="requests"><AdminRequests /></RequireRole>} />
+        <Route path="request-types" element={<RequireRole section="requestTypes"><AdminRequestTypes /></RequireRole>} />
       </Route>
 
       <Route
