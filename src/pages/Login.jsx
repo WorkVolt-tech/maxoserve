@@ -32,13 +32,37 @@ export default function Login() {
         return
       }
 
-      // Create the matching profile row
       if (data.user) {
         await supabase.from('profiles').insert({
           id: data.user.id,
           full_name: fullName,
           email,
         })
+
+        // Check if there's a pending invite for this email
+        const { data: invite } = await supabase
+          .from('staff_invites')
+          .select('*')
+          .eq('email', email.trim().toLowerCase())
+          .is('accepted_at', null)
+          .limit(1)
+          .single()
+
+        if (invite) {
+          await supabase.from('business_members').insert({
+            business_id: invite.business_id,
+            user_id: data.user.id,
+            role: invite.role,
+          })
+          await supabase
+            .from('staff_invites')
+            .update({ accepted_at: new Date().toISOString() })
+            .eq('id', invite.id)
+
+          navigate('/admin')
+          setLoading(false)
+          return
+        }
       }
 
       navigate('/admin/create-business')
