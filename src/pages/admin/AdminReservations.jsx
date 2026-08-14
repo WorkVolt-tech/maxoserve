@@ -378,7 +378,7 @@ export default function AdminReservations() {
                   {r.notes && <p style={styles.notes}>{r.notes}</p>}
                   {existingOrder && (
                     <p style={styles.preOrderSummary}>
-                      Pre-order: {existingOrder.items.length} item(s) · ${Number(existingOrder.total).toFixed(2)}
+                      Pre-order: {existingOrder.items.reduce((sum, i) => sum + i.quantity, 0)} item(s) · ${Number(existingOrder.total).toFixed(2)}
                     </p>
                   )}
                 </div>
