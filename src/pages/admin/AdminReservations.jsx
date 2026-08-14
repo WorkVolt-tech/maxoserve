@@ -84,11 +84,13 @@ export default function AdminReservations() {
     setLocations(locationsData || [])
     if (locationsData && locationsData.length > 0) setLocationId(locationsData[0].id)
 
-    const { data: tablesData } = await supabase
-      .from('tables')
+    const { data: eventsData } = await supabase
+      .from('events')
       .select('*')
       .eq('business_id', membership.business_id)
-    setTables(tablesData || [])
+      .eq('is_active', true)
+      .order('starts_at', { ascending: false })
+    setEvents(eventsData || [])
 
     const { data: catsData } = await supabase
       .from('menu_categories')
@@ -204,6 +206,7 @@ export default function AdminReservations() {
     const { error: insertError } = await supabase.from('reservations').insert({
       business_id: businessId,
       location_id: locationId,
+      event_id: eventId || null,
       customer_name: name,
       customer_phone: phone || null,
       customer_email: email || null,
@@ -224,6 +227,7 @@ export default function AdminReservations() {
     setPartySize(2)
     setReservationTime('')
     setNotes('')
+    setEventId('')
     loadReservations(businessId)
   }
 
@@ -367,6 +371,12 @@ export default function AdminReservations() {
         <select value={locationId} onChange={(e) => setLocationId(e.target.value)} style={styles.select}>
           {locations.map((loc) => (
             <option key={loc.id} value={loc.id}>{loc.name}</option>
+          ))}
+        </select>
+        <select value={eventId} onChange={(e) => setEventId(e.target.value)} style={styles.select}>
+          <option value="">No event (regular reservation)</option>
+          {events.map((ev) => (
+            <option key={ev.id} value={ev.id}>{ev.name}</option>
           ))}
         </select>
         <textarea
