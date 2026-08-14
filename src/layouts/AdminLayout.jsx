@@ -12,6 +12,7 @@ const navItems = [
   { to: '/admin/modifiers', label: 'Modifiers', section: 'modifiers' },
   { to: '/admin/staff', label: 'Staff', section: 'staff' },
   { to: '/admin/assignments', label: 'Assignments', section: 'assignments' },
+  { to: '/admin/reservations', label: 'Reservations', section: 'reservations' },
   { to: '/admin/orders', label: 'Orders', section: 'orders' },
   { to: '/admin/requests', label: 'Requests', section: 'requests' },
   { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes' },
