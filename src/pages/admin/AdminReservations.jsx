@@ -34,6 +34,7 @@ export default function AdminReservations() {
 
   const [expandedReservationId, setExpandedReservationId] = useState(null)
   const [preOrderCart, setPreOrderCart] = useState([])
+  const [itemQuantities, setItemQuantities] = useState({}) // item_id -> qty being selected
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -225,11 +226,24 @@ export default function AdminReservations() {
     loadReservations(businessId)
   }
 
-  function addToPreOrderCart(item) {
-    setPreOrderCart((prev) => [
-      ...prev,
-      { tempId: `${item.id}-${Date.now()}`, item, quantity: 1, options: [] },
-    ])
+  function addToPreOrderCart(item, quantity) {
+    const qty = parseInt(quantity) || 1
+    setPreOrderCart((prev) => {
+      const existing = prev.find((line) => line.item.id === item.id)
+      if (existing) {
+        return prev.map((line) =>
+          line.item.id === item.id ? { ...line, quantity: line.quantity + qty } : line
+        )
+      }
+      return [...prev, { tempId: `${item.id}-${Date.now()}`, item, quantity: qty, options: [] }]
+    })
+  }
+
+  function updateCartLineQuantity(tempId, quantity) {
+    const qty = Math.max(1, parseInt(quantity) || 1)
+    setPreOrderCart((prev) =>
+      prev.map((line) => (line.tempId === tempId ? { ...line, quantity: qty } : line))
+    )
   }
 
   function removeFromPreOrderCart(tempId) {
@@ -423,9 +437,23 @@ export default function AdminReservations() {
                       {(menuItems[cat.id] || []).map((item) => (
                         <div key={item.id} style={styles.menuItemRow}>
                           <span>{item.name} · ${Number(item.price).toFixed(2)}</span>
-                          <button onClick={() => addToPreOrderCart(item)} style={styles.addButton}>
-                            + Add
-                          </button>
+                          <div style={styles.qtyAddRow}>
+                            <input
+                              type="number"
+                              min="1"
+                              value={itemQuantities[item.id] ?? 1}
+                              onChange={(e) =>
+                                setItemQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                              style={styles.qtyInput}
+                            />
+                            <button
+                              onClick={() => addToPreOrderCart(item, itemQuantities[item.id] ?? 1)}
+                              style={styles.addButton}
+                            >
+                              + Add
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -434,12 +462,21 @@ export default function AdminReservations() {
                   {preOrderCart.length > 0 && (
                     <div style={styles.cartPreview}>
                       <div style={styles.cartTitle}>New items to add:</div>
-                      {preOrderCart.map((line) => (
+                     {preOrderCart.map((line) => (
                         <div key={line.tempId} style={styles.cartLine}>
-                          <span>{line.quantity}× {line.item.name}</span>
-                          <button onClick={() => removeFromPreOrderCart(line.tempId)} style={styles.removeButton}>
-                            ×
-                          </button>
+                          <span>{line.item.name}</span>
+                          <div style={styles.cartLineControls}>
+                            <input
+                              type="number"
+                              min="1"
+                              value={line.quantity}
+                              onChange={(e) => updateCartLineQuantity(line.tempId, e.target.value)}
+                              style={styles.qtyInput}
+                            />
+                            <button onClick={() => removeFromPreOrderCart(line.tempId)} style={styles.removeButton}>
+                              ×
+                            </button>
+                          </div>
                         </div>
                       ))}
                       <div style={styles.cartTotal}>Total: ${preOrderTotal().toFixed(2)}</div>
@@ -569,6 +606,16 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.8rem',
   },
+  qtyAddRow: { display: 'flex', gap: '0.4rem', alignItems: 'center' },
+  qtyInput: {
+    width: '44px',
+    padding: '0.25rem',
+    borderRadius: '6px',
+    border: '1px solid #e2e4e9',
+    fontSize: '0.8rem',
+    textAlign: 'center',
+  },
+  cartLineControls: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
   cartPreview: {
     background: '#f9fafb',
     borderRadius: '8px',
