@@ -31,6 +31,8 @@ export default function AdminReservations() {
   const [reservationTime, setReservationTime] = useState('')
   const [locationId, setLocationId] = useState('')
   const [notes, setNotes] = useState('')
+  const [eventId, setEventId] = useState('')
+  const [events, setEvents] = useState([])
 
   const [expandedReservationId, setExpandedReservationId] = useState(null)
   const [preOrderCart, setPreOrderCart] = useState([])
