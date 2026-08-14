@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { logActivity } from '../../lib/activityLog'
 
 const STATUS_COLORS = {
   pending: '#e91e63',
@@ -115,6 +116,7 @@ export default function StaffDashboard() {
     }
 
     await supabase.from('service_requests').update(updates).eq('id', request.id)
+    logActivity(businessId, user.id, `${newStatus} a service request`)
     loadRequests(businessId)
   }
 
