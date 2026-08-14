@@ -20,6 +20,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([])
   const [orderItems, setOrderItems] = useState({}) // order_id -> [items with menu_item + modifiers]
   const [tables, setTables] = useState({})
+  const [reservations, setReservations] = useState({})
   const [filter, setFilter] = useState('active')
   const [loading, setLoading] = useState(true)
 
@@ -57,7 +58,7 @@ export default function AdminOrders() {
       return
     }
 
-    setBusinessId(membership.business_id)
+   setBusinessId(membership.business_id)
 
     const { data: tablesData } = await supabase
       .from('tables')
@@ -67,6 +68,15 @@ export default function AdminOrders() {
     const tablesMap = {}
     for (const t of tablesData || []) tablesMap[t.id] = t
     setTables(tablesMap)
+
+    const { data: reservationsData } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('business_id', membership.business_id)
+
+    const reservationsMap = {}
+    for (const r of reservationsData || []) reservationsMap[r.id] = r
+    setReservations(reservationsMap)
 
     await loadOrders(membership.business_id)
     setLoading(false)
@@ -179,7 +189,11 @@ export default function AdminOrders() {
             <div key={order.id} style={styles.orderCard}>
               <div style={styles.orderHeader}>
                 <div>
-                  <strong>{table?.name || 'Unknown table'}</strong>
+                  <strong>
+                    {table?.name || (order.reservation_id && reservations[order.reservation_id]
+                      ? `Reservation: ${reservations[order.reservation_id].customer_name}`
+                      : 'Unassigned')}
+                  </strong>
                   <span style={styles.orderMeta}> · ${Number(order.total).toFixed(2)} · {minutesAgo(order.created_at)}m ago</span>
                 </div>
                 <span style={{ ...styles.statusBadge, background: (STATUS_FLOW[order.status]?.color || '#999') + '22', color: STATUS_FLOW[order.status]?.color || '#666' }}>
