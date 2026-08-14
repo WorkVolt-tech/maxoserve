@@ -26,6 +26,7 @@ const SECTION_ACCESS = {
   assignments: ['owner', 'admin', 'manager'],
   reservations: ['owner', 'admin', 'manager', 'hostess'],
   events: ['owner', 'admin', 'manager'],
+  activityLogs: ['owner', 'admin'],
   orders: ['owner', 'admin', 'manager', 'bartender', 'kitchen', 'server'],
   requests: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender'],
   requestTypes: ['owner', 'admin'],
