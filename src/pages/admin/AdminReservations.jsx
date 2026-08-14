@@ -298,13 +298,16 @@ export default function AdminReservations() {
     }
 
     for (const line of preOrderCart) {
-      await supabase.from('order_items').insert({
+      const { error: lineError } = await supabase.from('order_items').insert({
         business_id: businessId,
         order_id: order.id,
         menu_item_id: line.item.id,
         quantity: line.quantity,
         unit_price: line.item.price,
       })
+      if (lineError) {
+        setError(`Failed to save "${line.item.name}": ${lineError.message}`)
+      }
     }
 
     setPreOrderCart([])
