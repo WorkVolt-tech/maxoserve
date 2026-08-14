@@ -13,6 +13,7 @@ import AdminMenuItems from './pages/admin/AdminMenuItems'
 import AdminModifiers from './pages/admin/AdminModifiers'
 import AdminStaff from './pages/admin/AdminStaff'
 import AdminAssignments from './pages/admin/AdminAssignments'
+import AdminReservations from './pages/admin/AdminReservations'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequests from './pages/admin/AdminRequests'
 import AdminRequestTypes from './pages/admin/AdminRequestTypes'
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="modifiers" element={<RequireRole section="modifiers"><AdminModifiers /></RequireRole>} />
         <Route path="staff" element={<RequireRole section="staff"><AdminStaff /></RequireRole>} />
         <Route path="assignments" element={<RequireRole section="assignments"><AdminAssignments /></RequireRole>} />
+        <Route path="reservations" element={<RequireRole section="reservations"><AdminReservations /></RequireRole>} />
         <Route path="orders" element={<RequireRole section="orders"><AdminOrders /></RequireRole>} />
         <Route path="requests" element={<RequireRole section="requests"><AdminRequests /></RequireRole>} />
         <Route path="request-types" element={<RequireRole section="requestTypes"><AdminRequestTypes /></RequireRole>} />
