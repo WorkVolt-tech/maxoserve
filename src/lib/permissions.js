@@ -24,6 +24,7 @@ const SECTION_ACCESS = {
   modifiers: ['owner', 'admin'],
   staff: ['owner', 'admin'],
   assignments: ['owner', 'admin', 'manager'],
+  reservations: ['owner', 'admin', 'manager', 'hostess'],
   orders: ['owner', 'admin', 'manager', 'bartender', 'kitchen', 'server'],
   requests: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender'],
   requestTypes: ['owner', 'admin'],
