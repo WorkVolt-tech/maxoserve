@@ -43,6 +43,21 @@ export default function AdminReservations() {
     loadInitial()
   }, [])
 
+  useEffect(() => {
+    if (!businessId) return
+
+    const channel = supabase
+      .channel(`reservation-orders-${businessId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `business_id=eq.${businessId}` },
+        () => loadReservations(businessId)
+      )
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
+  }, [businessId])
+
   async function loadInitial() {
     setLoading(true)
 
