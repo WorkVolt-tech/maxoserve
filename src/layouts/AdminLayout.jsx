@@ -16,7 +16,6 @@ const navItems = [
   { to: '/admin/events', label: 'Events', section: 'events' },
   { to: '/admin/activity-log', label: 'Activity Log', section: 'activityLogs' },
   { to: '/admin/orders', label: 'Orders', section: 'orders' },
-  { to: '/admin/requests', label: 'Requests', section: 'requests' },
   { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes' },
 ]
 
