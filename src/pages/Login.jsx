@@ -5,7 +5,7 @@ import logo from '../assets/maxoserve-logo.png'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [mode, setMode] = useState('login') // 'login' or 'signup'
+  const [mode, setMode] = useState('login')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,9 +21,7 @@ export default function Login() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { full_name: fullName },
-        },
+        options: { data: { full_name: fullName } },
       })
 
       if (signUpError) {
@@ -33,13 +31,8 @@ export default function Login() {
       }
 
       if (data.user) {
-        await supabase.from('profiles').insert({
-          id: data.user.id,
-          full_name: fullName,
-          email,
-        })
+        await supabase.from('profiles').insert({ id: data.user.id, full_name: fullName, email })
 
-        // Check if there's a pending invite for this email
         const { data: invite } = await supabase
           .from('staff_invites')
           .select('*')
@@ -67,10 +60,7 @@ export default function Login() {
 
       navigate('/admin/create-business')
     } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
       if (signInError) {
         setError(signInError.message)
@@ -139,7 +129,7 @@ export default function Login() {
           {error && <p style={styles.error}>{error}</p>}
 
           <button type="submit" disabled={loading} style={styles.submit}>
-            {loading ? 'Please wait...' : mode === 'signup' ? 'Create Account' : 'Log In'}
+            {loading ? 'Please wait…' : mode === 'signup' ? 'Create Account' : 'Log In'}
           </button>
         </form>
       </div>
@@ -153,66 +143,75 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f6f8',
-    fontFamily: 'system-ui, sans-serif',
+    background: 'radial-gradient(circle at top, #1b2440 0%, #0e1220 60%)',
     padding: '1rem',
   },
   card: {
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '2rem',
+    background: '#ffffff',
+    borderRadius: '20px',
+    padding: '2.5rem 2rem',
     width: '100%',
-    maxWidth: '360px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    maxWidth: '380px',
+    boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+    textAlign: 'center',
   },
-  title: { margin: 0, fontSize: '1.5rem' },
   logo: {
-    width: '160px',
-    height: '160px',
-    marginBottom: '0.5rem',
+    width: '150px',
+    height: '150px',
     display: 'block',
-    marginLeft: 'auto',
-    marginRight: 'auto',
+    margin: '0 auto 0.25rem',
   },
-  subtitle: { margin: '0.25rem 0 1.5rem', color: '#666' },
+  subtitle: { margin: '0 0 1.75rem', color: '#6b7280', fontSize: '0.95rem', fontWeight: 500 },
   toggleRow: {
     display: 'flex',
     marginBottom: '1.5rem',
-    border: '1px solid #e2e4e9',
-    borderRadius: '8px',
-    overflow: 'hidden',
+    background: '#f3f4f6',
+    borderRadius: '10px',
+    padding: '4px',
   },
   toggle: {
     flex: 1,
-    padding: '0.5rem',
+    padding: '0.55rem',
     border: 'none',
-    background: '#fff',
+    borderRadius: '8px',
+    background: 'transparent',
+    color: '#6b7280',
+    fontWeight: 600,
+    fontSize: '0.9rem',
     cursor: 'pointer',
   },
   toggleActive: {
     flex: 1,
-    padding: '0.5rem',
+    padding: '0.55rem',
     border: 'none',
-    background: '#4c8dff',
-    color: '#fff',
-    cursor: 'pointer',
-  },
-  form: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
-  input: {
-    padding: '0.65rem',
     borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    fontSize: '1rem',
+    background: '#ffffff',
+    color: '#14161a',
+    fontWeight: 600,
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  },
+  form: { display: 'flex', flexDirection: 'column', gap: '0.85rem', textAlign: 'left' },
+  input: {
+    padding: '0.75rem 0.9rem',
+    borderRadius: '10px',
+    border: '1.5px solid #e5e7eb',
+    fontSize: '0.95rem',
+    outline: 'none',
+    transition: 'border-color 0.15s',
   },
   submit: {
-    marginTop: '0.5rem',
-    padding: '0.75rem',
-    borderRadius: '8px',
+    marginTop: '0.4rem',
+    padding: '0.8rem',
+    borderRadius: '10px',
     border: 'none',
-    background: '#4c8dff',
+    background: '#3b6fe0',
     color: '#fff',
-    fontSize: '1rem',
+    fontSize: '0.95rem',
+    fontWeight: 700,
     cursor: 'pointer',
+    boxShadow: '0 4px 14px rgba(59,111,224,0.35)',
   },
-  error: { color: '#d33', fontSize: '0.9rem', margin: 0 },
+  error: { color: '#dc2626', fontSize: '0.85rem', margin: 0 },
 }
