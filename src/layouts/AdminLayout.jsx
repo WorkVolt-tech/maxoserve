@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { canAccess } from '../lib/permissions'
+import logo from '../assets/maxoserve-logo.png'
 
 const navItems = [
   { to: '/admin', label: 'Dashboard', end: true, section: 'dashboard' },
@@ -25,7 +26,7 @@ export default function AdminLayout() {
   if (roleLoading) {
     return (
       <div style={styles.shell}>
-        <div style={{ padding: '2rem', color: '#666' }}>Loading...</div>
+        <div style={{ padding: '2rem', color: 'var(--color-text-muted)' }}>Loading…</div>
       </div>
     )
   }
@@ -35,7 +36,10 @@ export default function AdminLayout() {
   return (
     <div style={styles.shell}>
       <aside style={styles.sidebar}>
-        <div style={styles.brand}>MaxoServe</div>
+        <div style={styles.brand}>
+          <img src={logo} alt="MaxoServe" style={styles.brandLogo} />
+          <span style={styles.brandText}>MaxoServe</span>
+        </div>
         <nav style={styles.nav}>
           {visibleItems.map((item) => (
             <NavLink
@@ -51,12 +55,15 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <a href="/staff" style={styles.staffLink}>
-          Live Requests →
-        </a>
-        <button onClick={signOut} style={styles.signOut}>
-          Sign Out
-        </button>
+        <div style={styles.footer}>
+          {role && <div style={styles.roleBadge}>{role}</div>}
+          <a href="/staff" style={styles.staffLink}>
+            Live Requests
+          </a>
+          <button onClick={signOut} style={styles.signOut}>
+            Sign Out
+          </button>
+        </div>
       </aside>
       <main style={styles.content}>
         <Outlet />
@@ -66,54 +73,70 @@ export default function AdminLayout() {
 }
 
 const styles = {
-  shell: { display: 'flex', minHeight: '100vh', fontFamily: 'system-ui, sans-serif' },
+  shell: { display: 'flex', minHeight: '100vh' },
   sidebar: {
-    width: '220px',
-    background: '#12161c',
-    color: '#e6e8ec',
+    width: '236px',
+    background: 'var(--color-sidebar-bg)',
+    color: 'var(--color-sidebar-text)',
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
   },
   brand: {
-    fontWeight: 600,
-    fontSize: '1.1rem',
-    padding: '1.25rem 1rem',
-    borderBottom: '1px solid #232a34',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    padding: '1.25rem 1.25rem',
+    borderBottom: '1px solid var(--color-sidebar-border)',
   },
-  nav: { display: 'flex', flexDirection: 'column', padding: '0.75rem 0', flex: 1 },
+  brandLogo: { width: '30px', height: '30px', flexShrink: 0 },
+  brandText: { fontWeight: 700, fontSize: '1.02rem', color: '#fff', letterSpacing: '-0.01em' },
+  nav: {
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '0.75rem 0.75rem',
+    gap: '2px',
+    flex: 1,
+    overflowY: 'auto',
+  },
   navLink: {
-    color: '#b7bdc7',
+    color: 'var(--color-sidebar-text)',
     textDecoration: 'none',
-    padding: '0.65rem 1.25rem',
-    fontSize: '0.95rem',
+    padding: '0.55rem 0.75rem',
+    fontSize: '0.88rem',
+    fontWeight: 500,
+    borderRadius: '8px',
   },
   navLinkActive: {
-    background: '#232a34',
+    background: 'rgba(59,111,224,0.18)',
     color: '#fff',
-    borderLeft: '3px solid #4c8dff',
-    paddingLeft: 'calc(1.25rem - 3px)',
+  },
+  footer: {
+    padding: '0.9rem',
+    borderTop: '1px solid var(--color-sidebar-border)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  roleBadge: {
+    fontSize: '0.7rem',
+    color: 'var(--color-sidebar-text)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    padding: '0 0.15rem',
+    fontWeight: 600,
   },
   staffLink: {
-    margin: '1rem 1rem 0',
     padding: '0.6rem',
-    background: '#4c8dff',
+    background: 'var(--color-primary)',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
     textAlign: 'center',
     textDecoration: 'none',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontWeight: 600,
   },
   signOut: {
-    margin: '1rem',
     padding: '0.6rem',
-    background: 'transparent',
-    color: '#b7bdc7',
-    border: '1px solid #333b47',
-    borderRadius: '8px',
-    cursor: 'pointer',
-  },
-  content: { flex: 1, padding: '2rem', background: '#f5f6f8' },
-}
+    background:
