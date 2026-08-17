@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
@@ -22,6 +22,11 @@ export default function StaffDashboard() {
   const [tables, setTables] = useState({})
   const [filter, setFilter] = useState('new')
   const [loading, setLoading] = useState(true)
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  )
+  const knownRequestIds = useRef(new Set())
+  const isFirstLoad = useRef(true)
 
   useEffect(() => {
     init()
@@ -97,7 +102,36 @@ export default function StaffDashboard() {
       .eq('business_id', bizId)
       .order('created_at', { ascending: false })
 
-    setRequests(data || [])
+    const fresh = data || []
+
+    if (!isFirstLoad.current) {
+      const newPending = fresh.filter(
+        (r) => r.status === 'pending' && !knownRequestIds.current.has(r.id)
+      )
+      for (const r of newPending) {
+        notifyNewRequest(r)
+      }
+    }
+
+    knownRequestIds.current = new Set(fresh.map((r) => r.id))
+    isFirstLoad.current = false
+    setRequests(fresh)
+  }
+
+  function notifyNewRequest(request) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    const type = requestTypes[request.request_type_id]
+    const table = tables[request.table_id]
+    new Notification('New request', {
+      body: `${type?.label || 'Request'} — ${table?.name || 'Unknown table'}`,
+    })
+
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+  }
+
+  function requestNotificationPermission() {
+    if (typeof Notification === 'undefined') return
+    Notification.requestPermission().then(setNotifPermission)
   }
 
   async function updateStatus(request, newStatus) {
@@ -149,7 +183,14 @@ export default function StaffDashboard() {
     <div style={styles.page}>
       <div style={styles.header}>
         <h1 style={styles.headerTitle}>Requests</h1>
-        <button onClick={signOut} style={styles.signOutButton}>Sign Out</button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+            <button onClick={requestNotificationPermission} style={styles.notifButton}>
+              Enable Alerts
+            </button>
+          )}
+          <button onClick={signOut} style={styles.signOutButton}>Sign Out</button>
+        </div>
       </div>
 
       <div style={styles.filterRow}>
@@ -259,6 +300,15 @@ const styles = {
     border: '1px solid #333b47',
     background: 'transparent',
     color: '#b7bdc7',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  },
+  notifButton: {
+    padding: '0.4rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid #4c8dff',
+    background: '#4c8dff',
+    color: '#fff',
     cursor: 'pointer',
     fontSize: '0.85rem',
   },
