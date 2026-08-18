@@ -22,7 +22,7 @@ export default function AdminReservations() {
   const [categories, setCategories] = useState([])
   const [menuItems, setMenuItems] = useState({})
   const [modifierGroups, setModifierGroups] = useState({})
-  const [orders, setOrders] = useState({}) // reservation_id -> order with items
+  const [orders, setOrders] = useState({})
 
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -37,7 +37,7 @@ export default function AdminReservations() {
 
   const [expandedReservationId, setExpandedReservationId] = useState(null)
   const [preOrderCart, setPreOrderCart] = useState([])
-  const [itemQuantities, setItemQuantities] = useState({}) // item_id -> qty being selected
+  const [itemQuantities, setItemQuantities] = useState({})
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -78,7 +78,7 @@ export default function AdminReservations() {
 
     setBusinessId(membership.business_id)
 
-   const { data: locationsData } = await supabase
+    const { data: locationsData } = await supabase
       .from('locations')
       .select('*')
       .eq('business_id', membership.business_id)
@@ -197,6 +197,8 @@ export default function AdminReservations() {
           byReservation[o.reservation_id] = { ...o, items: itemsByOrder[o.id] || [] }
         }
         setOrders(byReservation)
+      } else {
+        setOrders({})
       }
     }
   }
@@ -241,7 +243,6 @@ export default function AdminReservations() {
   async function handleStatusChange(reservation, newStatus) {
     await supabase.from('reservations').update({ status: newStatus }).eq('id', reservation.id)
 
-    // Keep the physical table's status in sync with the reservation lifecycle
     if (reservation.table_id) {
       if (newStatus === 'seated') {
         await supabase.from('tables').update({ status: 'occupied' }).eq('id', reservation.table_id)
@@ -340,12 +341,30 @@ export default function AdminReservations() {
 
   if (loading) return <div><h2>Reservations</h2><p>Loading...</p></div>
 
+  const visibleReservations = reservations.filter(
+    (r) => filterLocationId === 'all' || r.location_id === filterLocationId
+  )
+
   return (
     <div>
       <h2>Reservations</h2>
       <p style={{ color: '#666' }}>
         Take table and bottle reservations over the phone. Assign a table and build a pre-order for arrival.
       </p>
+
+      <div style={styles.filterRow}>
+        <label style={styles.filterLabel}>Show reservations for:</label>
+        <select
+          value={filterLocationId}
+          onChange={(e) => setFilterLocationId(e.target.value)}
+          style={styles.select}
+        >
+          <option value="all">All locations</option>
+          {locations.map((loc) => (
+            <option key={loc.id} value={loc.id}>{loc.name}</option>
+          ))}
+        </select>
+      </div>
 
       <form onSubmit={handleCreate} style={styles.form}>
         <input
@@ -408,8 +427,8 @@ export default function AdminReservations() {
       {error && <p style={{ color: '#d33' }}>{error}</p>}
 
       <div style={styles.list}>
-        {reservations.length === 0 && <p style={{ color: '#888' }}>No reservations yet.</p>}
-        {reservations.map((r) => {
+        {visibleReservations.length === 0 && <p style={{ color: '#888' }}>No reservations here.</p>}
+        {visibleReservations.map((r) => {
           const isExpanded = expandedReservationId === r.id
           const existingOrder = orders[r.id]
           const tablesForLocation = tables.filter((t) => t.location_id === r.location_id)
@@ -461,7 +480,7 @@ export default function AdminReservations() {
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                
+
                 <button
                   onClick={() => {
                     setExpandedReservationId(isExpanded ? null : r.id)
@@ -509,7 +528,7 @@ export default function AdminReservations() {
                   {preOrderCart.length > 0 && (
                     <div style={styles.cartPreview}>
                       <div style={styles.cartTitle}>New items to add:</div>
-                     {preOrderCart.map((line) => (
+                      {preOrderCart.map((line) => (
                         <div key={line.tempId} style={styles.cartLine}>
                           <span>{line.item.name}</span>
                           <div style={styles.cartLineControls}>
@@ -543,6 +562,13 @@ export default function AdminReservations() {
 }
 
 const styles = {
+  filterRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    marginBottom: '1.25rem',
+  },
+  filterLabel: { fontSize: '0.9rem', color: '#555' },
   form: {
     display: 'flex',
     gap: '0.5rem',
