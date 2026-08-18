@@ -97,7 +97,11 @@ export default function AdminModifiers() {
 
   async function handleDeleteGroup(id) {
     if (!confirm('Delete this modifier group and all its options?')) return
-    await supabase.from('modifier_groups').delete().eq('id', id)
+    const { error: deleteError } = await supabase.from('modifier_groups').delete().eq('id', id)
+    if (deleteError) {
+      setError(`Could not delete group: ${deleteError.message}`)
+      return
+    }
     loadGroups(businessId)
   }
 
@@ -137,7 +141,11 @@ export default function AdminModifiers() {
   }
 
   async function handleDeleteOption(id) {
-    await supabase.from('modifier_options').delete().eq('id', id)
+    const { error: deleteError } = await supabase.from('modifier_options').delete().eq('id', id)
+    if (deleteError) {
+      setError(`Could not delete option: ${deleteError.message}`)
+      return
+    }
     loadGroups(businessId)
   }
 
