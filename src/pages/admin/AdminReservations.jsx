@@ -77,12 +77,18 @@ export default function AdminReservations() {
 
     setBusinessId(membership.business_id)
 
-    const { data: locationsData } = await supabase
+   const { data: locationsData } = await supabase
       .from('locations')
       .select('*')
       .eq('business_id', membership.business_id)
     setLocations(locationsData || [])
     if (locationsData && locationsData.length > 0) setLocationId(locationsData[0].id)
+
+    const { data: tablesData } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('business_id', membership.business_id)
+    setTables(tablesData || [])
 
     const { data: eventsData } = await supabase
       .from('events')
