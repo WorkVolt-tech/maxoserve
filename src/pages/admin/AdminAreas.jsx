@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 export default function AdminAreas() {
   const { user } = useAuth()
+  const { currentLocationId, locations } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
-  const [locations, setLocations] = useState([])
-  const [selectedLocationId, setSelectedLocationId] = useState('')
   const [areas, setAreas] = useState([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
@@ -23,13 +23,13 @@ export default function AdminAreas() {
   }, [])
 
   useEffect(() => {
-    if (selectedLocationId) {
-      loadAreas(selectedLocationId)
+    if (currentLocationId) {
+      loadAreas(currentLocationId)
     } else {
       setAreas([])
     }
-  }, [selectedLocationId])
-
+  }, [currentLocationId])
+  
   async function loadInitial() {
     setLoading(true)
 
@@ -46,22 +46,6 @@ export default function AdminAreas() {
     }
 
     setBusinessId(membership.business_id)
-
-    const { data: locationsData, error: locationsError } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-      .order('created_at', { ascending: true })
-
-    if (locationsError) {
-      setError(locationsError.message)
-    } else {
-      setLocations(locationsData)
-      if (locationsData.length > 0) {
-        setSelectedLocationId(locationsData[0].id)
-      }
-    }
-
     setLoading(false)
   }
 
@@ -90,7 +74,7 @@ export default function AdminAreas() {
 
     const { error: insertError } = await supabase.from('areas').insert({
       business_id: businessId,
-      location_id: selectedLocationId,
+      location_id: currentLocationId,
       name,
       display_order: areas.length,
     })
@@ -101,19 +85,19 @@ export default function AdminAreas() {
     }
 
     setName('')
-    loadAreas(selectedLocationId)
+    loadAreas(currentLocationId)
   }
 
   async function handleDelete(id) {
     if (!confirm('Delete this area? This will also delete its tables.')) return
     await supabase.from('areas').delete().eq('id', id)
-    loadAreas(selectedLocationId)
+    loadAreas(currentLocationId)
   }
 
   function openDuplicateForm(area) {
     setDuplicatingAreaId(area.id)
     setDuplicateName(`${area.name} (Copy)`)
-    setDuplicateTargetLocationId(selectedLocationId)
+    setDuplicateTargetLocationId(currentLocationId)
     setError('')
   }
 
@@ -194,14 +178,14 @@ export default function AdminAreas() {
     setDuplicateName('')
 
     // Refresh the list if we duplicated into the currently viewed location
-    if (duplicateTargetLocationId === selectedLocationId) {
-      loadAreas(selectedLocationId)
+    if (duplicateTargetLocationId === currentLocationId) {
+      loadAreas(currentLocationId)
     }
   }
 
   if (loading) return <div><h2>Areas</h2><p>Loading...</p></div>
 
-  if (locations.length === 0) {
+  if (!currentLocationId) {
     return (
       <div>
         <h2>Areas</h2>
@@ -216,23 +200,8 @@ export default function AdminAreas() {
     <div>
       <h2>Areas</h2>
       <p style={{ color: '#666' }}>
-        Areas are rooms or sections within a location (e.g. "Main Floor", "VIP", "Patio").
+        Areas are rooms or sections within a location (e.g. "Main Floor", "VIP", "Patio"). Showing areas for the location selected above.
       </p>
-
-      <div style={styles.locationPicker}>
-        <label style={styles.label}>Location:</label>
-        <select
-          value={selectedLocationId}
-          onChange={(e) => setSelectedLocationId(e.target.value)}
-          style={styles.select}
-        >
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.name}
-            </option>
-          ))}
-        </select>
-      </div>
 
       <form onSubmit={handleAdd} style={styles.form}>
         <input
