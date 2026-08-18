@@ -140,10 +140,24 @@ export default function AdminModifiers() {
     loadGroups(businessId)
   }
 
+  async function handleToggleOptionAvailable(option) {
+    await supabase
+      .from('modifier_options')
+      .update({ is_available: !option.is_available })
+      .eq('id', option.id)
+    loadGroups(businessId)
+  }
+  
   async function handleDeleteOption(id) {
     const { error: deleteError } = await supabase.from('modifier_options').delete().eq('id', id)
     if (deleteError) {
-      setError(`Could not delete option: ${deleteError.message}`)
+      if (deleteError.code === '23503') {
+        setError('This option has been ordered before, so it can\'t be deleted. It\'s been hidden from customers instead.')
+        await supabase.from('modifier_options').update({ is_available: false }).eq('id', id)
+        loadGroups(businessId)
+      } else {
+        setError(`Could not delete option: ${deleteError.message}`)
+      }
       return
     }
     loadGroups(businessId)
@@ -207,10 +221,16 @@ export default function AdminModifiers() {
                   <span>
                     {opt.name}
                     {opt.price_delta > 0 && <span style={styles.priceDelta}> +${Number(opt.price_delta).toFixed(2)}</span>}
+                    {!opt.is_available && <span style={styles.hiddenTag}> (hidden)</span>}
                   </span>
-                  <button onClick={() => handleDeleteOption(opt.id)} style={styles.smallDeleteButton}>
-                    ×
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <button onClick={() => handleToggleOptionAvailable(opt)} style={styles.smallToggleButton}>
+                      {opt.is_available ? 'Hide' : 'Show'}
+                    </button>
+                    <button onClick={() => handleDeleteOption(opt.id)} style={styles.smallDeleteButton}>
+                      ×
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -315,6 +335,16 @@ const styles = {
     fontSize: '1rem',
     padding: '0 0.3rem',
   },
+  smallToggleButton: {
+    border: '1px solid #e2e4e9',
+    background: '#fff',
+    color: '#555',
+    cursor: 'pointer',
+    fontSize: '0.75rem',
+    padding: '0.15rem 0.5rem',
+    borderRadius: '4px',
+  },
+  hiddenTag: { color: '#c2185b', fontSize: '0.78rem' },
   addOptionForm: { display: 'flex', gap: '0.5rem' },
   optionInput: {
     padding: '0.45rem',
