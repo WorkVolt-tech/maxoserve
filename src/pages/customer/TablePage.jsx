@@ -326,7 +326,9 @@ export default function TablePage() {
     setSelectedOptions((prev) => {
       const current = prev[group.id] || []
       if (group.selection_type === 'single') {
-        return { ...prev, [group.id]: [option.id] }
+        // Tapping the already-selected option clears it; tapping a different one selects it
+        const isSelected = current.includes(option.id)
+        return { ...prev, [group.id]: isSelected ? [] : [option.id] }
       }
       const exists = current.includes(option.id)
       return {
