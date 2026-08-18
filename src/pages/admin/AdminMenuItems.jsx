@@ -128,7 +128,11 @@ export default function AdminMenuItems() {
 
   async function handleDelete(id) {
     if (!confirm('Delete this item?')) return
-    await supabase.from('menu_items').delete().eq('id', id)
+    const { error: deleteError } = await supabase.from('menu_items').delete().eq('id', id)
+    if (deleteError) {
+      setError(`Could not delete item: ${deleteError.message}`)
+      return
+    }
     loadItems()
   }
 
