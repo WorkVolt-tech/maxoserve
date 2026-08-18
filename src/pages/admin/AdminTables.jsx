@@ -5,6 +5,25 @@ import QrCodeModal from '../../components/QrCodeModal'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
+function statusBadgeColor(status) {
+  switch (status) {
+    case 'available':
+      return { background: '#e8f5e9', color: '#2e7d32' }
+    case 'occupied':
+      return { background: '#fdecea', color: '#c62828' }
+    case 'reserved':
+      return { background: '#fff3e0', color: '#e65100' }
+    case 'needs_service':
+      return { background: '#fce4ec', color: '#ad1457' }
+    case 'order_pending':
+      return { background: '#f3e5f5', color: '#6a1b9a' }
+    case 'disabled':
+      return { background: '#eceff1', color: '#546e7a' }
+    default:
+      return { background: '#e8f5e9', color: '#2e7d32' }
+  }
+}
+
 function generateToken() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   const bytes = new Uint8Array(12)
@@ -361,7 +380,7 @@ export default function AdminTables() {
                     {t.table_number && <span style={styles.meta}> · #{t.table_number}</span>}
                     {t.capacity && <span style={styles.meta}> · seats {t.capacity}</span>}
                     <span style={styles.meta}> · {t.shape.replace('_', ' ')}</span>
-                    <span style={styles.statusBadge}>{t.status}</span>
+                    <span style={{ ...styles.statusBadge, ...statusBadgeColor(t.status) }}>{t.status}</span>
                   </div>
                   <div style={styles.cardActions}>
                     {hasQr ? (
