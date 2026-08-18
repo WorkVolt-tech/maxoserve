@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
 import { canAccess } from '../lib/permissions'
 import logo from '../assets/maxoserve-logo.png'
 
@@ -20,6 +21,28 @@ const navItems = [
   { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes' },
 ]
 
+function LocationSwitcher() {
+  const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
+
+  if (locationsLoading) return null
+  if (locations.length === 0) return null
+
+  return (
+    <div style={styles.topBar}>
+      <span style={styles.topBarLabel}>Location:</span>
+      <select
+        value={currentLocationId}
+        onChange={(e) => setCurrentLocationId(e.target.value)}
+        style={styles.topBarSelect}
+      >
+        {locations.map((loc) => (
+          <option key={loc.id} value={loc.id}>{loc.name}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 export default function AdminLayout() {
   const { signOut, role, roleLoading } = useAuth()
 
@@ -34,41 +57,46 @@ export default function AdminLayout() {
   const visibleItems = navItems.filter((item) => canAccess(role, item.section))
 
   return (
-    <div style={styles.shell}>
-      <aside style={styles.sidebar}>
-        <div style={styles.brand}>
-          <img src={logo} alt="MaxoServe" style={styles.brandLogo} />
-          <span style={styles.brandText}>MaxoServe</span>
+    <LocationProvider>
+      <div style={styles.shell}>
+        <aside style={styles.sidebar}>
+          <div style={styles.brand}>
+            <img src={logo} alt="MaxoServe" style={styles.brandLogo} />
+            <span style={styles.brandText}>MaxoServe</span>
+          </div>
+          <nav style={styles.nav}>
+            {visibleItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                style={({ isActive }) => ({
+                  ...styles.navLink,
+                  ...(isActive ? styles.navLinkActive : {}),
+                })}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div style={styles.footer}>
+            {role && <div style={styles.roleBadge}>{role}</div>}
+            <a href="/staff" style={styles.staffLink}>
+              Live Requests
+            </a>
+            <button onClick={signOut} style={styles.signOut}>
+              Sign Out
+            </button>
+          </div>
+        </aside>
+        <div style={styles.mainColumn}>
+          <LocationSwitcher />
+          <main style={styles.content}>
+            <Outlet />
+          </main>
         </div>
-        <nav style={styles.nav}>
-          {visibleItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              style={({ isActive }) => ({
-                ...styles.navLink,
-                ...(isActive ? styles.navLinkActive : {}),
-              })}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div style={styles.footer}>
-          {role && <div style={styles.roleBadge}>{role}</div>}
-          <a href="/staff" style={styles.staffLink}>
-            Live Requests
-          </a>
-          <button onClick={signOut} style={styles.signOut}>
-            Sign Out
-          </button>
-        </div>
-      </aside>
-      <main style={styles.content}>
-        <Outlet />
-      </main>
-    </div>
+      </div>
+    </LocationProvider>
   )
 }
 
@@ -145,6 +173,24 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
     fontSize: '0.85rem',
+  },
+  mainColumn: { flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 },
+  topBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.6rem',
+    padding: '0.85rem 2.25rem',
+    background: 'var(--color-surface)',
+    borderBottom: '1px solid var(--color-border)',
+  },
+  topBarLabel: { fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 600 },
+  topBarSelect: {
+    padding: '0.45rem 0.75rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    fontSize: '0.9rem',
+    fontWeight: 600,
+    background: '#fff',
   },
   content: { flex: 1, padding: '2.25rem', background: 'var(--color-bg)', overflowY: 'auto' },
 }
