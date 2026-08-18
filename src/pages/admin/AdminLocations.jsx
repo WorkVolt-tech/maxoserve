@@ -18,7 +18,6 @@ export default function AdminLocations() {
   async function loadData() {
     setLoading(true)
 
-    // Find which business this user belongs to
     const { data: membership } = await supabase
       .from('business_members')
       .select('business_id')
@@ -39,11 +38,8 @@ export default function AdminLocations() {
       .eq('business_id', membership.business_id)
       .order('created_at', { ascending: true })
 
-    if (locationsError) {
-      setError(locationsError.message)
-    } else {
-      setLocations(locationsData)
-    }
+    if (locationsError) setError(locationsError.message)
+    else setLocations(locationsData)
 
     setLoading(false)
   }
@@ -74,45 +70,45 @@ export default function AdminLocations() {
     loadData()
   }
 
-  if (loading) return <div><h2>Locations</h2><p>Loading...</p></div>
+  if (loading) return <div><h2 style={s.title}>Locations</h2><p style={s.muted}>Loading…</p></div>
 
   return (
     <div>
-      <h2>Locations</h2>
-      <p style={{ color: '#666' }}>
+      <h2 style={s.title}>Locations</h2>
+      <p style={s.subtitle}>
         A location is a physical address (e.g. "Club Max — Montreal"). Add each address your business operates at.
       </p>
 
-      <form onSubmit={handleAdd} style={styles.form}>
+      <form onSubmit={handleAdd} style={s.form}>
         <input
           type="text"
           placeholder="Location name (e.g. Downtown)"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          style={styles.input}
+          style={s.input}
         />
         <input
           type="text"
           placeholder="Address (optional)"
           value={address}
           onChange={(e) => setAddress(e.target.value)}
-          style={styles.input}
+          style={s.input}
         />
-        <button type="submit" style={styles.button}>Add Location</button>
+        <button type="submit" style={s.primaryButton}>Add Location</button>
       </form>
 
-      {error && <p style={{ color: '#d33' }}>{error}</p>}
+      {error && <p style={s.error}>{error}</p>}
 
-      <div style={styles.list}>
-        {locations.length === 0 && <p style={{ color: '#888' }}>No locations yet.</p>}
+      <div style={s.list}>
+        {locations.length === 0 && <p style={s.empty}>No locations yet.</p>}
         {locations.map((loc) => (
-          <div key={loc.id} style={styles.card}>
+          <div key={loc.id} style={s.card}>
             <div>
-              <strong>{loc.name}</strong>
-              {loc.address && <p style={styles.address}>{loc.address}</p>}
+              <div style={s.cardTitle}>{loc.name}</div>
+              {loc.address && <div style={s.cardMeta}>{loc.address}</div>}
             </div>
-            <button onClick={() => handleDelete(loc.id)} style={styles.deleteButton}>
+            <button onClick={() => handleDelete(loc.id)} style={s.dangerButton}>
               Delete
             </button>
           </div>
@@ -122,47 +118,80 @@ export default function AdminLocations() {
   )
 }
 
-const styles = {
-  form: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-  },
+export const s = {
+  title: { fontSize: '1.5rem' },
+  subtitle: { color: 'var(--color-text-muted)', marginTop: '-0.5rem', marginBottom: '1.5rem', maxWidth: '560px' },
+  muted: { color: 'var(--color-text-muted)' },
+  empty: { color: 'var(--color-text-faint)' },
+  error: { color: 'var(--color-danger)', fontSize: '0.88rem', marginBottom: '0.75rem' },
+  form: { display: 'flex', gap: '0.6rem', marginBottom: '1.75rem', flexWrap: 'wrap' },
   input: {
-    padding: '0.6rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    fontSize: '0.95rem',
+    padding: '0.65rem 0.85rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    fontSize: '0.92rem',
     flex: '1 1 200px',
+    outline: 'none',
+    background: 'var(--color-surface)',
   },
-  button: {
-    padding: '0.6rem 1.2rem',
-    borderRadius: '8px',
+  select: {
+    padding: '0.65rem 0.85rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    fontSize: '0.92rem',
+    background: 'var(--color-surface)',
+  },
+  textarea: {
+    padding: '0.65rem 0.85rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    fontSize: '0.92rem',
+    width: '100%',
+    minHeight: '60px',
+    fontFamily: 'inherit',
+    background: 'var(--color-surface)',
+  },
+  primaryButton: {
+    padding: '0.65rem 1.3rem',
+    borderRadius: 'var(--radius-sm)',
     border: 'none',
-    background: '#4c8dff',
+    background: 'var(--color-primary)',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
+    fontWeight: 600,
   },
-  list: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+  secondaryButton: {
+    padding: '0.5rem 0.9rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-text)',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: 500,
+  },
+  dangerButton: {
+    padding: '0.5rem 0.9rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-danger)',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: 500,
+  },
+  list: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
   card: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    background: '#fff',
-    padding: '1rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
+    background: 'var(--color-surface)',
+    padding: '1.1rem 1.25rem',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--color-border)',
+    boxShadow: 'var(--shadow-sm)',
   },
-  address: { margin: '0.25rem 0 0', color: '#888', fontSize: '0.85rem' },
-  deleteButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#d33',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
+  cardTitle: { fontWeight: 600, fontSize: '0.95rem' },
+  cardMeta: { color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem' },
 }
