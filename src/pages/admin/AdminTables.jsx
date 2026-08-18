@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 import QrCodeModal from '../../components/QrCodeModal'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
@@ -33,10 +34,9 @@ function generateToken() {
 
 export default function AdminTables() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
-  const [locations, setLocations] = useState([])
   const [areas, setAreas] = useState([])
-  const [selectedLocationId, setSelectedLocationId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
   const [qrTokens, setQrTokens] = useState({})
@@ -57,13 +57,13 @@ export default function AdminTables() {
   }, [])
 
   useEffect(() => {
-    if (selectedLocationId) {
-      loadAreasForLocation(selectedLocationId)
+    if (currentLocationId) {
+      loadAreasForLocation(currentLocationId)
     } else {
       setAreas([])
       setSelectedAreaId('')
     }
-  }, [selectedLocationId])
+  }, [currentLocationId])
 
   useEffect(() => {
     if (selectedAreaId) {
@@ -89,22 +89,6 @@ export default function AdminTables() {
     }
 
     setBusinessId(membership.business_id)
-
-    const { data: locationsData, error: locationsError } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-      .order('created_at', { ascending: true })
-
-    if (locationsError) {
-      setError(locationsError.message)
-    } else {
-      setLocations(locationsData)
-      if (locationsData.length > 0) {
-        setSelectedLocationId(locationsData[0].id)
-      }
-    }
-
     setLoading(false)
   }
 
@@ -196,7 +180,7 @@ export default function AdminTables() {
 
     const { error: insertError } = await supabase.from('tables').insert({
       business_id: businessId,
-      location_id: selectedLocationId,
+      location_id: currentLocationId,
       area_id: selectedAreaId,
       name,
       table_number: tableNumber || null,
@@ -285,7 +269,7 @@ export default function AdminTables() {
 
   if (loading) return <div><h2>Tables</h2><p>Loading...</p></div>
 
-  if (locations.length === 0) {
+  if (!currentLocationId) {
     return (
       <div>
         <h2>Tables</h2>
@@ -303,19 +287,6 @@ export default function AdminTables() {
       <p style={{ color: '#666' }}>Add and manage individual tables within an area.</p>
 
       <div style={styles.pickerRow}>
-        <div>
-          <label style={styles.label}>Location:</label>
-          <select
-            value={selectedLocationId}
-            onChange={(e) => setSelectedLocationId(e.target.value)}
-            style={styles.select}
-          >
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
-          </select>
-        </div>
-
         <div>
           <label style={styles.label}>Area:</label>
           <select
