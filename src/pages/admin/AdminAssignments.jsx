@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 export default function AdminAssignments() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
   const [members, setMembers] = useState([])
   const [profiles, setProfiles] = useState({})
-  const [locations, setLocations] = useState([])
   const [areas, setAreas] = useState([])
   const [tables, setTables] = useState([])
   const [assignments, setAssignments] = useState([])
 
   const [selectedUserId, setSelectedUserId] = useState('')
   const [scopeType, setScopeType] = useState('table') // 'location' | 'area' | 'table'
-  const [selectedLocationId, setSelectedLocationId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [selectedTableId, setSelectedTableId] = useState('')
 
@@ -59,16 +59,6 @@ export default function AdminAssignments() {
       const map = {}
       for (const p of profilesData || []) map[p.id] = p
       setProfiles(map)
-    }
-
-    const { data: locationsData } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-      .order('created_at', { ascending: true })
-    setLocations(locationsData || [])
-    if (locationsData && locationsData.length > 0) {
-      setSelectedLocationId(locationsData[0].id)
     }
 
     const { data: areasData } = await supabase
@@ -119,8 +109,8 @@ export default function AdminAssignments() {
     }
 
     if (scopeType === 'location') {
-      if (!selectedLocationId) { setError('Select a location.'); return }
-      row.location_id = selectedLocationId
+      if (!currentLocationId) { setError('Select a location.'); return }
+      row.location_id = currentLocationId
     } else if (scopeType === 'area') {
       if (!selectedAreaId) { setError('Select an area.'); return }
       row.area_id = selectedAreaId
@@ -154,14 +144,13 @@ export default function AdminAssignments() {
       return `Area: ${ar?.name || 'Unknown'}`
     }
     if (a.location_id) {
-      const l = locations.find((loc) => loc.id === a.location_id)
-      return `Location: ${l?.name || 'Unknown'}`
+      return 'Entire location'
     }
     return 'Unknown scope'
   }
 
-  const areasForSelectedLocation = areas.filter((a) => a.location_id === selectedLocationId)
-  const tablesForSelectedLocation = tables.filter((t) => t.location_id === selectedLocationId)
+  const areasForSelectedLocation = areas.filter((a) => a.location_id === currentLocationId)
+  const tablesForSelectedLocation = tables.filter((t) => t.location_id === currentLocationId)
 
   if (loading) return <div><h2>Assignments</h2><p>Loading...</p></div>
 
@@ -186,12 +175,6 @@ export default function AdminAssignments() {
           <option value="table">Specific table</option>
           <option value="area">Whole area</option>
           <option value="location">Entire location</option>
-        </select>
-
-        <select value={selectedLocationId} onChange={(e) => setSelectedLocationId(e.target.value)} style={styles.select}>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
         </select>
 
         {scopeType === 'area' && (
