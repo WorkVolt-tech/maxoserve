@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import { useAuth } from '../contexts/AuthContext'
 import logo from '../assets/maxoserve-logo.png'
 
 export default function Login() {
   const navigate = useNavigate()
+  const { refreshRole } = useAuth()
   const [mode, setMode] = useState('login')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -40,6 +42,10 @@ export default function Login() {
         .select('business_id')
         .limit(1)
         .single()
+
+      if (membership) {
+        await refreshRole()
+      }
 
       navigate(membership ? '/admin' : '/admin/create-business')
     } else {
