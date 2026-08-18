@@ -233,6 +233,16 @@ export default function AdminReservations() {
 
   async function handleStatusChange(reservation, newStatus) {
     await supabase.from('reservations').update({ status: newStatus }).eq('id', reservation.id)
+
+    // Keep the physical table's status in sync with the reservation lifecycle
+    if (reservation.table_id) {
+      if (newStatus === 'seated') {
+        await supabase.from('tables').update({ status: 'occupied' }).eq('id', reservation.table_id)
+      } else if (['completed', 'cancelled', 'no_show'].includes(newStatus)) {
+        await supabase.from('tables').update({ status: 'available' }).eq('id', reservation.table_id)
+      }
+    }
+
     loadReservations(businessId)
   }
 
