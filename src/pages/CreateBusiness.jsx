@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function CreateBusiness() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, refreshRole } = useAuth()
   const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -55,6 +55,10 @@ export default function CreateBusiness() {
     await supabase.from('business_settings').insert({
       business_id: businessId,
     })
+
+    // Refresh auth context so /admin immediately knows about the new business,
+    // instead of showing a stale "no business" state until manually refreshed
+    await refreshRole()
 
     navigate('/admin')
   }
