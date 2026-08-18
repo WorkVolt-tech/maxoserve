@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Stage, Layer, Rect, Circle, Ellipse, Text, Group } from 'react-konva'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 const STATUS_COLORS = {
   available: '#4caf50',
@@ -14,9 +15,8 @@ const STATUS_COLORS = {
 
 export default function AdminFloorPlan() {
   const { user } = useAuth()
-  const [locations, setLocations] = useState([])
+  const { currentLocationId } = useCurrentLocation()
   const [areas, setAreas] = useState([])
-  const [selectedLocationId, setSelectedLocationId] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
   const [dirty, setDirty] = useState(false)
@@ -32,9 +32,9 @@ export default function AdminFloorPlan() {
   }, [])
 
   useEffect(() => {
-    if (selectedLocationId) loadAreasForLocation(selectedLocationId)
+    if (currentLocationId) loadAreasForLocation(currentLocationId)
     else { setAreas([]); setSelectedAreaId('') }
-  }, [selectedLocationId])
+  }, [currentLocationId])
 
   useEffect(() => {
     if (selectedAreaId) loadTables(selectedAreaId)
@@ -64,17 +64,6 @@ export default function AdminFloorPlan() {
       .single()
 
     if (!membership) { setLoading(false); return }
-
-    const { data: locationsData } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-      .order('created_at', { ascending: true })
-
-    setLocations(locationsData || [])
-    if (locationsData && locationsData.length > 0) {
-      setSelectedLocationId(locationsData[0].id)
-    }
     setLoading(false)
   }
 
@@ -133,7 +122,7 @@ export default function AdminFloorPlan() {
 
   if (loading) return <div><h2>Floor Plan</h2><p>Loading...</p></div>
 
-  if (locations.length === 0) {
+  if (!currentLocationId) {
     return <div><h2>Floor Plan</h2><p style={{ color: '#888' }}>Create a location first.</p></div>
   }
 
@@ -143,12 +132,6 @@ export default function AdminFloorPlan() {
       <p style={{ color: '#666' }}>Drag tables to arrange your floor plan. Click Save when done.</p>
 
       <div style={styles.pickerRow}>
-        <div>
-          <label style={styles.label}>Location:</label>
-          <select value={selectedLocationId} onChange={(e) => setSelectedLocationId(e.target.value)} style={styles.select}>
-            {locations.map((loc) => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-          </select>
-        </div>
         <div>
           <label style={styles.label}>Area:</label>
           <select value={selectedAreaId} onChange={(e) => setSelectedAreaId(e.target.value)} style={styles.select} disabled={areas.length === 0}>
