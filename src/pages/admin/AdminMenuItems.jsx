@@ -130,7 +130,11 @@ export default function AdminMenuItems() {
     if (!confirm('Delete this item?')) return
     const { error: deleteError } = await supabase.from('menu_items').delete().eq('id', id)
     if (deleteError) {
-      setError(`Could not delete item: ${deleteError.message}`)
+      if (deleteError.code === '23503') {
+        setError('This item has been ordered before, so it can\'t be deleted (it would corrupt past order history). Use "Mark Unavailable" instead to hide it from customers.')
+      } else {
+        setError(`Could not delete item: ${deleteError.message}`)
+      }
       return
     }
     loadItems()
