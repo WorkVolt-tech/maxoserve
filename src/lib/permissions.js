@@ -19,7 +19,7 @@ const SECTION_ACCESS = {
   locations: ['owner', 'admin'],
   areas: ['owner', 'admin'],
   tables: ['owner', 'admin'],
-  floorPlan: ['owner', 'admin', 'manager'],
+  floorPlan: ['owner', 'admin', 'manager', 'hostess', 'server'],
   menu: ['owner', 'admin'],
   modifiers: ['owner', 'admin'],
   staff: ['owner', 'admin'],
