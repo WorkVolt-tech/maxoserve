@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show']
 
@@ -15,8 +16,8 @@ const STATUS_COLORS = {
 
 export default function AdminReservations() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
-  const [locations, setLocations] = useState([])
   const [tables, setTables] = useState([])
   const [reservations, setReservations] = useState([])
   const [categories, setCategories] = useState([])
@@ -29,11 +30,9 @@ export default function AdminReservations() {
   const [email, setEmail] = useState('')
   const [partySize, setPartySize] = useState(2)
   const [reservationTime, setReservationTime] = useState('')
-  const [locationId, setLocationId] = useState('')
   const [notes, setNotes] = useState('')
   const [eventId, setEventId] = useState('')
   const [events, setEvents] = useState([])
-  const [filterLocationId, setFilterLocationId] = useState('all')
 
   const [expandedReservationId, setExpandedReservationId] = useState(null)
   const [preOrderCart, setPreOrderCart] = useState([])
@@ -77,13 +76,6 @@ export default function AdminReservations() {
     }
 
     setBusinessId(membership.business_id)
-
-    const { data: locationsData } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-    setLocations(locationsData || [])
-    if (locationsData && locationsData.length > 0) setLocationId(locationsData[0].id)
 
     const { data: tablesData } = await supabase
       .from('tables')
@@ -207,14 +199,14 @@ export default function AdminReservations() {
     e.preventDefault()
     setError('')
 
-    if (!locationId) {
+    if (!currentLocationId) {
       setError('Select a location.')
       return
     }
 
     const { error: insertError } = await supabase.from('reservations').insert({
       business_id: businessId,
-      location_id: locationId,
+      location_id: currentLocationId,
       event_id: eventId || null,
       customer_name: name,
       customer_phone: phone || null,
@@ -341,9 +333,7 @@ export default function AdminReservations() {
 
   if (loading) return <div><h2>Reservations</h2><p>Loading...</p></div>
 
-  const visibleReservations = reservations.filter(
-    (r) => filterLocationId === 'all' || r.location_id === filterLocationId
-  )
+  const visibleReservations = reservations.filter((r) => r.location_id === currentLocationId)
 
   return (
     <div>
@@ -351,20 +341,6 @@ export default function AdminReservations() {
       <p style={{ color: '#666' }}>
         Take table and bottle reservations over the phone. Assign a table and build a pre-order for arrival.
       </p>
-
-      <div style={styles.filterRow}>
-        <label style={styles.filterLabel}>Show reservations for:</label>
-        <select
-          value={filterLocationId}
-          onChange={(e) => setFilterLocationId(e.target.value)}
-          style={styles.select}
-        >
-          <option value="all">All locations</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
-        </select>
-      </div>
 
       <form onSubmit={handleCreate} style={styles.form}>
         <input
@@ -404,11 +380,6 @@ export default function AdminReservations() {
           required
           style={styles.input}
         />
-        <select value={locationId} onChange={(e) => setLocationId(e.target.value)} style={styles.select}>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
-        </select>
         <select value={eventId} onChange={(e) => setEventId(e.target.value)} style={styles.select}>
           <option value="">No event (regular reservation)</option>
           {events.map((ev) => (
