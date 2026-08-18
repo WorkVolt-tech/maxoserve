@@ -25,6 +25,20 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+ async function refreshRole() {
+    if (!session?.user) return
+    setRoleLoading(true)
+    const { data } = await supabase
+      .from('business_members')
+      .select('business_id, role')
+      .eq('user_id', session.user.id)
+      .limit(1)
+      .single()
+    setBusinessId(data?.business_id || null)
+    setRole(data?.role || null)
+    setRoleLoading(false)
+  }
+
   useEffect(() => {
     if (!session?.user) {
       setBusinessId(null)
@@ -32,28 +46,17 @@ export function AuthProvider({ children }) {
       setRoleLoading(false)
       return
     }
-
-    setRoleLoading(true)
-    supabase
-      .from('business_members')
-      .select('business_id, role')
-      .eq('user_id', session.user.id)
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        setBusinessId(data?.business_id || null)
-        setRole(data?.role || null)
-        setRoleLoading(false)
-      })
+    refreshRole()
   }, [session?.user?.id])
 
-  const value = {
+ const value = {
     session,
     user: session?.user ?? null,
     loading,
     businessId,
     role,
     roleLoading,
+    refreshRole,
     signOut: () => supabase.auth.signOut(),
   }
 
