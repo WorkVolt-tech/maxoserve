@@ -72,29 +72,28 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
-  if (loading) return <div><h2>Dashboard</h2><p>Loading...</p></div>
-
-  if (!stats) return <div><h2>Dashboard</h2><p>No data available.</p></div>
+  if (loading) return <div><h2>Dashboard</h2><p style={{ color: 'var(--color-text-muted)' }}>Loading…</p></div>
+  if (!stats) return <div><h2>Dashboard</h2><p style={{ color: 'var(--color-text-muted)' }}>No data available.</p></div>
 
   const cards = [
-    { label: 'Tables Occupied', value: `${stats.tablesOccupied} / ${stats.tablesTotal}` },
-    { label: 'Open Requests', value: stats.openRequests },
-    { label: 'Completed Requests Today', value: stats.completedRequestsToday },
-    { label: 'Avg. Response Time', value: stats.avgResponseMinutes ? `${stats.avgResponseMinutes} min` : '—' },
-    { label: 'Orders Today', value: stats.ordersToday },
-    { label: 'Orders Preparing', value: stats.ordersPreparing },
-    { label: 'Staff Members', value: stats.staffCount },
+    { label: 'Tables Occupied', value: `${stats.tablesOccupied} / ${stats.tablesTotal}`, accent: 'primary' },
+    { label: 'Open Requests', value: stats.openRequests, accent: stats.openRequests > 0 ? 'warning' : 'default' },
+    { label: 'Completed Today', value: stats.completedRequestsToday, accent: 'success' },
+    { label: 'Avg. Response Time', value: stats.avgResponseMinutes ? `${stats.avgResponseMinutes}m` : '—', accent: 'default' },
+    { label: 'Orders Today', value: stats.ordersToday, accent: 'primary' },
+    { label: 'Orders Preparing', value: stats.ordersPreparing, accent: stats.ordersPreparing > 0 ? 'warning' : 'default' },
+    { label: 'Staff Members', value: stats.staffCount, accent: 'default' },
   ]
 
   return (
     <div>
-      <h2>Dashboard</h2>
-      <p style={{ color: '#666' }}>An overview of what's happening right now.</p>
+      <h2 style={styles.title}>Dashboard</h2>
+      <p style={styles.subtitle}>An overview of what's happening right now.</p>
 
       <div style={styles.grid}>
         {cards.map((c) => (
           <div key={c.label} style={styles.card}>
-            <div style={styles.cardValue}>{c.value}</div>
+            <div style={{ ...styles.cardValue, color: accentColor(c.accent) }}>{c.value}</div>
             <div style={styles.cardLabel}>{c.label}</div>
           </div>
         ))}
@@ -103,18 +102,30 @@ export default function AdminDashboard() {
   )
 }
 
+function accentColor(accent) {
+  switch (accent) {
+    case 'primary': return 'var(--color-primary)'
+    case 'success': return 'var(--color-success)'
+    case 'warning': return 'var(--color-warning)'
+    default: return 'var(--color-text)'
+  }
+}
+
 const styles = {
+  title: { fontSize: '1.5rem' },
+  subtitle: { color: 'var(--color-text-muted)', marginTop: '-0.5rem', marginBottom: '1.75rem' },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
     gap: '1rem',
   },
   card: {
-    background: '#fff',
-    borderRadius: '10px',
-    border: '1px solid #e2e4e9',
-    padding: '1.25rem',
+    background: 'var(--color-surface)',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--color-border)',
+    padding: '1.4rem',
+    boxShadow: 'var(--shadow-sm)',
   },
-  cardValue: { fontSize: '1.8rem', fontWeight: 700, color: '#1a1d23' },
-  cardLabel: { fontSize: '0.85rem', color: '#888', marginTop: '0.3rem' },
+  cardValue: { fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.02em' },
+  cardLabel: { fontSize: '0.83rem', color: 'var(--color-text-muted)', marginTop: '0.35rem', fontWeight: 500 },
 }
