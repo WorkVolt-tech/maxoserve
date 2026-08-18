@@ -139,4 +139,12 @@ const styles = {
   },
   signOut: {
     padding: '0.6rem',
-    background:
+    background: 'transparent',
+    color: 'var(--color-sidebar-text)',
+    border: '1px solid var(--color-sidebar-border)',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+  },
+  content: { flex: 1, padding: '2.25rem', background: 'var(--color-bg)', overflowY: 'auto' },
+}
