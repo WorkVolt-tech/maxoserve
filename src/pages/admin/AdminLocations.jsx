@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 export default function AdminLocations() {
   const { user } = useAuth()
+  const { reloadLocations } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
   const [locations, setLocations] = useState([])
   const [name, setName] = useState('')
@@ -62,12 +64,14 @@ export default function AdminLocations() {
     setName('')
     setAddress('')
     loadData()
+    reloadLocations()
   }
 
   async function handleDelete(id) {
     if (!confirm('Delete this location? This will also delete its areas and tables.')) return
     await supabase.from('locations').delete().eq('id', id)
     loadData()
+    reloadLocations()
   }
 
   if (loading) return <div><h2 style={s.title}>Locations</h2><p style={s.muted}>Loading…</p></div>
