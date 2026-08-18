@@ -77,7 +77,11 @@ export default function AdminMenu() {
 
   async function handleDelete(id) {
     if (!confirm('Delete this category? All items inside it will also be deleted.')) return
-    await supabase.from('menu_categories').delete().eq('id', id)
+    const { error: deleteError } = await supabase.from('menu_categories').delete().eq('id', id)
+    if (deleteError) {
+      setError(`Could not delete category: ${deleteError.message}`)
+      return
+    }
     loadCategories(businessId)
   }
 
