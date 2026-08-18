@@ -460,10 +460,7 @@ export default function AdminReservations() {
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
-                <span style={{ fontSize: '0.7rem', color: 'red' }}>
-                  [debug: {tables.length} total tables loaded, {tablesForLocation.length} match this location]
-                </span>
-
+                
                 <button
                   onClick={() => {
                     setExpandedReservationId(isExpanded ? null : r.id)
