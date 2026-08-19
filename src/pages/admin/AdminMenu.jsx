@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import MenuImportModal from '../../components/MenuImportModal'
+import Button from '../../components/ui/Button'
 
 export default function AdminMenu() {
   const { user } = useAuth()
@@ -9,6 +12,7 @@ export default function AdminMenu() {
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     loadInitial()
@@ -87,12 +91,30 @@ export default function AdminMenu() {
 
   if (loading) return <div><h2>Menu</h2><p>Loading...</p></div>
 
-  return (
+ return (
     <div>
-      <h2>Menu Categories</h2>
-      <p style={{ color: '#666' }}>
-        Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h2>Menu Categories</h2>
+          <p style={{ color: '#666' }}>
+            Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items.
+          </p>
+        </div>
+        <Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>
+          Import from File
+        </Button>
+      </div>
+
+      {showImport && (
+        <MenuImportModal
+          businessId={businessId}
+          existingCategories={categories}
+          onClose={() => setShowImport(false)}
+          onImported={(count) => {
+            loadCategories(businessId)
+          }}
+        />
+      )}
 
       <form onSubmit={handleAdd} style={styles.form}>
         <input
