@@ -1,9 +1,23 @@
 import { useEffect, useState } from 'react'
+import {
+  LayoutGrid, Bell, ShoppingBag, Clock, ChefHat, Users,
+} from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
+import Card from '../../components/ui/Card'
+import LoadingState from '../../components/ui/LoadingState'
+
+function greeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
 
 export default function AdminDashboard() {
   const { user } = useAuth()
+  const { locations, currentLocationId } = useCurrentLocation()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -47,7 +61,7 @@ export default function AdminDashboard() {
     ])
 
     const tables = tablesRes.data || []
-    const occupied = tables.filter((t) => t.status === 'occupied' || t.status === 'needs_service' || t.status === 'order_pending').length
+    const occupied = tables.filter((t) => ['occupied', 'needs_service', 'order_pending'].includes(t.status)).length
 
     const completedToday = requestsCompletedTodayRes.data || []
     let avgResponseMinutes = null
@@ -72,60 +86,118 @@ export default function AdminDashboard() {
     setLoading(false)
   }
 
-  if (loading) return <div><h2>Dashboard</h2><p style={{ color: 'var(--color-text-muted)' }}>Loading…</p></div>
-  if (!stats) return <div><h2>Dashboard</h2><p style={{ color: 'var(--color-text-muted)' }}>No data available.</p></div>
+  const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'there'
+  const currentLocation = locations.find((l) => l.id === currentLocationId)
+
+  if (loading) return <LoadingState label="Loading dashboard…" />
+
+  if (!stats) return <p style={{ color: 'var(--color-text-muted)' }}>No data available.</p>
 
   const cards = [
-    { label: 'Tables Occupied', value: `${stats.tablesOccupied} / ${stats.tablesTotal}`, accent: 'primary' },
-    { label: 'Open Requests', value: stats.openRequests, accent: stats.openRequests > 0 ? 'warning' : 'default' },
-    { label: 'Completed Today', value: stats.completedRequestsToday, accent: 'success' },
-    { label: 'Avg. Response Time', value: stats.avgResponseMinutes ? `${stats.avgResponseMinutes}m` : '—', accent: 'default' },
-    { label: 'Orders Today', value: stats.ordersToday, accent: 'primary' },
-    { label: 'Orders Preparing', value: stats.ordersPreparing, accent: stats.ordersPreparing > 0 ? 'warning' : 'default' },
-    { label: 'Staff Members', value: stats.staffCount, accent: 'default' },
+    {
+      icon: LayoutGrid,
+      value: `${stats.tablesOccupied} / ${stats.tablesTotal}`,
+      label: 'Tables Occupied',
+      color: 'primary',
+    },
+    {
+      icon: Bell,
+      value: stats.openRequests,
+      label: 'Open Requests',
+      meta: stats.openRequests > 0 ? `${stats.openRequests} need attention` : 'All caught up',
+      color: stats.openRequests > 0 ? 'warning' : 'success',
+    },
+    {
+      icon: Clock,
+      value: stats.avgResponseMinutes ? `${stats.avgResponseMinutes}m` : '—',
+      label: 'Avg. Response Time',
+      color: 'info',
+    },
+    {
+      icon: ShoppingBag,
+      value: stats.ordersToday,
+      label: 'Orders Today',
+      color: 'primary',
+    },
+    {
+      icon: ChefHat,
+      value: stats.ordersPreparing,
+      label: 'Orders Preparing',
+      meta: stats.ordersPreparing > 0 ? 'In the kitchen now' : null,
+      color: stats.ordersPreparing > 0 ? 'warning' : 'success',
+    },
+    {
+      icon: Users,
+      value: stats.staffCount,
+      label: 'Staff Members',
+      color: 'neutral',
+    },
   ]
 
   return (
     <div>
-      <h2 style={styles.title}>Dashboard</h2>
-      <p style={styles.subtitle}>An overview of what's happening right now.</p>
+      <div style={{ marginBottom: '1.75rem' }}>
+        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{greeting()}, {displayName}</h2>
+        <p style={{ color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
+          Here's what's happening{currentLocation ? ` at ${currentLocation.name}` : ''}.
+        </p>
+      </div>
 
       <div style={styles.grid}>
         {cards.map((c) => (
-          <div key={c.label} style={styles.card}>
-            <div style={{ ...styles.cardValue, color: accentColor(c.accent) }}>{c.value}</div>
-            <div style={styles.cardLabel}>{c.label}</div>
-          </div>
+          <Card key={c.label} style={styles.statCard}>
+            <div style={{ ...styles.iconWrap, background: colorBg(c.color) }}>
+              <c.icon size={18} color={colorFg(c.color)} />
+            </div>
+            <div style={styles.statValue}>{c.value}</div>
+            <div style={styles.statLabel}>{c.label}</div>
+            {c.meta && <div style={styles.statMeta}>{c.meta}</div>}
+          </Card>
         ))}
       </div>
     </div>
   )
 }
 
-function accentColor(accent) {
-  switch (accent) {
+function colorBg(color) {
+  switch (color) {
+    case 'primary': return 'var(--color-primary-soft)'
+    case 'success': return 'var(--color-success-soft)'
+    case 'warning': return 'var(--color-warning-soft)'
+    case 'info': return 'var(--color-info-soft)'
+    default: return '#f1f2f5'
+  }
+}
+
+function colorFg(color) {
+  switch (color) {
     case 'primary': return 'var(--color-primary)'
     case 'success': return 'var(--color-success)'
     case 'warning': return 'var(--color-warning)'
-    default: return 'var(--color-text)'
+    case 'info': return 'var(--color-info)'
+    default: return 'var(--color-text-muted)'
   }
 }
 
 const styles = {
-  title: { fontSize: '1.5rem' },
-  subtitle: { color: 'var(--color-text-muted)', marginTop: '-0.5rem', marginBottom: '1.75rem' },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
     gap: '1rem',
   },
-  card: {
-    background: 'var(--color-surface)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--color-border)',
-    padding: '1.4rem',
-    boxShadow: 'var(--shadow-sm)',
+  statCard: {
+    transition: 'transform 0.12s, box-shadow 0.12s',
   },
-  cardValue: { fontSize: '1.9rem', fontWeight: 800, letterSpacing: '-0.02em' },
-  cardLabel: { fontSize: '0.83rem', color: 'var(--color-text-muted)', marginTop: '0.35rem', fontWeight: 500 },
+  iconWrap: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '9px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '0.75rem',
+  },
+  statValue: { fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em' },
+  statLabel: { fontSize: '0.83rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', fontWeight: 500 },
+  statMeta: { fontSize: '0.75rem', color: 'var(--color-text-faint)', marginTop: '0.35rem' },
 }
