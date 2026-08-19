@@ -1,50 +1,166 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import {
+  LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
+  UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
+  CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
+  LogOut, Menu as MenuIcon, X, ChevronDown,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
 import { canAccess } from '../lib/permissions'
 import logo from '../assets/maxoserve-logo.png'
 
-const navItems = [
-  { to: '/admin', label: 'Dashboard', end: true, section: 'dashboard' },
-  { to: '/admin/locations', label: 'Locations', section: 'locations' },
-  { to: '/admin/areas', label: 'Areas', section: 'areas' },
-  { to: '/admin/tables', label: 'Tables', section: 'tables' },
-  { to: '/admin/floor-plan', label: 'Floor Plan', section: 'floorPlan' },
-  { to: '/admin/menu', label: 'Menu', section: 'menu' },
-  { to: '/admin/modifiers', label: 'Modifiers', section: 'modifiers' },
-  { to: '/admin/staff', label: 'Staff', section: 'staff' },
-  { to: '/admin/assignments', label: 'Assignments', section: 'assignments' },
-  { to: '/admin/reservations', label: 'Reservations', section: 'reservations' },
-  { to: '/admin/events', label: 'Events', section: 'events' },
-  { to: '/admin/activity-log', label: 'Activity Log', section: 'activityLogs' },
-  { to: '/admin/orders', label: 'Orders', section: 'orders' },
-  { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes' },
+const NAV_GROUPS = [
+  {
+    label: null,
+    items: [{ to: '/admin', label: 'Dashboard', end: true, section: 'dashboard', icon: LayoutDashboard }],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/admin/floor-plan', label: 'Floor Plan', section: 'floorPlan', icon: PanelsTopLeft },
+      { to: '/admin/tables', label: 'Tables', section: 'tables', icon: LayoutGrid },
+      { to: '/admin/orders', label: 'Orders', section: 'orders', icon: ShoppingBag },
+    ],
+  },
+  {
+    label: 'Menu',
+    items: [
+      { to: '/admin/menu', label: 'Menu', section: 'menu', icon: UtensilsCrossed },
+      { to: '/admin/modifiers', label: 'Modifiers', section: 'modifiers', icon: SlidersHorizontal },
+    ],
+  },
+  {
+    label: 'People',
+    items: [
+      { to: '/admin/staff', label: 'Staff', section: 'staff', icon: Users },
+      { to: '/admin/assignments', label: 'Assignments', section: 'assignments', icon: UserRoundCog },
+    ],
+  },
+  {
+    label: 'Venue',
+    items: [
+      { to: '/admin/locations', label: 'Locations', section: 'locations', icon: MapPin },
+      { to: '/admin/areas', label: 'Areas', section: 'areas', icon: Map },
+      { to: '/admin/reservations', label: 'Reservations', section: 'reservations', icon: CalendarCheck },
+      { to: '/admin/events', label: 'Events', section: 'events', icon: PartyPopper },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes', icon: Bell },
+      { to: '/admin/activity-log', label: 'Activity Log', section: 'activityLogs', icon: ScrollText },
+    ],
+  },
 ]
 
-function LocationSwitcher() {
-  const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
+function initials(name) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
 
-  if (locationsLoading) return null
-  if (locations.length === 0) return null
+function SidebarContent({ visibleGroups, onNavigate }) {
+  const { signOut, role } = useAuth()
+
+  return (
+    <>
+      <div style={styles.brand}>
+        <img src={logo} alt="MaxoServe" style={styles.brandLogo} />
+        <span style={styles.brandText}>MaxoServe</span>
+      </div>
+      <nav style={styles.nav}>
+        {visibleGroups.map((group, gi) => (
+          <div key={gi} style={styles.navGroup}>
+            {group.label && <div style={styles.navGroupLabel}>{group.label}</div>}
+            {group.items.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onNavigate}
+                style={({ isActive }) => ({
+                  ...styles.navLink,
+                  ...(isActive ? styles.navLinkActive : {}),
+                })}
+              >
+                <item.icon size={17} strokeWidth={2} />
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+        ))}
+      </nav>
+      <div style={styles.footer}>
+        {role && <div style={styles.roleBadge}>{role}</div>}
+        <a href="/staff" style={styles.staffLink}>
+          <Bell size={15} /> Live Requests
+        </a>
+        <button onClick={signOut} style={styles.signOut}>
+          <LogOut size={15} /> Sign Out
+        </button>
+      </div>
+    </>
+  )
+}
+
+function TopBar({ onOpenDrawer }) {
+  const { user, signOut } = useAuth()
+  const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const displayName = user?.user_metadata?.full_name || user?.email || 'Account'
 
   return (
     <div style={styles.topBar}>
-      <span style={styles.topBarLabel}>Location:</span>
-      <select
-        value={currentLocationId}
-        onChange={(e) => setCurrentLocationId(e.target.value)}
-        style={styles.topBarSelect}
-      >
-        {locations.map((loc) => (
-          <option key={loc.id} value={loc.id}>{loc.name}</option>
-        ))}
-      </select>
+      <button style={styles.hamburger} onClick={onOpenDrawer} aria-label="Open menu">
+        <MenuIcon size={20} />
+      </button>
+
+      {!locationsLoading && locations.length > 0 && (
+        <div style={styles.topBarLocation}>
+          <MapPin size={15} color="var(--color-text-muted)" />
+          <select
+            value={currentLocationId}
+            onChange={(e) => setCurrentLocationId(e.target.value)}
+            style={styles.topBarSelect}
+          >
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      <div style={{ position: 'relative' }}>
+        <button style={styles.userButton} onClick={() => setMenuOpen((v) => !v)}>
+          <span style={styles.avatar}>{initials(displayName)}</span>
+          <ChevronDown size={15} color="var(--color-text-muted)" />
+        </button>
+
+        {menuOpen && (
+          <>
+            <div style={styles.menuOverlay} onClick={() => setMenuOpen(false)} />
+            <div style={styles.userDropdown}>
+              <div style={styles.userDropdownName}>{displayName}</div>
+              <button onClick={signOut} style={styles.userDropdownItem}>
+                <LogOut size={15} /> Sign Out
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }
 
 export default function AdminLayout() {
-  const { signOut, role, roleLoading } = useAuth()
+  const { role, roleLoading } = useAuth()
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   if (roleLoading) {
     return (
@@ -54,43 +170,33 @@ export default function AdminLayout() {
     )
   }
 
-  const visibleItems = navItems.filter((item) => canAccess(role, item.section))
+  const visibleGroups = NAV_GROUPS
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => canAccess(role, item.section)),
+    }))
+    .filter((group) => group.items.length > 0)
 
   return (
     <LocationProvider>
       <div style={styles.shell}>
-        <aside style={styles.sidebar}>
-          <div style={styles.brand}>
-            <img src={logo} alt="MaxoServe" style={styles.brandLogo} />
-            <span style={styles.brandText}>MaxoServe</span>
-          </div>
-          <nav style={styles.nav}>
-            {visibleItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                style={({ isActive }) => ({
-                  ...styles.navLink,
-                  ...(isActive ? styles.navLinkActive : {}),
-                })}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div style={styles.footer}>
-            {role && <div style={styles.roleBadge}>{role}</div>}
-            <a href="/staff" style={styles.staffLink}>
-              Live Requests
-            </a>
-            <button onClick={signOut} style={styles.signOut}>
-              Sign Out
-            </button>
-          </div>
+        <aside style={styles.sidebarDesktop}>
+          <SidebarContent visibleGroups={visibleGroups} />
         </aside>
+
+        {drawerOpen && (
+          <div style={styles.drawerOverlay} onClick={() => setDrawerOpen(false)}>
+            <aside style={styles.sidebarMobile} onClick={(e) => e.stopPropagation()}>
+              <button style={styles.drawerClose} onClick={() => setDrawerOpen(false)}>
+                <X size={20} />
+              </button>
+              <SidebarContent visibleGroups={visibleGroups} onNavigate={() => setDrawerOpen(false)} />
+            </aside>
+          </div>
+        )}
+
         <div style={styles.mainColumn}>
-          <LocationSwitcher />
+          <TopBar onOpenDrawer={() => setDrawerOpen(true)} />
           <main style={styles.content}>
             <Outlet />
           </main>
@@ -102,13 +208,39 @@ export default function AdminLayout() {
 
 const styles = {
   shell: { display: 'flex', minHeight: '100vh' },
-  sidebar: {
-    width: '236px',
+  sidebarDesktop: {
+    width: '250px',
     background: 'var(--color-sidebar-bg)',
     color: 'var(--color-sidebar-text)',
     display: 'flex',
     flexDirection: 'column',
     flexShrink: 0,
+  },
+  drawerOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.5)',
+    zIndex: 1000,
+    display: 'none',
+  },
+  sidebarMobile: {
+    width: '270px',
+    height: '100%',
+    background: 'var(--color-sidebar-bg)',
+    color: 'var(--color-sidebar-text)',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+  },
+  drawerClose: {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'transparent',
+    border: 'none',
+    color: '#fff',
+    cursor: 'pointer',
+    padding: '0.3rem',
   },
   brand: {
     display: 'flex',
@@ -123,21 +255,35 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     padding: '0.75rem 0.75rem',
-    gap: '2px',
+    gap: '0.9rem',
     flex: 1,
     overflowY: 'auto',
   },
+  navGroup: { display: 'flex', flexDirection: 'column', gap: '2px' },
+  navGroupLabel: {
+    fontSize: '0.68rem',
+    fontWeight: 700,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color: '#5c6178',
+    padding: '0.4rem 0.75rem 0.25rem',
+  },
   navLink: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.65rem',
     color: 'var(--color-sidebar-text)',
     textDecoration: 'none',
     padding: '0.55rem 0.75rem',
-    fontSize: '0.88rem',
+    fontSize: '0.87rem',
     fontWeight: 500,
     borderRadius: '8px',
   },
   navLinkActive: {
     background: 'rgba(59,111,224,0.18)',
     color: '#fff',
+    borderLeft: '3px solid var(--color-primary)',
+    paddingLeft: 'calc(0.75rem - 3px)',
   },
   footer: {
     padding: '0.9rem',
@@ -155,17 +301,24 @@ const styles = {
     fontWeight: 600,
   },
   staffLink: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.4rem',
     padding: '0.6rem',
     background: 'var(--color-primary)',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
-    textAlign: 'center',
     textDecoration: 'none',
     fontSize: '0.85rem',
     fontWeight: 600,
   },
   signOut: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.4rem',
     padding: '0.6rem',
     background: 'transparent',
     color: 'var(--color-sidebar-text)',
@@ -178,19 +331,90 @@ const styles = {
   topBar: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.6rem',
-    padding: '0.85rem 2.25rem',
+    gap: '0.85rem',
+    padding: '0.75rem 1.5rem',
     background: 'var(--color-surface)',
     borderBottom: '1px solid var(--color-border)',
   },
-  topBarLabel: { fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 600 },
-  topBarSelect: {
-    padding: '0.45rem 0.75rem',
+  hamburger: {
+    display: 'none',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0.3rem',
+    color: 'var(--color-text)',
+  },
+  topBarLocation: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: 'var(--color-bg)',
+    border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-sm)',
-    border: '1.5px solid var(--color-border)',
-    fontSize: '0.9rem',
+    padding: '0.3rem 0.6rem',
+  },
+  topBarSelect: {
+    border: 'none',
+    background: 'transparent',
+    fontSize: '0.88rem',
     fontWeight: 600,
-    background: '#fff',
+    outline: 'none',
+    cursor: 'pointer',
+  },
+  userButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0.2rem',
+  },
+  avatar: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    background: 'var(--color-primary)',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '0.78rem',
+    fontWeight: 700,
+  },
+  menuOverlay: { position: 'fixed', inset: 0, zIndex: 100 },
+  userDropdown: {
+    position: 'absolute',
+    right: 0,
+    top: 'calc(100% + 0.5rem)',
+    background: 'var(--color-surface)',
+    border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-md)',
+    boxShadow: 'var(--shadow-md)',
+    width: '190px',
+    padding: '0.5rem',
+    zIndex: 101,
+  },
+  userDropdownName: {
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    padding: '0.4rem 0.6rem 0.6rem',
+    borderBottom: '1px solid var(--color-border)',
+    marginBottom: '0.4rem',
+  },
+  userDropdownItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    width: '100%',
+    background: 'transparent',
+    border: 'none',
+    padding: '0.5rem 0.6rem',
+    fontSize: '0.85rem',
+    color: 'var(--color-danger)',
+    cursor: 'pointer',
+    borderRadius: '6px',
+    textAlign: 'left',
   },
   content: { flex: 1, padding: '2.25rem', background: 'var(--color-bg)', overflowY: 'auto' },
 }
