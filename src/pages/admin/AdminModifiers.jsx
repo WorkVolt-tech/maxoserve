@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
+import { Upload } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import ModifierImportModal from '../../components/ModifierImportModal'
+import Button from '../../components/ui/Button'
 
 export default function AdminModifiers() {
   const { user } = useAuth()
@@ -16,6 +19,7 @@ export default function AdminModifiers() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     loadInitial()
@@ -167,10 +171,27 @@ export default function AdminModifiers() {
 
   return (
     <div>
-      <h2>Modifiers</h2>
-      <p style={{ color: '#666' }}>
-        Modifier groups are reusable customizations (e.g. "Choose Mixer", "Add-ons") you can attach to menu items.
-      </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h2>Modifiers</h2>
+          <p style={{ color: '#666' }}>
+            Modifier groups are reusable customizations (e.g. "Choose Mixer", "Add-ons") you can attach to menu items.
+          </p>
+        </div>
+        <Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>
+          Import from File
+        </Button>
+      </div>
+
+      {showImport && (
+        <ModifierImportModal
+          businessId={businessId}
+          onClose={() => setShowImport(false)}
+          onImported={(count) => {
+            loadGroups(businessId)
+          }}
+        />
+      )}
 
       <form onSubmit={handleAddGroup} style={styles.form}>
         <input
