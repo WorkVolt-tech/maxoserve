@@ -12,7 +12,6 @@ export default function AdminAreas() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Duplicate flow state
   const [duplicatingAreaId, setDuplicatingAreaId] = useState(null)
   const [duplicateName, setDuplicateName] = useState('')
   const [duplicateTargetLocationId, setDuplicateTargetLocationId] = useState('')
@@ -29,7 +28,7 @@ export default function AdminAreas() {
       setAreas([])
     }
   }, [currentLocationId])
-  
+
   async function loadInitial() {
     setLoading(true)
 
@@ -67,7 +66,7 @@ export default function AdminAreas() {
     e.preventDefault()
     setError('')
 
-    if (!selectedLocationId) {
+    if (!currentLocationId) {
       setError('Select a location first.')
       return
     }
@@ -116,7 +115,6 @@ export default function AdminAreas() {
 
     setDuplicating(true)
 
-    // Step 1: fetch all tables belonging to the source area
     const { data: sourceTables, error: tablesError } = await supabase
       .from('tables')
       .select('*')
@@ -128,7 +126,6 @@ export default function AdminAreas() {
       return
     }
 
-    // Step 2: create the new area
     const { data: newArea, error: newAreaError } = await supabase
       .from('areas')
       .insert({
@@ -146,7 +143,6 @@ export default function AdminAreas() {
       return
     }
 
-    // Step 3: copy every table into the new area, keeping shape/size/position
     if (sourceTables && sourceTables.length > 0) {
       const newTables = sourceTables.map((t) => ({
         business_id: businessId,
@@ -177,7 +173,6 @@ export default function AdminAreas() {
     setDuplicatingAreaId(null)
     setDuplicateName('')
 
-    // Refresh the list if we duplicated into the currently viewed location
     if (duplicateTargetLocationId === currentLocationId) {
       loadAreas(currentLocationId)
     }
@@ -280,12 +275,6 @@ export default function AdminAreas() {
 }
 
 const styles = {
-  locationPicker: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    marginBottom: '1rem',
-  },
   label: { fontSize: '0.9rem', color: '#555' },
   select: {
     padding: '0.5rem',
