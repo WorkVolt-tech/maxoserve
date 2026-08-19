@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import {
-  LayoutGrid, Bell, ShoppingBag, Clock, ChefHat, Users,
+  LayoutGrid, Bell, ShoppingBag, Clock, ChefHat, Users, ArrowRight,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import Card from '../../components/ui/Card'
 import LoadingState from '../../components/ui/LoadingState'
+import EmptyState from '../../components/ui/EmptyState'
+import StatusBadge from '../../components/ui/StatusBadge'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -20,9 +22,15 @@ export default function AdminDashboard() {
   const { locations, currentLocationId } = useCurrentLocation()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [recentRequests, setRecentRequests] = useState([])
+  const [recentActivity, setRecentActivity] = useState([])
+  const [profiles, setProfiles] = useState({})
+  const [tablesMap, setTablesMap] = useState({})
+  const [requestTypesMap, setRequestTypesMap] = useState({})
 
   useEffect(() => {
     loadStats()
+    loadSidePanels()
   }, [])
 
   async function loadStats() {
@@ -84,6 +92,63 @@ export default function AdminDashboard() {
     })
 
     setLoading(false)
+  }
+
+  async function loadSidePanels() {
+    const { data: membership } = await supabase
+      .from('business_members')
+      .select('business_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single()
+
+    if (!membership) return
+    const businessId = membership.business_id
+
+    const { data: requestsData } = await supabase
+      .from('service_requests')
+      .select('*')
+      .eq('business_id', businessId)
+      .in('status', ['pending', 'accepted', 'on_the_way'])
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    setRecentRequests(requestsData || [])
+
+    if (requestsData && requestsData.length > 0) {
+      const tableIds = [...new Set(requestsData.map((r) => r.table_id))]
+      const { data: tablesData } = await supabase.from('tables').select('*').in('id', tableIds)
+      const tMap = {}
+      for (const t of tablesData || []) tMap[t.id] = t
+      setTablesMap(tMap)
+
+      const typeIds = [...new Set(requestsData.map((r) => r.request_type_id))]
+      const { data: typesData } = await supabase.from('service_request_types').select('*').in('id', typeIds)
+      const tyMap = {}
+      for (const ty of typesData || []) tyMap[ty.id] = ty
+      setRequestTypesMap(tyMap)
+    }
+
+    const { data: activityData } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .eq('business_id', businessId)
+      .order('created_at', { ascending: false })
+      .limit(6)
+
+    setRecentActivity(activityData || [])
+
+    if (activityData && activityData.length > 0) {
+      const userIds = [...new Set(activityData.map((a) => a.user_id).filter(Boolean))]
+      const { data: profilesData } = await supabase.from('profiles').select('*').in('id', userIds)
+      const pMap = {}
+      for (const p of profilesData || []) pMap[p.id] = p
+      setProfiles(pMap)
+    }
+  }
+
+  function minutesAgo(dateStr) {
+    return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000))
   }
 
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'there'
@@ -155,6 +220,68 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      <div style={styles.panelGrid}>
+        <Card>
+          <div style={styles.panelHeader}>
+            <h3 style={styles.panelTitle}>Service Requests</h3>
+            <a href="/staff" style={styles.panelLink}>
+              View all <ArrowRight size={13} />
+            </a>
+          </div>
+          {recentRequests.length === 0 ? (
+            <EmptyState
+              icon={Bell}
+              title="No active requests"
+              description="New requests from customers will appear here."
+            />
+          ) : (
+            <div style={styles.reqList}>
+              {recentRequests.map((r) => (
+                <div key={r.id} style={styles.reqRow}>
+                  <div>
+                    <div style={styles.reqTable}>{tablesMap[r.table_id]?.name || 'Table'}</div>
+                    <div style={styles.reqType}>{requestTypesMap[r.request_type_id]?.label || 'Request'}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={styles.waitTime}>{minutesAgo(r.created_at)}m</span>
+                    <StatusBadge status={r.status} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <div style={styles.panelHeader}>
+            <h3 style={styles.panelTitle}>Recent Activity</h3>
+            <a href="/admin/activity-log" style={styles.panelLink}>
+              View all <ArrowRight size={13} />
+            </a>
+          </div>
+          {recentActivity.length === 0 ? (
+            <EmptyState
+              title="No activity yet"
+              description="Actions taken across your business will show up here."
+            />
+          ) : (
+            <div style={styles.reqList}>
+              {recentActivity.map((a) => {
+                const who = profiles[a.user_id]?.full_name || profiles[a.user_id]?.email || 'Someone'
+                return (
+                  <div key={a.id} style={styles.activityRow}>
+                    <span style={styles.activityText}>
+                      <strong>{who}</strong> {a.action}
+                    </span>
+                    <span style={styles.waitTime}>{minutesAgo(a.created_at)}m ago</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   )
 }
@@ -200,4 +327,46 @@ const styles = {
   statValue: { fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em' },
   statLabel: { fontSize: '0.83rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', fontWeight: 500 },
   statMeta: { fontSize: '0.75rem', color: 'var(--color-text-faint)', marginTop: '0.35rem' },
+  panelGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: '1rem',
+    marginTop: '1.5rem',
+  },
+  panelHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '0.9rem',
+  },
+  panelTitle: { fontSize: '1rem', margin: 0 },
+  panelLink: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.25rem',
+    fontSize: '0.8rem',
+    color: 'var(--color-primary)',
+    textDecoration: 'none',
+    fontWeight: 600,
+  },
+  reqList: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
+  reqRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.6rem 0',
+    borderBottom: '1px solid var(--color-border)',
+  },
+  reqTable: { fontWeight: 600, fontSize: '0.88rem' },
+  reqType: { fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' },
+  waitTime: { fontSize: '0.78rem', color: 'var(--color-text-faint)' },
+  activityRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.5rem 0',
+    borderBottom: '1px solid var(--color-border)',
+    gap: '1rem',
+  },
+  activityText: { fontSize: '0.85rem' },
 }
