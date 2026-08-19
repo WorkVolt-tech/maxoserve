@@ -1,18 +1,33 @@
 import { useEffect, useState, useRef } from 'react'
+import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
+import StatusBadge from '../../components/ui/StatusBadge'
+import EmptyState from '../../components/ui/EmptyState'
 
-const STATUS_COLORS = {
-  pending: '#e91e63',
-  accepted: '#ff9800',
-  on_the_way: '#2196f3',
-  completed: '#4caf50',
-  rejected: '#9e9e9e',
-  cancelled: '#9e9e9e',
+const FILTERS = ['new', 'assigned_to_me', 'in_progress', 'completed', 'all']
+
+const FILTER_LABELS = {
+  new: 'New',
+  assigned_to_me: 'Assigned to Me',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  all: 'All',
 }
 
-const FILTERS = ['all', 'new', 'assigned_to_me', 'in_progress', 'completed']
+function urgency(createdAt) {
+  const minutes = (Date.now() - new Date(createdAt).getTime()) / 60000
+  if (minutes >= 5) return 'urgent'
+  if (minutes >= 3) return 'warning'
+  return 'normal'
+}
+
+const URGENCY_STYLES = {
+  normal: { border: 'var(--color-border)', accent: 'var(--color-primary)' },
+  warning: { border: 'var(--color-warning)', accent: 'var(--color-warning)' },
+  urgent: { border: 'var(--color-danger)', accent: 'var(--color-danger)' },
+}
 
 export default function StaffDashboard() {
   const { user, signOut } = useAuth()
@@ -27,6 +42,7 @@ export default function StaffDashboard() {
   )
   const knownRequestIds = useRef(new Set())
   const isFirstLoad = useRef(true)
+  const [, forceTick] = useState(0)
 
   useEffect(() => {
     init()
@@ -34,31 +50,25 @@ export default function StaffDashboard() {
 
   useEffect(() => {
     if (!businessId) return
-
     const channel = supabase
       .channel(`staff-requests-${businessId}`)
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'service_requests',
-          filter: `business_id=eq.${businessId}`,
-        },
-        () => {
-          loadRequests(businessId)
-        }
+        { event: '*', schema: 'public', table: 'service_requests', filter: `business_id=eq.${businessId}` },
+        () => loadRequests(businessId)
       )
       .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => supabase.removeChannel(channel)
   }, [businessId])
+
+  // Re-render every 20s so wait times / urgency stay fresh without needing a data refetch
+  useEffect(() => {
+    const t = setInterval(() => forceTick((v) => v + 1), 20000)
+    return () => clearInterval(t)
+  }, [])
 
   async function init() {
     setLoading(true)
-
     const { data: membership } = await supabase
       .from('business_members')
       .select('business_id')
@@ -66,18 +76,13 @@ export default function StaffDashboard() {
       .limit(1)
       .single()
 
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-
+    if (!membership) { setLoading(false); return }
     setBusinessId(membership.business_id)
 
     const { data: typesData } = await supabase
       .from('service_request_types')
       .select('*')
       .eq('business_id', membership.business_id)
-
     const typesMap = {}
     for (const t of typesData || []) typesMap[t.id] = t
     setRequestTypes(typesMap)
@@ -86,7 +91,6 @@ export default function StaffDashboard() {
       .from('tables')
       .select('*')
       .eq('business_id', membership.business_id)
-
     const tablesMap = {}
     for (const t of tablesData || []) tablesMap[t.id] = t
     setTables(tablesMap)
@@ -105,12 +109,8 @@ export default function StaffDashboard() {
     const fresh = data || []
 
     if (!isFirstLoad.current) {
-      const newPending = fresh.filter(
-        (r) => r.status === 'pending' && !knownRequestIds.current.has(r.id)
-      )
-      for (const r of newPending) {
-        notifyNewRequest(r)
-      }
+      const newPending = fresh.filter((r) => r.status === 'pending' && !knownRequestIds.current.has(r.id))
+      for (const r of newPending) notifyNewRequest(r)
     }
 
     knownRequestIds.current = new Set(fresh.map((r) => r.id))
@@ -125,7 +125,6 @@ export default function StaffDashboard() {
     new Notification('New request', {
       body: `${type?.label || 'Request'} — ${table?.name || 'Unknown table'}`,
     })
-
     if (navigator.vibrate) navigator.vibrate([200, 100, 200])
   }
 
@@ -137,17 +136,10 @@ export default function StaffDashboard() {
   async function updateStatus(request, newStatus) {
     const updates = { status: newStatus }
     const now = new Date().toISOString()
-
-    if (newStatus === 'accepted') {
-      updates.accepted_at = now
-      updates.assigned_to = user.id
-    } else if (newStatus === 'on_the_way') {
-      updates.on_the_way_at = now
-    } else if (newStatus === 'completed') {
-      updates.completed_at = now
-    } else if (newStatus === 'rejected') {
-      updates.cancelled_at = now
-    }
+    if (newStatus === 'accepted') { updates.accepted_at = now; updates.assigned_to = user.id }
+    else if (newStatus === 'on_the_way') updates.on_the_way_at = now
+    else if (newStatus === 'completed') updates.completed_at = now
+    else if (newStatus === 'rejected') updates.cancelled_at = now
 
     await supabase.from('service_requests').update(updates).eq('id', request.id)
     logActivity(businessId, user.id, `${newStatus} a service request`)
@@ -155,8 +147,7 @@ export default function StaffDashboard() {
   }
 
   function minutesWaiting(createdAt) {
-    const diffMs = Date.now() - new Date(createdAt).getTime()
-    return Math.max(0, Math.floor(diffMs / 60000))
+    return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000))
   }
 
   function matchesFilter(r) {
@@ -169,12 +160,18 @@ export default function StaffDashboard() {
   }
 
   const visibleRequests = requests.filter(matchesFilter)
-  const newCount = requests.filter((r) => r.status === 'pending').length
+  const counts = {
+    new: requests.filter((r) => r.status === 'pending').length,
+    assigned_to_me: requests.filter((r) => r.assigned_to === user.id).length,
+    in_progress: requests.filter((r) => ['accepted', 'on_the_way'].includes(r.status)).length,
+    completed: requests.filter((r) => r.status === 'completed').length,
+    all: requests.length,
+  }
 
   if (loading) {
     return (
       <div style={styles.page}>
-        <p>Loading...</p>
+        <p style={{ color: '#fff', padding: '2rem' }}>Loading…</p>
       </div>
     )
   }
@@ -186,10 +183,12 @@ export default function StaffDashboard() {
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
             <button onClick={requestNotificationPermission} style={styles.notifButton}>
-              Enable Alerts
+              <Bell size={14} /> Enable Alerts
             </button>
           )}
-          <button onClick={signOut} style={styles.signOutButton}>Sign Out</button>
+          <button onClick={signOut} style={styles.signOutButton}>
+            <LogOut size={14} /> Sign Out
+          </button>
         </div>
       </div>
 
@@ -198,51 +197,57 @@ export default function StaffDashboard() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            style={{
-              ...styles.filterButton,
-              ...(filter === f ? styles.filterButtonActive : {}),
-            }}
+            style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
           >
-            {f.replace('_', ' ')}
-            {f === 'new' && newCount > 0 && <span style={styles.filterBadge}>{newCount}</span>}
+            {FILTER_LABELS[f]}
+            {counts[f] > 0 && (
+              <span style={{ ...styles.filterCount, ...(filter === f ? styles.filterCountActive : {}) }}>
+                {counts[f]}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       <div style={styles.list}>
         {visibleRequests.length === 0 && (
-          <p style={{ color: '#888', textAlign: 'center', marginTop: '2rem' }}>
-            No requests here.
-          </p>
+          <EmptyState
+            icon={Bell}
+            title="No requests here"
+            description="You're all caught up for this filter."
+          />
         )}
 
         {visibleRequests.map((r) => {
           const type = requestTypes[r.request_type_id]
           const table = tables[r.table_id]
           const isNew = r.status === 'pending'
+          const level = urgency(r.created_at)
+          const urgencyStyle = URGENCY_STYLES[level]
 
           return (
             <div
               key={r.id}
               style={{
                 ...styles.requestCard,
-                ...(isNew ? styles.requestCardNew : {}),
+                borderColor: isNew ? urgencyStyle.border : 'var(--color-border)',
+                borderWidth: isNew && level !== 'normal' ? '2px' : '1px',
               }}
             >
+              {isNew && <div style={{ ...styles.newTag, background: urgencyStyle.accent }}>NEW</div>}
+
               <div style={styles.requestTop}>
                 <div>
                   <div style={styles.requestType}>{type?.label || 'Request'}</div>
-                  <div style={styles.requestTable}>{table?.name || 'Unknown table'}</div>
+                  <div style={styles.requestTable}>
+                    <MapPin size={12} /> {table?.name || 'Unknown table'}
+                  </div>
                 </div>
-                <div style={styles.requestMeta}>
-                  <span
-                    style={{
-                      ...styles.statusDot,
-                      backgroundColor: STATUS_COLORS[r.status] || '#999',
-                    }}
-                  />
-                  <span style={styles.statusText}>{r.status.replace('_', ' ')}</span>
-                  <span style={styles.waitTime}>{minutesWaiting(r.created_at)}m ago</span>
+                <div style={{ textAlign: 'right' }}>
+                  <StatusBadge status={r.status} />
+                  <div style={{ ...styles.waitTime, color: isNew ? urgencyStyle.accent : 'var(--color-text-faint)' }}>
+                    Waiting {minutesWaiting(r.created_at)}m
+                  </div>
                 </div>
               </div>
 
@@ -250,25 +255,27 @@ export default function StaffDashboard() {
                 {r.status === 'pending' && (
                   <>
                     <button onClick={() => updateStatus(r, 'accepted')} style={styles.acceptButton}>
-                      Accept
+                      <Check size={16} /> Accept
                     </button>
                     <button onClick={() => updateStatus(r, 'rejected')} style={styles.rejectButton}>
-                      Reject
+                      <X size={16} /> Decline
                     </button>
                   </>
                 )}
                 {r.status === 'accepted' && (
                   <button onClick={() => updateStatus(r, 'on_the_way')} style={styles.acceptButton}>
-                    On My Way
+                    <Truck size={16} /> On My Way
                   </button>
                 )}
                 {r.status === 'on_the_way' && (
                   <button onClick={() => updateStatus(r, 'completed')} style={styles.completeButton}>
-                    Complete
+                    <CheckCheck size={16} /> Complete
                   </button>
                 )}
                 {r.status === 'completed' && (
-                  <span style={styles.doneText}>✓ Completed</span>
+                  <span style={styles.doneText}>
+                    <CheckCheck size={15} /> Completed
+                  </span>
                 )}
               </div>
             </div>
@@ -282,8 +289,8 @@ export default function StaffDashboard() {
 const styles = {
   page: {
     minHeight: '100vh',
-    background: '#f5f6f8',
-    fontFamily: 'system-ui, sans-serif',
+    background: 'var(--color-bg)',
+    fontFamily: "'Inter', system-ui, sans-serif",
     paddingBottom: '2rem',
   },
   header: {
@@ -291,26 +298,29 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '1rem 1.25rem',
-    background: '#12161c',
+    background: 'var(--color-sidebar-bg)',
   },
   headerTitle: { color: '#fff', margin: 0, fontSize: '1.3rem' },
   signOutButton: {
-    padding: '0.4rem 0.8rem',
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.45rem 0.8rem',
     borderRadius: '6px',
-    border: '1px solid #333b47',
+    border: '1px solid var(--color-sidebar-border)',
     background: 'transparent',
-    color: '#b7bdc7',
+    color: 'var(--color-sidebar-text)',
     cursor: 'pointer',
-    fontSize: '0.85rem',
+    fontSize: '0.82rem',
   },
   notifButton: {
-    padding: '0.4rem 0.8rem',
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.45rem 0.8rem',
     borderRadius: '6px',
-    border: '1px solid #4c8dff',
-    background: '#4c8dff',
+    border: 'none',
+    background: 'var(--color-primary)',
     color: '#fff',
     cursor: 'pointer',
-    fontSize: '0.85rem',
+    fontSize: '0.82rem',
+    fontWeight: 600,
   },
   filterRow: {
     display: 'flex',
@@ -319,30 +329,34 @@ const styles = {
     overflowX: 'auto',
   },
   filterButton: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
     padding: '0.5rem 1rem',
     borderRadius: '999px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#555',
+    border: '1px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-text-muted)',
     cursor: 'pointer',
     fontSize: '0.85rem',
+    fontWeight: 600,
     whiteSpace: 'nowrap',
-    textTransform: 'capitalize',
     flexShrink: 0,
   },
   filterButtonActive: {
-    background: '#4c8dff',
-    borderColor: '#4c8dff',
+    background: 'var(--color-primary)',
+    borderColor: 'var(--color-primary)',
     color: '#fff',
   },
-  filterBadge: {
-    marginLeft: '0.4rem',
-    background: '#fff',
-    color: '#e91e63',
+  filterCount: {
+    background: 'var(--color-bg)',
+    color: 'var(--color-text-muted)',
     borderRadius: '999px',
-    padding: '0.05rem 0.4rem',
-    fontSize: '0.75rem',
+    padding: '0.05rem 0.45rem',
+    fontSize: '0.72rem',
     fontWeight: 700,
+  },
+  filterCountActive: {
+    background: 'rgba(255,255,255,0.25)',
+    color: '#fff',
   },
   list: {
     display: 'flex',
@@ -351,60 +365,72 @@ const styles = {
     padding: '0 1.25rem',
   },
   requestCard: {
-    background: '#fff',
-    borderRadius: '12px',
+    position: 'relative',
+    background: 'var(--color-surface)',
+    borderRadius: 'var(--radius-md)',
     padding: '1rem',
-    border: '1px solid #e2e4e9',
+    border: '1px solid var(--color-border)',
+    boxShadow: 'var(--shadow-sm)',
   },
-  requestCardNew: {
-    borderColor: '#e91e63',
-    borderWidth: '2px',
-    boxShadow: '0 0 0 3px rgba(233,30,99,0.1)',
+  newTag: {
+    position: 'absolute',
+    top: '-9px',
+    left: '14px',
+    color: '#fff',
+    fontSize: '0.68rem',
+    fontWeight: 800,
+    letterSpacing: '0.04em',
+    padding: '0.15rem 0.55rem',
+    borderRadius: '999px',
   },
   requestTop: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: '0.75rem',
+    marginBottom: '0.85rem',
   },
-  requestType: { fontSize: '1.1rem', fontWeight: 700 },
-  requestTable: { color: '#666', fontSize: '0.9rem', marginTop: '0.1rem' },
-  requestMeta: { display: 'flex', alignItems: 'center', gap: '0.4rem' },
-  statusDot: { width: '10px', height: '10px', borderRadius: '50%', display: 'inline-block' },
-  statusText: { fontSize: '0.8rem', color: '#555', textTransform: 'capitalize' },
-  waitTime: { fontSize: '0.8rem', color: '#999', marginLeft: '0.5rem' },
+  requestType: { fontSize: '1.05rem', fontWeight: 700 },
+  requestTable: {
+    display: 'flex', alignItems: 'center', gap: '0.3rem',
+    color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem',
+  },
+  waitTime: { fontSize: '0.75rem', marginTop: '0.35rem', fontWeight: 600 },
   actions: { display: 'flex', gap: '0.5rem' },
   acceptButton: {
-    flex: 1,
+    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
     padding: '0.7rem',
     borderRadius: '8px',
     border: 'none',
-    background: '#4c8dff',
+    background: 'var(--color-primary)',
     color: '#fff',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
   },
   rejectButton: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
     padding: '0.7rem 1rem',
     borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#d33',
-    fontWeight: 600,
+    border: '1px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-danger)',
+    fontWeight: 700,
     cursor: 'pointer',
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
   },
   completeButton: {
-    flex: 1,
+    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
     padding: '0.7rem',
     borderRadius: '8px',
     border: 'none',
-    background: '#4caf50',
+    background: 'var(--color-success)',
     color: '#fff',
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: 'pointer',
-    fontSize: '0.95rem',
+    fontSize: '0.92rem',
   },
-  doneText: { color: '#2e7d32', fontWeight: 600, fontSize: '0.9rem' },
+  doneText: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    color: 'var(--color-success)', fontWeight: 700, fontSize: '0.9rem',
+  },
 }
