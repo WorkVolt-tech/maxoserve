@@ -115,7 +115,7 @@ function TopBar({ onOpenDrawer }) {
 
   return (
     <div style={styles.topBar}>
-      <button style={styles.hamburger} onClick={onOpenDrawer} aria-label="Open menu">
+      <button style={styles.hamburger} className="ms-hamburger" onClick={onOpenDrawer} aria-label="Open menu">
         <MenuIcon size={20} />
       </button>
 
@@ -180,7 +180,7 @@ export default function AdminLayout() {
   return (
     <LocationProvider>
       <div style={styles.shell}>
-        <aside style={styles.sidebarDesktop}>
+        <aside style={styles.sidebarDesktop} className="ms-sidebar-desktop">
           <SidebarContent visibleGroups={visibleGroups} />
         </aside>
 
@@ -221,7 +221,6 @@ const styles = {
     inset: 0,
     background: 'rgba(0,0,0,0.5)',
     zIndex: 1000,
-    display: 'none',
   },
   sidebarMobile: {
     width: '270px',
