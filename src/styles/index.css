@@ -79,3 +79,12 @@ input, select, textarea {
 ::selection {
   background: var(--color-primary-soft);
 }
+
+@media (max-width: 860px) {
+  .ms-sidebar-desktop {
+    display: none !important;
+  }
+  .ms-hamburger {
+    display: inline-flex !important;
+  }
+}
