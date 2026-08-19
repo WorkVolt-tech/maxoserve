@@ -110,6 +110,8 @@ function TopBar({ onOpenDrawer }) {
   const { user, signOut } = useAuth()
   const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const location = window.location.pathname
+  const hideLocationSwitcher = location === '/admin/locations'
 
   const displayName = user?.user_metadata?.full_name || user?.email || 'Account'
 
@@ -119,7 +121,7 @@ function TopBar({ onOpenDrawer }) {
         <MenuIcon size={20} />
       </button>
 
-      {!locationsLoading && locations.length > 0 && (
+     {!locationsLoading && locations.length > 0 && !hideLocationSwitcher && (
         <div style={styles.topBarLocation}>
           <MapPin size={15} color="var(--color-text-muted)" />
           <select
