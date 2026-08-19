@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 export default function AdminEvents() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
-  const [locations, setLocations] = useState([])
   const [events, setEvents] = useState([])
 
   const [name, setName] = useState('')
-  const [locationId, setLocationId] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
 
@@ -35,14 +35,7 @@ export default function AdminEvents() {
       return
     }
 
-    setBusinessId(membership.business_id)
-
-    const { data: locationsData } = await supabase
-      .from('locations')
-      .select('*')
-      .eq('business_id', membership.business_id)
-    setLocations(locationsData || [])
-    if (locationsData && locationsData.length > 0) setLocationId(locationsData[0].id)
+   setBusinessId(membership.business_id)
 
     await loadEvents(membership.business_id)
     setLoading(false)
@@ -66,14 +59,14 @@ export default function AdminEvents() {
     e.preventDefault()
     setError('')
 
-    if (!locationId) {
+    if (!currentLocationId) {
       setError('Select a location.')
       return
     }
 
     const { error: insertError } = await supabase.from('events').insert({
       business_id: businessId,
-      location_id: locationId,
+      location_id: currentLocationId,
       name,
       starts_at: startsAt,
       ends_at: endsAt,
@@ -120,7 +113,7 @@ export default function AdminEvents() {
         Create temporary events like weddings, birthdays, or private parties. Reservations can be linked to an event.
       </p>
 
-      <form onSubmit={handleCreate} style={styles.form}>
+     <form onSubmit={handleCreate} style={styles.form}>
         <input
           type="text"
           placeholder="Event name (e.g. Smith Wedding)"
@@ -129,11 +122,6 @@ export default function AdminEvents() {
           required
           style={styles.input}
         />
-        <select value={locationId} onChange={(e) => setLocationId(e.target.value)} style={styles.select}>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
-        </select>
         <div style={styles.dateGroup}>
           <label style={styles.dateLabel}>Starts</label>
           <input
@@ -159,16 +147,16 @@ export default function AdminEvents() {
 
       {error && <p style={{ color: '#d33' }}>{error}</p>}
 
-      <div style={styles.list}>
-        {events.length === 0 && <p style={{ color: '#888' }}>No events yet.</p>}
-        {events.map((event) => {
-          const location = locations.find((l) => l.id === event.location_id)
+     <div style={styles.list}>
+        {events.filter((e) => e.location_id === currentLocationId).length === 0 && (
+          <p style={{ color: '#888' }}>No events yet.</p>
+        )}
+        {events.filter((e) => e.location_id === currentLocationId).map((event) => {
           const status = eventStatus(event)
           return (
             <div key={event.id} style={styles.card}>
               <div>
                 <strong>{event.name}</strong>
-                <span style={styles.meta}> · {location?.name || 'Unknown location'}</span>
                 <p style={styles.dateRange}>
                   {new Date(event.starts_at).toLocaleString()} → {new Date(event.ends_at).toLocaleString()}
                 </p>
