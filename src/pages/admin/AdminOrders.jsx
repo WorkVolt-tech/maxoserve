@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 
 const STATUS_FLOW = {
   submitted: { next: 'accepted', label: 'Accept', color: '#e91e63' },
@@ -16,6 +17,7 @@ const FILTERS = ['active', 'all', 'kitchen', 'bar', 'bottle_service', 'delivered
 
 export default function AdminOrders() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
   const [orders, setOrders] = useState([])
   const [orderItems, setOrderItems] = useState({}) // order_id -> [items with menu_item + modifiers]
@@ -157,7 +159,16 @@ export default function AdminOrders() {
     return true
   }
 
-  const visibleOrders = orders.filter(matchesFilter)
+  const ordersForLocation = orders.filter((o) => {
+    if (o.table_id) {
+      return tables[o.table_id]?.location_id === currentLocationId
+    }
+    if (o.reservation_id && reservations[o.reservation_id]) {
+      return reservations[o.reservation_id].location_id === currentLocationId
+    }
+    return false
+  })
+  const visibleOrders = ordersForLocation.filter(matchesFilter)
 
   if (loading) return <div><h2>Orders</h2><p>Loading...</p></div>
 
