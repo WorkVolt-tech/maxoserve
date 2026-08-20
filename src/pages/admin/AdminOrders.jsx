@@ -25,6 +25,7 @@ export default function AdminOrders() {
   const [reservations, setReservations] = useState({})
   const [filter, setFilter] = useState('active')
   const [loading, setLoading] = useState(true)
+  const [groupByTable, setGroupByTable] = useState(false)
 
   useEffect(() => {
     init()
@@ -170,6 +171,20 @@ export default function AdminOrders() {
   })
   const visibleOrders = ordersForLocation.filter(matchesFilter)
 
+  const groupedByTable = {}
+  for (const o of visibleOrders) {
+    const key = o.table_id || `reservation-${o.reservation_id}`
+    if (!groupedByTable[key]) groupedByTable[key] = []
+    groupedByTable[key].push(o)
+  }
+  function groupLabel(key, orderList) {
+    if (key.startsWith('reservation-')) {
+      const resId = key.replace('reservation-', '')
+      return `Reservation: ${reservations[resId]?.customer_name || 'Unknown'}`
+    }
+    return tables[key]?.name || 'Unassigned table'
+  }
+
   if (loading) return <div><h2>Orders</h2><p>Loading...</p></div>
 
   return (
@@ -187,70 +202,91 @@ export default function AdminOrders() {
             {f.replace('_', ' ')}
           </button>
         ))}
+        <button
+          onClick={() => setGroupByTable((v) => !v)}
+          style={{ ...styles.filterButton, ...(groupByTable ? styles.filterButtonActive : {}), marginLeft: 'auto' }}
+        >
+          {groupByTable ? '✓ ' : ''}Group by Table
+        </button>
       </div>
 
-      <div style={styles.list}>
-        {visibleOrders.length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
-        {visibleOrders.map((order) => {
-          const items = orderItems[order.id] || []
-          const table = tables[order.table_id]
-          const flow = STATUS_FLOW[order.status] || {}
-
-          return (
-            <div key={order.id} style={styles.orderCard}>
-              <div style={styles.orderHeader}>
-                <div>
-                  <strong>
-                    {table?.name || (order.reservation_id && reservations[order.reservation_id]
-                      ? `Reservation: ${reservations[order.reservation_id].customer_name}`
-                      : 'Unassigned')}
-                  </strong>
-                  <span style={styles.orderMeta}> · ${Number(order.total).toFixed(2)} · {minutesAgo(order.created_at)}m ago</span>
+      {groupByTable ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {Object.entries(groupedByTable).map(([key, orderList]) => {
+            const groupTotal = orderList.reduce((sum, o) => sum + Number(o.total), 0)
+            return (
+              <div key={key}>
+                <div style={styles.groupHeader}>
+                  <strong>{groupLabel(key, orderList)}</strong>
+                  <span style={styles.orderMeta}>
+                    {orderList.length} order{orderList.length !== 1 ? 's' : ''} · ${groupTotal.toFixed(2)} total
+                  </span>
                 </div>
-                <span style={{ ...styles.statusBadge, background: (STATUS_FLOW[order.status]?.color || '#999') + '22', color: STATUS_FLOW[order.status]?.color || '#666' }}>
-                  {order.status.replace('_', ' ')}
-                </span>
+                <div style={styles.list}>
+                  {orderList.map((order) => renderOrderCard(order))}
+                </div>
               </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={styles.list}>
+          {visibleOrders.length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {visibleOrders.map((order) => renderOrderCard(order))}
+        </div>
+      )}
+          }
 
-              <div style={styles.itemsList}>
-                {items.map((item) => (
-                  <div key={item.id} style={styles.itemRow}>
-                    <div style={styles.itemLine}>
-                      <span>{item.quantity}× {item.menu_items?.name || 'Item'}</span>
-                      <span style={styles.prepTag}>{item.menu_items?.prep_location?.replace('_', ' ')}</span>
-                    </div>
-                    {item.modifiers.length > 0 && (
-                      <div style={styles.modLine}>
-                        {item.modifiers.map((m) => m.modifier_options?.name).join(', ')}
-                      </div>
-                    )}
-                    {item.notes && <div style={styles.notesLine}>"{item.notes}"</div>}
-                  </div>
-                ))}
-              </div>
+  function renderOrderCard(order) {
+    const items = orderItems[order.id] || []
+    const table = tables[order.table_id]
+    const flow = STATUS_FLOW[order.status] || {}
 
-              <div style={styles.actions}>
-                {flow.next && (
-                  <button
-                    onClick={() => updateStatus(order, flow.next)}
-                    style={{ ...styles.actionButton, background: flow.color }}
-                  >
-                    {flow.label}
-                  </button>
-                )}
-                {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
-                  <button onClick={() => updateStatus(order, 'cancelled')} style={styles.cancelButton}>
-                    Cancel
-                  </button>
-                )}
+    return (
+      <div key={order.id} style={styles.orderCard}>
+        <div style={styles.orderHeader}>
+          <div>
+            <strong>
+              {table?.name || (order.reservation_id && reservations[order.reservation_id]
+                ? `Reservation: ${reservations[order.reservation_id].customer_name}`
+                : 'Unassigned')}
+            </strong>
+            <span style={styles.orderMeta}> · ${Number(order.total).toFixed(2)} · {minutesAgo(order.created_at)}m ago</span>
+          </div>
+          <span style={{ ...styles.statusBadge, background: (STATUS_FLOW[order.status]?.color || '#999') + '22', color: STATUS_FLOW[order.status]?.color || '#666' }}>
+            {order.status.replace('_', ' ')}
+          </span>
+        </div>
+
+        <div style={styles.itemsList}>
+          {items.map((item) => (
+            <div key={item.id} style={styles.itemRow}>
+              <div style={styles.itemLine}>
+                <span>{item.quantity}× {item.menu_items?.name || 'Item'}</span>
+                <span style={styles.prepTag}>{item.menu_items?.prep_location?.replace('_', ' ')}</span>
               </div>
+              {item.modifiers.length > 0 && (
+                <div style={styles.modLine}>{item.modifiers.map((m) => m.modifier_options?.name).join(', ')}</div>
+              )}
+              {item.notes && <div style={styles.notesLine}>"{item.notes}"</div>}
             </div>
-          )
-        })}
+          ))}
+        </div>
+
+        <div style={styles.actions}>
+          {flow.next && (
+            <button onClick={() => updateStatus(order, flow.next)} style={{ ...styles.actionButton, background: flow.color }}>
+              {flow.label}
+            </button>
+          )}
+          {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
+            <button onClick={() => updateStatus(order, 'cancelled')} style={styles.cancelButton}>Cancel</button>
+          )}
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
 const styles = {
   filterRow: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
@@ -266,6 +302,10 @@ const styles = {
   },
   filterButtonActive: { background: '#4c8dff', borderColor: '#4c8dff', color: '#fff' },
   list: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
+  groupHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+    padding: '0.5rem 0.25rem', borderBottom: '2px solid #e2e4e9', marginBottom: '0.75rem',
+  },
   orderCard: {
     background: '#fff',
     borderRadius: '10px',
