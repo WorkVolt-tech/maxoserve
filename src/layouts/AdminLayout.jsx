@@ -111,7 +111,7 @@ function TopBar({ onOpenDrawer }) {
   const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const location = window.location.pathname
-  const hideLocationSwitcher = location === '/admin/locations'
+  const hideLocationSwitcher = location === '/admin/locations' || location === '/admin/staff'
 
   const displayName = user?.user_metadata?.full_name || user?.email || 'Account'
 
