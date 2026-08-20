@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation as useRouterLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
@@ -110,8 +110,8 @@ function TopBar({ onOpenDrawer }) {
   const { user, signOut } = useAuth()
   const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const location = window.location.pathname
-  const hideLocationSwitcher = location === '/admin/locations' || location === '/admin/staff'
+  const routerLocation = useRouterLocation()
+  const hideLocationSwitcher = routerLocation.pathname === '/admin/locations' || routerLocation.pathname === '/admin/staff'
 
   const displayName = user?.user_metadata?.full_name || user?.email || 'Account'
 
