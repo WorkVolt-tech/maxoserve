@@ -27,7 +27,7 @@ export default function AdminAssignments() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { loadInitial() }, [currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
