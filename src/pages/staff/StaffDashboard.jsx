@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck } from 'lucide-react'
+import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
@@ -43,6 +43,8 @@ export default function StaffDashboard() {
   const knownRequestIds = useRef(new Set())
   const isFirstLoad = useRef(true)
   const [, forceTick] = useState(0)
+  const [locations, setLocations] = useState([])
+  const [selectedLocationId, setSelectedLocationId] = useState('all')
 
   useEffect(() => {
     init()
@@ -78,6 +80,13 @@ export default function StaffDashboard() {
 
     if (!membership) { setLoading(false); return }
     setBusinessId(membership.business_id)
+
+    const { data: locationsData } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('business_id', membership.business_id)
+      .order('created_at', { ascending: true })
+    setLocations(locationsData || [])
 
     const { data: typesData } = await supabase
       .from('service_request_types')
@@ -159,13 +168,17 @@ export default function StaffDashboard() {
     return true
   }
 
-  const visibleRequests = requests.filter(matchesFilter)
+  const requestsForLocation = selectedLocationId === 'all'
+    ? requests
+    : requests.filter((r) => tables[r.table_id]?.location_id === selectedLocationId)
+
+  const visibleRequests = requestsForLocation.filter(matchesFilter)
   const counts = {
-    new: requests.filter((r) => r.status === 'pending').length,
-    assigned_to_me: requests.filter((r) => r.assigned_to === user.id).length,
-    in_progress: requests.filter((r) => ['accepted', 'on_the_way'].includes(r.status)).length,
-    completed: requests.filter((r) => r.status === 'completed').length,
-    all: requests.length,
+    new: requestsForLocation.filter((r) => r.status === 'pending').length,
+    assigned_to_me: requestsForLocation.filter((r) => r.assigned_to === user.id).length,
+    in_progress: requestsForLocation.filter((r) => ['accepted', 'on_the_way'].includes(r.status)).length,
+    completed: requestsForLocation.filter((r) => r.status === 'completed').length,
+    all: requestsForLocation.length,
   }
 
   if (loading) {
@@ -191,6 +204,23 @@ export default function StaffDashboard() {
           </button>
         </div>
       </div>
+
+      {locations.length > 1 && (
+        <div style={styles.locationBar}>
+          <MapPin size={14} color="var(--color-sidebar-text)" />
+          <select
+            value={selectedLocationId}
+            onChange={(e) => setSelectedLocationId(e.target.value)}
+            style={styles.locationSelect}
+          >
+            <option value="all">All Locations</option>
+            {locations.map((loc) => (
+              <option key={loc.id} value={loc.id}>{loc.name}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} color="var(--color-sidebar-text)" />
+        </div>
+      )}
 
       <div style={styles.filterRow}>
         {FILTERS.map((f) => (
@@ -321,6 +351,23 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.82rem',
     fontWeight: 600,
+  },
+  locationBar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    padding: '0.6rem 1.25rem',
+    background: 'var(--color-sidebar-bg)',
+    borderTop: '1px solid var(--color-sidebar-border)',
+  },
+  locationSelect: {
+    background: 'transparent',
+    border: 'none',
+    color: '#fff',
+    fontSize: '0.85rem',
+    fontWeight: 600,
+    outline: 'none',
+    cursor: 'pointer',
   },
   filterRow: {
     display: 'flex',
