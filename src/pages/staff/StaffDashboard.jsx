@@ -193,11 +193,16 @@ export default function StaffDashboard() {
     <div style={styles.page}>
       <div style={styles.header}>
         <h1 style={styles.headerTitle}>Requests</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
             <button onClick={requestNotificationPermission} style={styles.notifButton}>
               <Bell size={14} /> Enable Alerts
             </button>
+          )}
+          {notifPermission === 'granted' && (
+            <span style={styles.notifOnBadge} title="To turn off, manage notification permissions in your browser's site settings">
+              <Bell size={12} /> Alerts On
+            </span>
           )}
           <button onClick={signOut} style={styles.signOutButton}>
             <LogOut size={14} /> Sign Out
@@ -350,6 +355,16 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.82rem',
     fontWeight: 600,
+  },
+  notifOnBadge: {
+    display: 'flex', alignItems: 'center', gap: '0.3rem',
+    padding: '0.4rem 0.7rem',
+    borderRadius: '999px',
+    background: 'rgba(22,163,74,0.15)',
+    color: '#4ade80',
+    fontSize: '0.78rem',
+    fontWeight: 600,
+    cursor: 'help',
   },
   locationBar: {
     display: 'flex',
