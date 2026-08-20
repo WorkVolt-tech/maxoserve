@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck, ChevronDown } from 'lucide-react'
+import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
@@ -207,18 +207,17 @@ export default function StaffDashboard() {
 
       {locations.length > 1 && (
         <div style={styles.locationBar}>
-          <MapPin size={14} color="var(--color-sidebar-text)" />
+          <MapPin size={14} color="#fff" />
           <select
             value={selectedLocationId}
             onChange={(e) => setSelectedLocationId(e.target.value)}
             style={styles.locationSelect}
           >
-            <option value="all">All Locations</option>
+            <option value="all" style={styles.locationOption}>All Locations</option>
             {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
+              <option key={loc.id} value={loc.id} style={styles.locationOption}>{loc.name}</option>
             ))}
           </select>
-          <ChevronDown size={14} color="var(--color-sidebar-text)" />
         </div>
       )}
 
@@ -368,6 +367,10 @@ const styles = {
     fontWeight: 600,
     outline: 'none',
     cursor: 'pointer',
+  },
+  locationOption: {
+    background: '#14161f',
+    color: '#fff',
   },
   filterRow: {
     display: 'flex',
