@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Upload } from 'lucide-react'
+import { UtensilsCrossed, Plus, Trash2, Upload, ChevronRight, EyeOff, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import MenuImportModal from '../../components/MenuImportModal'
+import PageHeader from '../../components/ui/PageHeader'
+import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import Badge from '../../components/ui/Badge'
+import EmptyState from '../../components/ui/EmptyState'
+import LoadingState from '../../components/ui/LoadingState'
 
 export default function AdminMenu() {
   const { user } = useAuth()
@@ -14,25 +20,13 @@ export default function AdminMenu() {
   const [error, setError] = useState('')
   const [showImport, setShowImport] = useState(false)
 
-  useEffect(() => {
-    loadInitial()
-  }, [])
+  useEffect(() => { loadInitial() }, [])
 
   async function loadInitial() {
     setLoading(true)
-
     const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-
+      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
+    if (!membership) { setLoading(false); return }
     setBusinessId(membership.business_id)
     await loadCategories(membership.business_id)
     setLoading(false)
@@ -40,184 +34,94 @@ export default function AdminMenu() {
 
   async function loadCategories(bizId) {
     const { data, error: catError } = await supabase
-      .from('menu_categories')
-      .select('*')
-      .eq('business_id', bizId)
-      .order('display_order', { ascending: true })
-
-    if (catError) {
-      setError(catError.message)
-    } else {
-      setCategories(data)
-    }
+      .from('menu_categories').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
+    if (catError) setError(catError.message)
+    else setCategories(data)
   }
 
   async function handleAdd(e) {
     e.preventDefault()
     setError('')
-
     const { error: insertError } = await supabase.from('menu_categories').insert({
-      business_id: businessId,
-      name,
-      display_order: categories.length,
+      business_id: businessId, name, display_order: categories.length,
     })
-
-    if (insertError) {
-      setError(insertError.message)
-      return
-    }
-
+    if (insertError) { setError(insertError.message); return }
     setName('')
     loadCategories(businessId)
   }
 
   async function handleToggleActive(category) {
-    await supabase
-      .from('menu_categories')
-      .update({ is_active: !category.is_active })
-      .eq('id', category.id)
+    await supabase.from('menu_categories').update({ is_active: !category.is_active }).eq('id', category.id)
     loadCategories(businessId)
   }
 
   async function handleDelete(id) {
     if (!confirm('Delete this category? All items inside it will also be deleted.')) return
     const { error: deleteError } = await supabase.from('menu_categories').delete().eq('id', id)
-    if (deleteError) {
-      setError(`Could not delete category: ${deleteError.message}`)
-      return
-    }
+    if (deleteError) { setError(`Could not delete category: ${deleteError.message}`); return }
     loadCategories(businessId)
   }
 
-  if (loading) return <div><h2>Menu</h2><p>Loading...</p></div>
+  if (loading) return <LoadingState label="Loading menu…" />
 
- return (
+  return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div>
-          <h2>Menu Categories</h2>
-          <p style={{ color: '#666' }}>
-            Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items.
-          </p>
-        </div>
-        <Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>
-          Import from File
-        </Button>
-      </div>
+      <PageHeader
+        title="Menu Categories"
+        subtitle="Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items."
+        actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
+      />
 
       {showImport && (
         <MenuImportModal
           businessId={businessId}
           existingCategories={categories}
           onClose={() => setShowImport(false)}
-          onImported={(count) => {
-            loadCategories(businessId)
-          }}
+          onImported={() => loadCategories(businessId)}
         />
       )}
 
-      <form onSubmit={handleAdd} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Category name (e.g. Appetizers)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" style={styles.button}>Add Category</button>
-      </form>
-
-      {error && <p style={{ color: '#d33' }}>{error}</p>}
-
-      <div style={styles.list}>
-        {categories.length === 0 && <p style={{ color: '#888' }}>No categories yet.</p>}
-        {categories.map((cat) => (
-          <div key={cat.id} style={styles.card}>
-            <a href={`/admin/menu/${cat.id}`} style={styles.categoryLink}>
-              <strong>{cat.name}</strong>
-              {!cat.is_active && <span style={styles.inactiveBadge}>hidden</span>}
-            </a>
-            <div style={styles.cardActions}>
-              <button onClick={() => handleToggleActive(cat)} style={styles.toggleButton}>
-                {cat.is_active ? 'Hide' : 'Show'}
-              </button>
-              <button onClick={() => handleDelete(cat.id)} style={styles.deleteButton}>
-                Delete
-              </button>
-            </div>
+      <Card style={{ marginBottom: '1.5rem' }}>
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input placeholder="Category name (e.g. Appetizers)" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
-        ))}
-      </div>
+          <Button type="submit" icon={Plus}>Add Category</Button>
+        </form>
+        {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
+      </Card>
+
+      {categories.length === 0 ? (
+        <EmptyState icon={UtensilsCrossed} title="No menu categories yet" description="Create your first category to start building your menu." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          {categories.map((cat) => (
+            <Card key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <a href={`/admin/menu/${cat.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit', flex: 1 }}>
+                <div style={styles.iconWrap}><UtensilsCrossed size={16} color="var(--color-primary)" /></div>
+                <div>
+                  <strong>{cat.name}</strong>
+                  {!cat.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
+                </div>
+                <ChevronRight size={16} color="var(--color-text-faint)" style={{ marginLeft: 'auto' }} />
+              </a>
+              <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.75rem' }}>
+                <Button variant="secondary" size="sm" icon={cat.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(cat)}>
+                  {cat.is_active ? 'Hide' : 'Show'}
+                </Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(cat.id)}>Delete</Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 const styles = {
-  form: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-  },
-  input: {
-    padding: '0.6rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    fontSize: '0.95rem',
-    flex: '1 1 220px',
-  },
-  button: {
-    padding: '0.6rem 1.2rem',
-    borderRadius: '8px',
-    border: 'none',
-    background: '#4c8dff',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.95rem',
-  },
-  list: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  card: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    background: '#fff',
-    padding: '1rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    flexWrap: 'wrap',
-    gap: '0.5rem',
-  },
-  categoryLink: {
-    color: '#1a1d23',
-    textDecoration: 'none',
-    flex: 1,
-  },
-  inactiveBadge: {
-    marginLeft: '0.6rem',
-    fontSize: '0.75rem',
-    padding: '0.15rem 0.5rem',
-    borderRadius: '999px',
-    background: '#fce4ec',
-    color: '#c2185b',
-  },
-  cardActions: { display: 'flex', gap: '0.5rem' },
-  toggleButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#555',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-  deleteButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#d33',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
+  iconWrap: {
+    width: '34px', height: '34px', borderRadius: '9px',
+    background: 'var(--color-primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
 }
