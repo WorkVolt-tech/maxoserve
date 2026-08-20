@@ -26,6 +26,11 @@ export default function AdminOrders() {
   const [filter, setFilter] = useState('active')
   const [loading, setLoading] = useState(true)
   const [groupByTable, setGroupByTable] = useState(false)
+  const [expandedGroups, setExpandedGroups] = useState({})
+
+  function toggleGroup(key) {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   useEffect(() => {
     init()
@@ -262,21 +267,28 @@ export default function AdminOrders() {
       </div>
 
       {groupByTable ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
           {Object.entries(groupedByTable).map(([key, orderList]) => {
-            const groupTotal = orderList.reduce((sum, o) => sum + Number(o.total), 0)
+            const billableOrders = orderList.filter((o) => !['cancelled', 'rejected'].includes(o.status))
+            const groupTotal = billableOrders.reduce((sum, o) => sum + Number(o.total), 0)
+            const isExpanded = !!expandedGroups[key]
             return (
-              <div key={key}>
-                <div style={styles.groupHeader}>
-                  <strong>{groupLabel(key)}</strong>
+              <div key={key} style={styles.groupCard}>
+                <button onClick={() => toggleGroup(key)} style={styles.groupCardHeader}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ ...styles.chevron, transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
+                    <strong>{groupLabel(key)}</strong>
+                  </div>
                   <span style={styles.orderMeta}>
                     {orderList.length} order{orderList.length !== 1 ? 's' : ''} · ${groupTotal.toFixed(2)} total
                   </span>
-                </div>
-                <div style={styles.list}>
-                  {orderList.map((order) => renderOrderCard(order))}
-                </div>
+                </button>
+                {isExpanded && (
+                  <div style={styles.groupCardBody}>
+                    {orderList.map((order) => renderOrderCard(order))}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -304,9 +316,36 @@ const styles = {
     textTransform: 'capitalize',
   },
   filterButtonActive: { background: '#4c8dff', borderColor: '#4c8dff', color: '#fff' },
-  groupHeader: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-    padding: '0.5rem 0.25rem', borderBottom: '2px solid #e2e4e9', marginBottom: '0.75rem',
+  groupCard: {
+    background: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #e2e4e9',
+    overflow: 'hidden',
+  },
+  groupCardHeader: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.9rem 1.1rem',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '0.95rem',
+    textAlign: 'left',
+  },
+  chevron: {
+    display: 'inline-block',
+    fontSize: '1.1rem',
+    color: '#888',
+    transition: 'transform 0.15s',
+  },
+  groupCardBody: {
+    padding: '0 1.1rem 1.1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.6rem',
+    borderTop: '1px solid #f0f0f0',
   },
   list: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   orderCard: {
