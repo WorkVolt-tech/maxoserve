@@ -11,6 +11,8 @@ import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
 import StatusBadge from '../../components/ui/StatusBadge'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useToast } from '../../contexts/ToastContext'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
@@ -24,6 +26,8 @@ function generateToken() {
 export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { showToast } = useToast()
+  const [deleteTarget, setDeleteTarget] = useState(null))
   const [businessId, setBusinessId] = useState(null)
   const [areas, setAreas] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState('')
@@ -113,12 +117,19 @@ export default function AdminTables() {
 
     if (insertError) { setError(insertError.message); return }
     setName(''); setTableNumber(''); setCapacity(''); setShape('round')
+    showToast(`"${name}" added`)
     loadTables(selectedAreaId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this table? Its QR code will stop working.')) return
-    await supabase.from('tables').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('tables').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete table: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Table deleted')
     loadTables(selectedAreaId)
   }
 
@@ -145,6 +156,7 @@ export default function AdminTables() {
     setRegenerating(false)
     if (insertError) { setError(insertError.message); return }
     setQrTokens((prev) => ({ ...prev, [table.id]: data }))
+    showToast('QR code regenerated — old code is now inactive')
   }
 
   if (loading) return <LoadingState label="Loading tables…" />
@@ -217,7 +229,7 @@ export default function AdminTables() {
                     ) : (
                       <Button variant="secondary" size="sm" icon={QrCode} onClick={() => handleGenerateQr(t)}>Generate QR</Button>
                     )}
-                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(t.id)}>Delete</Button>
+                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(t)}>Delete</Button>
                   </div>
                 </Card>
               )
@@ -233,6 +245,16 @@ export default function AdminTables() {
           onClose={() => setQrModalTable(null)}
           onRegenerate={() => handleRegenerate(qrModalTable)}
           regenerating={regenerating}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="Its QR code will stop working immediately. This can't be undone."
+          confirmLabel="Delete Table"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
     </div>
