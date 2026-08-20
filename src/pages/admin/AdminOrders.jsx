@@ -20,7 +20,7 @@ export default function AdminOrders() {
   const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
   const [orders, setOrders] = useState([])
-  const [orderItems, setOrderItems] = useState({}) // order_id -> [items with menu_item + modifiers]
+  const [orderItems, setOrderItems] = useState({})
   const [tables, setTables] = useState({})
   const [reservations, setReservations] = useState({})
   const [filter, setFilter] = useState('active')
@@ -61,7 +61,7 @@ export default function AdminOrders() {
       return
     }
 
-   setBusinessId(membership.business_id)
+    setBusinessId(membership.business_id)
 
     const { data: tablesData } = await supabase
       .from('tables')
@@ -177,66 +177,14 @@ export default function AdminOrders() {
     if (!groupedByTable[key]) groupedByTable[key] = []
     groupedByTable[key].push(o)
   }
-  function groupLabel(key, orderList) {
+
+  function groupLabel(key) {
     if (key.startsWith('reservation-')) {
       const resId = key.replace('reservation-', '')
       return `Reservation: ${reservations[resId]?.customer_name || 'Unknown'}`
     }
     return tables[key]?.name || 'Unassigned table'
   }
-
-  if (loading) return <div><h2>Orders</h2><p>Loading...</p></div>
-
-  return (
-    <div>
-      <h2>Orders</h2>
-      <p style={{ color: '#666' }}>Incoming orders update here in real time.</p>
-
-      <div style={styles.filterRow}>
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
-          >
-            {f.replace('_', ' ')}
-          </button>
-        ))}
-        <button
-          onClick={() => setGroupByTable((v) => !v)}
-          style={{ ...styles.filterButton, ...(groupByTable ? styles.filterButtonActive : {}), marginLeft: 'auto' }}
-        >
-          {groupByTable ? '✓ ' : ''}Group by Table
-        </button>
-      </div>
-
-      {groupByTable ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
-          {Object.entries(groupedByTable).map(([key, orderList]) => {
-            const groupTotal = orderList.reduce((sum, o) => sum + Number(o.total), 0)
-            return (
-              <div key={key}>
-                <div style={styles.groupHeader}>
-                  <strong>{groupLabel(key, orderList)}</strong>
-                  <span style={styles.orderMeta}>
-                    {orderList.length} order{orderList.length !== 1 ? 's' : ''} · ${groupTotal.toFixed(2)} total
-                  </span>
-                </div>
-                <div style={styles.list}>
-                  {orderList.map((order) => renderOrderCard(order))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div style={styles.list}>
-          {visibleOrders.length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
-          {visibleOrders.map((order) => renderOrderCard(order))}
-        </div>
-      )}
-          }
 
   function renderOrderCard(order) {
     const items = orderItems[order.id] || []
@@ -288,6 +236,61 @@ export default function AdminOrders() {
     )
   }
 
+  if (loading) return <div><h2>Orders</h2><p>Loading...</p></div>
+
+  return (
+    <div>
+      <h2>Orders</h2>
+      <p style={{ color: '#666' }}>Incoming orders update here in real time.</p>
+
+      <div style={styles.filterRow}>
+        {FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
+          >
+            {f.replace('_', ' ')}
+          </button>
+        ))}
+        <button
+          onClick={() => setGroupByTable((v) => !v)}
+          style={{ ...styles.filterButton, ...(groupByTable ? styles.filterButtonActive : {}), marginLeft: 'auto' }}
+        >
+          {groupByTable ? '✓ ' : ''}Group by Table
+        </button>
+      </div>
+
+      {groupByTable ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {Object.entries(groupedByTable).map(([key, orderList]) => {
+            const groupTotal = orderList.reduce((sum, o) => sum + Number(o.total), 0)
+            return (
+              <div key={key}>
+                <div style={styles.groupHeader}>
+                  <strong>{groupLabel(key)}</strong>
+                  <span style={styles.orderMeta}>
+                    {orderList.length} order{orderList.length !== 1 ? 's' : ''} · ${groupTotal.toFixed(2)} total
+                  </span>
+                </div>
+                <div style={styles.list}>
+                  {orderList.map((order) => renderOrderCard(order))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div style={styles.list}>
+          {visibleOrders.length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {visibleOrders.map((order) => renderOrderCard(order))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const styles = {
   filterRow: { display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' },
   filterButton: {
@@ -301,11 +304,11 @@ const styles = {
     textTransform: 'capitalize',
   },
   filterButtonActive: { background: '#4c8dff', borderColor: '#4c8dff', color: '#fff' },
-  list: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   groupHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
     padding: '0.5rem 0.25rem', borderBottom: '2px solid #e2e4e9', marginBottom: '0.75rem',
   },
+  list: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   orderCard: {
     background: '#fff',
     borderRadius: '10px',
