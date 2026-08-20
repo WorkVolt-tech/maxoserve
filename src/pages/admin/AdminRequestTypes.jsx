@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
+import { Bell, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import PageHeader from '../../components/ui/PageHeader'
+import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
+import Input from '../../components/ui/Input'
+import Badge from '../../components/ui/Badge'
+import EmptyState from '../../components/ui/EmptyState'
+import LoadingState from '../../components/ui/LoadingState'
 
 const ROLES = ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
@@ -24,25 +32,13 @@ export default function AdminRequestTypes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadInitial()
-  }, [])
+  useEffect(() => { loadInitial() }, [])
 
   async function loadInitial() {
     setLoading(true)
-
     const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-
+      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
+    if (!membership) { setLoading(false); return }
     setBusinessId(membership.business_id)
     await loadTypes(membership.business_id)
     setLoading(false)
@@ -50,34 +46,18 @@ export default function AdminRequestTypes() {
 
   async function loadTypes(bizId) {
     const { data, error: typesError } = await supabase
-      .from('service_request_types')
-      .select('*')
-      .eq('business_id', bizId)
-      .order('display_order', { ascending: true })
-
-    if (typesError) {
-      setError(typesError.message)
-    } else {
-      setTypes(data)
-    }
+      .from('service_request_types').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
+    if (typesError) setError(typesError.message)
+    else setTypes(data)
   }
 
   async function handleAdd(e) {
     e.preventDefault()
     setError('')
-
     const { error: insertError } = await supabase.from('service_request_types').insert({
-      business_id: businessId,
-      label,
-      routes_to_role: routesToRole,
-      display_order: types.length,
+      business_id: businessId, label, routes_to_role: routesToRole, display_order: types.length,
     })
-
-    if (insertError) {
-      setError(insertError.message)
-      return
-    }
-
+    if (insertError) { setError(insertError.message); return }
     setLabel('')
     loadTypes(businessId)
   }
@@ -85,25 +65,14 @@ export default function AdminRequestTypes() {
   async function handleAddPreset(preset) {
     setError('')
     const { error: insertError } = await supabase.from('service_request_types').insert({
-      business_id: businessId,
-      label: preset.label,
-      routes_to_role: preset.routes_to_role,
-      display_order: types.length,
+      business_id: businessId, label: preset.label, routes_to_role: preset.routes_to_role, display_order: types.length,
     })
-
-    if (insertError) {
-      setError(insertError.message)
-      return
-    }
-
+    if (insertError) { setError(insertError.message); return }
     loadTypes(businessId)
   }
 
   async function handleToggleActive(type) {
-    await supabase
-      .from('service_request_types')
-      .update({ is_active: !type.is_active })
-      .eq('id', type.id)
+    await supabase.from('service_request_types').update({ is_active: !type.is_active }).eq('id', type.id)
     loadTypes(businessId)
   }
 
@@ -113,160 +82,68 @@ export default function AdminRequestTypes() {
     loadTypes(businessId)
   }
 
-  if (loading) return <div><h2>Request Types</h2><p>Loading...</p></div>
+  if (loading) return <LoadingState label="Loading request buttons…" />
 
   const existingLabels = types.map((t) => t.label)
   const availablePresets = PRESETS.filter((p) => !existingLabels.includes(p.label))
 
   return (
     <div>
-      <h2>Request Buttons</h2>
-      <p style={{ color: '#666' }}>
-        These are the buttons customers see on their table page (e.g. "Call Server", "Request Bill").
-        Each one routes to a staff role.
-      </p>
+      <PageHeader title="Request Buttons" subtitle="The buttons customers see on their table page (e.g. Call Server, Request Bill). Each one routes to a staff role." />
 
       {availablePresets.length > 0 && (
-        <div style={styles.presetsBox}>
-          <p style={styles.presetsLabel}>Quick add common buttons:</p>
-          <div style={styles.presetsRow}>
+        <Card style={{ marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0 0 0.6rem' }}>Quick add common buttons:</p>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {availablePresets.map((p) => (
-              <button key={p.label} onClick={() => handleAddPreset(p)} style={styles.presetButton}>
-                + {p.label}
-              </button>
+              <button key={p.label} onClick={() => handleAddPreset(p)} style={styles.presetButton}>+ {p.label}</button>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
-      <form onSubmit={handleAdd} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Custom button label (e.g. Bottle Service)"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
-        <button type="submit" style={styles.button}>Add Button</button>
-      </form>
-
-      {error && <p style={{ color: '#d33' }}>{error}</p>}
-
-      <div style={styles.list}>
-        {types.length === 0 && <p style={{ color: '#888' }}>No request buttons yet.</p>}
-        {types.map((t) => (
-          <div key={t.id} style={styles.card}>
-            <div>
-              <strong>{t.label}</strong>
-              <span style={styles.meta}> · routes to {t.routes_to_role || 'unassigned'}</span>
-              {!t.is_active && <span style={styles.inactiveBadge}>hidden from customers</span>}
-            </div>
-            <div style={styles.cardActions}>
-              <button onClick={() => handleToggleActive(t)} style={styles.toggleButton}>
-                {t.is_active ? 'Hide' : 'Show'}
-              </button>
-              <button onClick={() => handleDelete(t.id)} style={styles.deleteButton}>
-                Delete
-              </button>
-            </div>
+      <Card style={{ marginBottom: '1.5rem' }}>
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input placeholder="Custom button label (e.g. Bottle Service)" value={label} onChange={(e) => setLabel(e.target.value)} required />
           </div>
-        ))}
-      </div>
+          <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
+            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <Button type="submit" icon={Plus}>Add Button</Button>
+        </form>
+        {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
+      </Card>
+
+      {types.length === 0 ? (
+        <EmptyState icon={Bell} title="No request buttons yet" description="Add a preset above or create a custom one." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {types.map((t) => (
+            <Card key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div>
+                <strong>{t.label}</strong>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · routes to {t.routes_to_role || 'unassigned'}</span>
+                {!t.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden from customers</Badge>}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="secondary" size="sm" icon={t.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(t)}>
+                  {t.is_active ? 'Hide' : 'Show'}
+                </Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(t.id)}>Delete</Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
 const styles = {
-  presetsBox: {
-    background: '#f5f6f8',
-    border: '1px solid #e2e4e9',
-    borderRadius: '8px',
-    padding: '1rem',
-    marginBottom: '1.5rem',
-  },
-  presetsLabel: { margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#555' },
-  presetsRow: { display: 'flex', gap: '0.5rem', flexWrap: 'wrap' },
+  select: { padding: '0.65rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem' },
   presetButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '999px',
-    border: '1px solid #4c8dff',
-    background: '#fff',
-    color: '#4c8dff',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-  form: {
-    display: 'flex',
-    gap: '0.5rem',
-    marginBottom: '1.5rem',
-    flexWrap: 'wrap',
-  },
-  input: {
-    padding: '0.6rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    fontSize: '0.95rem',
-    flex: '1 1 220px',
-  },
-  select: {
-    padding: '0.6rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    fontSize: '0.95rem',
-  },
-  button: {
-    padding: '0.6rem 1.2rem',
-    borderRadius: '8px',
-    border: 'none',
-    background: '#4c8dff',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '0.95rem',
-  },
-  list: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  card: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    background: '#fff',
-    padding: '1rem',
-    borderRadius: '8px',
-    border: '1px solid #e2e4e9',
-    flexWrap: 'wrap',
-    gap: '0.5rem',
-  },
-  meta: { color: '#888', fontSize: '0.85rem', marginLeft: '0.4rem' },
-  inactiveBadge: {
-    marginLeft: '0.6rem',
-    fontSize: '0.75rem',
-    padding: '0.15rem 0.5rem',
-    borderRadius: '999px',
-    background: '#fce4ec',
-    color: '#c2185b',
-  },
-  cardActions: { display: 'flex', gap: '0.5rem' },
-  toggleButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#555',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-  deleteButton: {
-    padding: '0.4rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid #e2e4e9',
-    background: '#fff',
-    color: '#d33',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
+    padding: '0.4rem 0.8rem', borderRadius: '999px', border: '1px solid var(--color-primary)',
+    background: '#fff', color: 'var(--color-primary)', cursor: 'pointer', fontSize: '0.85rem',
   },
 }
