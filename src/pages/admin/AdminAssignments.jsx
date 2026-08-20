@@ -27,17 +27,31 @@ export default function AdminAssignments() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [currentLocationId])
+  useEffect(() => {
+    loadInitial()
+  }, [currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
     const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
+      .from('business_members')
+      .select('business_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single()
+
+    if (!membership) {
+      setLoading(false)
+      return
+    }
     setBusinessId(membership.business_id)
 
-    const { data: membersData } = await supabase.from('business_members').select('*').eq('business_id', membership.business_id)
+    const { data: membersData } = await supabase
+      .from('business_members')
+      .select('*')
+      .eq('business_id', membership.business_id)
     setMembers(membersData || [])
+
     if (membersData && membersData.length > 0) {
       const userIds = membersData.map((m) => m.user_id)
       const { data: profilesData } = await supabase.from('profiles').select('*').in('id', userIds)
@@ -46,10 +60,16 @@ export default function AdminAssignments() {
       setProfiles(map)
     }
 
-    const { data: areasData } = await supabase.from('areas').select('*').eq('business_id', membership.business_id)
+    const { data: areasData } = await supabase
+      .from('areas')
+      .select('*')
+      .eq('business_id', membership.business_id)
     setAreas(areasData || [])
 
-    const { data: tablesData } = await supabase.from('tables').select('*').eq('business_id', membership.business_id)
+    const { data: tablesData } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('business_id', membership.business_id)
     setTables(tablesData || [])
 
     await loadAssignments(membership.business_id)
@@ -58,7 +78,10 @@ export default function AdminAssignments() {
 
   async function loadAssignments(bizId) {
     const { data, error: assignError } = await supabase
-      .from('staff_assignments').select('*').eq('business_id', bizId).order('created_at', { ascending: false })
+      .from('staff_assignments')
+      .select('*')
+      .eq('business_id', bizId)
+      .order('created_at', { ascending: false })
     if (assignError) setError(assignError.message)
     else setAssignments(data)
   }
@@ -66,7 +89,10 @@ export default function AdminAssignments() {
   async function handleAdd(e) {
     e.preventDefault()
     setError('')
-    if (!selectedUserId) { setError('Select a staff member.'); return }
+    if (!selectedUserId) {
+      setError('Select a staff member.')
+      return
+    }
 
     const row = { business_id: businessId, user_id: selectedUserId, location_id: null, area_id: null, table_id: null }
 
@@ -83,6 +109,9 @@ export default function AdminAssignments() {
 
     const { error: insertError } = await supabase.from('staff_assignments').insert(row)
     if (insertError) { setError(insertError.message); return }
+    setSelectedUserId('')
+    setSelectedAreaId('')
+    setSelectedTableId('')
     loadAssignments(businessId)
   }
 
@@ -98,14 +127,29 @@ export default function AdminAssignments() {
     return 'Unknown scope'
   }
 
+  // IMPORTANT: these two filtered lists are what the dropdowns use, and must
+  // only ever contain areas/tables belonging to the currently selected location.
   const areasForSelectedLocation = areas.filter((a) => a.location_id === currentLocationId)
   const tablesForSelectedLocation = tables.filter((t) => t.location_id === currentLocationId)
+
+  const areaIdsForLocation = new Set(areasForSelectedLocation.map((a) => a.id))
+  const tableIdsForLocation = new Set(tablesForSelectedLocation.map((t) => t.id))
+
+  const visibleAssignments = assignments.filter((a) => {
+    if (a.table_id) return tableIdsForLocation.has(a.table_id)
+    if (a.area_id) return areaIdsForLocation.has(a.area_id)
+    if (a.location_id) return a.location_id === currentLocationId
+    return false
+  })
 
   if (loading) return <LoadingState label="Loading assignments…" />
 
   return (
     <div>
-      <PageHeader title="Staff Assignments" subtitle="Assign staff to a specific table, a whole area, or an entire location. Remove an assignment to unassign." />
+      <PageHeader
+        title="Staff Assignments"
+        subtitle="Assign staff to a specific table, a whole area, or an entire location. Remove an assignment to unassign."
+      />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
@@ -117,33 +161,41 @@ export default function AdminAssignments() {
               </option>
             ))}
           </select>
+
           <select value={scopeType} onChange={(e) => setScopeType(e.target.value)} style={styles.select}>
             <option value="table">Specific table</option>
             <option value="area">Whole area</option>
             <option value="location">Entire location</option>
           </select>
+
           {scopeType === 'area' && (
             <select value={selectedAreaId} onChange={(e) => setSelectedAreaId(e.target.value)} style={styles.select}>
               <option value="">Select area</option>
-              {areasForSelectedLocation.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+              {areasForSelectedLocation.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
             </select>
           )}
+
           {scopeType === 'table' && (
             <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)} style={styles.select}>
               <option value="">Select table</option>
-              {tablesForSelectedLocation.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {tablesForSelectedLocation.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
             </select>
           )}
+
           <Button type="submit" icon={Plus}>Assign</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
 
-      {assignments.length === 0 ? (
-        <EmptyState icon={UserRoundCog} title="No assignments yet" description="Assign staff above to see them here." />
+      {visibleAssignments.length === 0 ? (
+        <EmptyState icon={UserRoundCog} title="No assignments here" description="Assign staff above to see them here." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {assignments.map((a) => (
+          {visibleAssignments.map((a) => (
             <Card key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <strong>{profiles[a.user_id]?.full_name || profiles[a.user_id]?.email || 'Unknown'}</strong>
