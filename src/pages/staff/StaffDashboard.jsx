@@ -5,15 +5,16 @@ import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
 import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const FILTERS = ['new', 'assigned_to_me', 'in_progress', 'completed', 'all']
 
-const FILTER_LABELS = {
-  new: 'New',
-  assigned_to_me: 'Assigned to Me',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  all: 'All',
+const FILTER_LABEL_KEYS = {
+  new: 'new',
+  assigned_to_me: 'assignedToMe',
+  in_progress: 'inProgress',
+  completed: 'completed',
+  all: 'all',
 }
 
 function urgency(createdAt) {
@@ -31,6 +32,7 @@ const URGENCY_STYLES = {
 
 export default function StaffDashboard() {
   const { user, signOut } = useAuth()
+  const { t, lang, setLang } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [requests, setRequests] = useState([])
   const [requestTypes, setRequestTypes] = useState({})
