@@ -9,10 +9,12 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminLocations() {
   const { user } = useAuth()
   const { reloadLocations } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [locations, setLocations] = useState([])
   const [name, setName] = useState('')
@@ -55,12 +57,12 @@ export default function AdminLocations() {
     reloadLocations()
   }
 
-  if (loading) return <LoadingState label="Loading locations…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
       <PageHeader
-        title="Locations"
+        title={t('locations')}
         subtitle='A location is a physical address (e.g. "Club Max — Montreal"). Add each address your business operates at.'
       />
 
@@ -72,7 +74,7 @@ export default function AdminLocations() {
           <div style={{ flex: '1 1 200px' }}>
             <Input placeholder="Address (optional)" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
-          <Button type="submit" icon={Plus}>Add Location</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -94,7 +96,7 @@ export default function AdminLocations() {
                   {loc.address && <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{loc.address}</div>}
                 </div>
               </div>
-              <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(loc.id)}>Delete</Button>
+              <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(loc.id)}>{t('delete')}</Button>
             </Card>
           ))}
         </div>
