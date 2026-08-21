@@ -9,12 +9,14 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const PREP_LOCATIONS = ['kitchen', 'bar', 'bottle_service']
 
 export default function AdminMenuItems() {
   const { categoryId } = useParams()
   const { user } = useAuth()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [category, setCategory] = useState(null)
   const [items, setItems] = useState([])
@@ -110,7 +112,7 @@ export default function AdminMenuItems() {
     loadItems()
   }
 
-  if (loading) return <LoadingState label="Loading items…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
@@ -130,7 +132,7 @@ export default function AdminMenuItems() {
             {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
           </select>
           <textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textarea} />
-          <Button type="submit" icon={Plus}>Add Item</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -159,12 +161,12 @@ export default function AdminMenuItems() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <Button variant="secondary" size="sm" icon={SlidersHorizontal} onClick={() => setExpandedItemId(isExpanded ? null : item.id)}>
-                      {isExpanded ? 'Close' : 'Modifiers'}
+                      {isExpanded ? t('cancel') : t('modifiers')}
                     </Button>
                     <Button variant="secondary" size="sm" icon={item.is_available ? EyeOff : Eye} onClick={() => handleToggleAvailable(item)}>
-                      {item.is_available ? 'Mark Unavailable' : 'Mark Available'}
+                      {item.is_available ? t('hide') : t('show')}
                     </Button>
-                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(item.id)}>Delete</Button>
+                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(item.id)}>{t('delete')}</Button>
                   </div>
                 </div>
 
