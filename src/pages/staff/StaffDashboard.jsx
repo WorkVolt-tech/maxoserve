@@ -194,20 +194,23 @@ export default function StaffDashboard() {
   return (
     <div style={styles.page}>
       <div style={styles.header}>
-        <h1 style={styles.headerTitle}>Requests</h1>
+        <h1 style={styles.headerTitle}>{t('requests')}</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button onClick={() => setLang(lang === 'en' ? 'fr' : 'en')} style={styles.langToggle}>
+            {lang === 'en' ? 'FR' : 'EN'}
+          </button>
           {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
             <button onClick={requestNotificationPermission} style={styles.notifButton}>
-              <Bell size={14} /> Enable Alerts
+              <Bell size={14} /> {t('enableAlerts')}
             </button>
           )}
           {notifPermission === 'granted' && (
             <span style={styles.notifOnBadge} title="To turn off, manage notification permissions in your browser's site settings">
-              <Bell size={12} /> Alerts On
+              <Bell size={12} /> {t('alertsOn')}
             </span>
           )}
           <button onClick={signOut} style={styles.signOutButton}>
-            <LogOut size={14} /> Sign Out
+            <LogOut size={14} /> {t('signOut')}
           </button>
         </div>
       </div>
