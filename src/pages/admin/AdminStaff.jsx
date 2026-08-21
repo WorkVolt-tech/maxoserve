@@ -9,12 +9,16 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useToast } from '../../contexts/ToastContext'
 
 const ROLES = ['admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
 export default function AdminStaff() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
+  const [removeTarget, setRemoveTarget] = useState(null)
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
   const [profiles, setProfiles] = useState({})
@@ -68,24 +72,33 @@ export default function AdminStaff() {
       setError(insertError.code === '23505' ? 'An invite for this email already exists.' : insertError.message)
       return
     }
+    showToast(`Invite sent to ${inviteEmail}`)
     setInviteEmail(''); setInviteRole('server')
     loadInvites(businessId)
   }
 
   async function handleCancelInvite(id) {
     await supabase.from('staff_invites').delete().eq('id', id)
+    showToast('Invite cancelled')
     loadInvites(businessId)
   }
 
   async function handleChangeRole(member, newRole) {
     await supabase.from('business_members').update({ role: newRole }).eq('id', member.id)
+    showToast(`Role updated to ${newRole}`)
     loadMembers(businessId)
   }
 
-  async function handleRemoveMember(member) {
-    if (member.role === 'owner') { alert("The owner can't be removed."); return }
-    if (!confirm('Remove this staff member from your business?')) return
-    await supabase.from('business_members').delete().eq('id', member.id)
+  async function confirmRemoveMember() {
+    if (!removeTarget) return
+    if (removeTarget.role === 'owner') {
+      showToast("The owner can't be removed.", 'error')
+      setRemoveTarget(null)
+      return
+    }
+    await supabase.from('business_members').delete().eq('id', removeTarget.id)
+    setRemoveTarget(null)
+    showToast('Staff member removed')
     loadMembers(businessId)
   }
 
@@ -154,7 +167,7 @@ export default function AdminStaff() {
                       <select value={member.role} onChange={(e) => handleChangeRole(member, e.target.value)} style={styles.roleSelect}>
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
-                      <Button variant="danger" size="sm" onClick={() => handleRemoveMember(member)}>Remove</Button>
+                      <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>Remove</Button>
                     </>
                   )}
                 </div>
@@ -162,6 +175,16 @@ export default function AdminStaff() {
             )
           })}
         </div>
+      )}
+
+      {removeTarget && (
+        <ConfirmationModal
+          title={`Remove ${profiles[removeTarget.user_id]?.full_name || profiles[removeTarget.user_id]?.email || 'this staff member'}?`}
+          description="They'll lose access to your business immediately."
+          confirmLabel="Remove"
+          onConfirm={confirmRemoveMember}
+          onCancel={() => setRemoveTarget(null)}
+        />
       )}
     </div>
   )
