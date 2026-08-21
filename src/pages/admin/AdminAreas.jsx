@@ -9,10 +9,12 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminAreas() {
   const { user } = useAuth()
   const { currentLocationId, locations } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [areas, setAreas] = useState([])
   const [name, setName] = useState('')
@@ -101,7 +103,7 @@ export default function AdminAreas() {
     if (duplicateTargetLocationId === currentLocationId) loadAreas(currentLocationId)
   }
 
-  if (loading) return <LoadingState label="Loading areas…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   if (!currentLocationId) {
     return <EmptyState icon={Map} title="No location selected" description="Create a location first before adding areas." />
@@ -109,14 +111,14 @@ export default function AdminAreas() {
 
   return (
     <div>
-      <PageHeader title="Areas" subtitle='Rooms or sections within a location (e.g. "Main Floor", "VIP", "Patio"). Follows the location selected above.' />
+      <PageHeader title={t('areas')} subtitle='Rooms or sections within a location (e.g. "Main Floor", "VIP", "Patio"). Follows the location selected above.' />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
             <Input placeholder="Area name (e.g. VIP)" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
-          <Button type="submit" icon={Plus}>Add Area</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -134,7 +136,7 @@ export default function AdminAreas() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button variant="secondary" size="sm" icon={Copy} onClick={() => openDuplicateForm(area)}>Duplicate</Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(area.id)}>Delete</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(area.id)}>{t('delete')}</Button>
                 </div>
               </div>
 
@@ -158,7 +160,7 @@ export default function AdminAreas() {
                     <Button onClick={() => handleConfirmDuplicate(area)} disabled={duplicating}>
                       {duplicating ? 'Duplicating…' : 'Confirm Duplicate'}
                     </Button>
-                    <Button variant="secondary" onClick={() => setDuplicatingAreaId(null)}>Cancel</Button>
+                    <Button variant="secondary" onClick={() => setDuplicatingAreaId(null)}>{t('cancel')}</Button>
                   </div>
                 </div>
               )}
