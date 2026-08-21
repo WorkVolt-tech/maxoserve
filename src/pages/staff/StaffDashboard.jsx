@@ -238,7 +238,7 @@ export default function StaffDashboard() {
             onClick={() => setFilter(f)}
             style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
           >
-            {FILTER_LABELS[f]}
+            {t(FILTER_LABEL_KEYS[f])}
             {counts[f] > 0 && (
               <span style={{ ...styles.filterCount, ...(filter === f ? styles.filterCountActive : {}) }}>
                 {counts[f]}
@@ -252,8 +252,8 @@ export default function StaffDashboard() {
         {visibleRequests.length === 0 && (
           <EmptyState
             icon={Bell}
-            title="No requests here"
-            description="You're all caught up for this filter."
+            title={t('noRequestsHere')}
+            description={t('allCaughtUp')}
           />
         )}
 
@@ -285,7 +285,7 @@ export default function StaffDashboard() {
                 <div style={{ textAlign: 'right' }}>
                   <StatusBadge status={r.status} />
                   <div style={{ ...styles.waitTime, color: isNew ? urgencyStyle.accent : 'var(--color-text-faint)' }}>
-                    Waiting {minutesWaiting(r.created_at)}m
+                    {t('waiting')} {minutesWaiting(r.created_at)}m
                   </div>
                 </div>
               </div>
@@ -294,26 +294,26 @@ export default function StaffDashboard() {
                 {r.status === 'pending' && (
                   <>
                     <button onClick={() => updateStatus(r, 'accepted')} style={styles.acceptButton}>
-                      <Check size={16} /> Accept
+                      <Check size={16} /> {t('accept')}
                     </button>
                     <button onClick={() => updateStatus(r, 'rejected')} style={styles.rejectButton}>
-                      <X size={16} /> Decline
+                      <X size={16} /> {t('decline')}
                     </button>
                   </>
                 )}
                 {r.status === 'accepted' && (
                   <button onClick={() => updateStatus(r, 'on_the_way')} style={styles.acceptButton}>
-                    <Truck size={16} /> On My Way
+                    <Truck size={16} /> {t('onMyWay')}
                   </button>
                 )}
                 {r.status === 'on_the_way' && (
                   <button onClick={() => updateStatus(r, 'completed')} style={styles.completeButton}>
-                    <CheckCheck size={16} /> Complete
+                    <CheckCheck size={16} /> {t('complete')}
                   </button>
                 )}
                 {r.status === 'completed' && (
                   <span style={styles.doneText}>
-                    <CheckCheck size={15} /> Completed
+                    <CheckCheck size={15} /> {t('completed')}
                   </span>
                 )}
               </div>
@@ -349,6 +349,16 @@ const styles = {
     color: 'var(--color-sidebar-text)',
     cursor: 'pointer',
     fontSize: '0.82rem',
+  },
+  langToggle: {
+    padding: '0.45rem 0.7rem',
+    borderRadius: '6px',
+    border: '1px solid var(--color-sidebar-border)',
+    background: 'transparent',
+    color: '#fff',
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    cursor: 'pointer',
   },
   notifButton: {
     display: 'flex', alignItems: 'center', gap: '0.35rem',
