@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { UtensilsCrossed, Plus, Trash2, Upload, ChevronRight, EyeOff, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 import MenuImportModal from '../../components/MenuImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -15,6 +16,7 @@ import { useToast } from '../../contexts/ToastContext'
 
 export default function AdminMenu() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [categories, setCategories] = useState([])
@@ -24,7 +26,10 @@ export default function AdminMenu() {
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  useEffect(() => { loadInitial() }, [])
+ useEffect(() => { loadInitial() }, [])
+  useEffect(() => {
+    if (businessId && currentLocationId) loadCategories(businessId)
+  }, [currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
@@ -37,8 +42,9 @@ export default function AdminMenu() {
   }
 
   async function loadCategories(bizId) {
+    if (!currentLocationId) { setCategories([]); return }
     const { data, error: catError } = await supabase
-      .from('menu_categories').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
+      .from('menu_categories').select('*').eq('business_id', bizId).eq('location_id', currentLocationId).order('display_order', { ascending: true })
     if (catError) setError(catError.message)
     else setCategories(data)
   }
@@ -47,7 +53,7 @@ export default function AdminMenu() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('menu_categories').insert({
-      business_id: businessId, name, display_order: categories.length,
+      business_id: businessId, location_id: currentLocationId, name, display_order: categories.length,
     })
     if (insertError) { setError(insertError.message); return }
     setName('')
