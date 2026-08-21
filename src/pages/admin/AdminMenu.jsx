@@ -13,11 +13,13 @@ import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminMenu() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { showToast } = useToast()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
@@ -79,12 +81,12 @@ export default function AdminMenu() {
     loadCategories(businessId)
   }
 
-  if (loading) return <LoadingState label="Loading menu…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
       <PageHeader
-        title="Menu Categories"
+        title={t('menu')}
         subtitle="Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items."
         actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
       />
@@ -103,7 +105,7 @@ export default function AdminMenu() {
           <div style={{ flex: '1 1 220px' }}>
             <Input placeholder="Category name (e.g. Appetizers)" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
-          <Button type="submit" icon={Plus}>Add Category</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -124,9 +126,9 @@ export default function AdminMenu() {
               </a>
               <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.75rem' }}>
                 <Button variant="secondary" size="sm" icon={cat.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(cat)}>
-                  {cat.is_active ? 'Hide' : 'Show'}
+                  {cat.is_active ? t('hide') : t('show')}
                 </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(cat)}>Delete</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(cat)}>{t('delete')}</Button>
               </div>
             </Card>
           ))}
