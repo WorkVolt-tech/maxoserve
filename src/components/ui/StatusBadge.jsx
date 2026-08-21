@@ -1,37 +1,41 @@
 import Badge from './Badge'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_CONFIG = {
   // service requests
-  pending: { label: 'Pending', color: 'warning' },
-  accepted: { label: 'Accepted', color: 'info' },
-  on_the_way: { label: 'On the Way', color: 'info' },
-  completed: { label: 'Completed', color: 'success' },
-  rejected: { label: 'Rejected', color: 'neutral' },
-  cancelled: { label: 'Cancelled', color: 'neutral' },
+  pending: { key: 'statusPending', color: 'warning' },
+  accepted: { key: 'statusAccepted', color: 'info' },
+  on_the_way: { key: 'statusOnTheWay', color: 'info' },
+  completed: { key: 'statusCompleted', color: 'success' },
+  rejected: { key: 'statusRejected', color: 'neutral' },
+  cancelled: { key: 'statusCancelled', color: 'neutral' },
 
   // orders
-  draft: { label: 'Draft', color: 'neutral' },
-  submitted: { label: 'Submitted', color: 'warning' },
-  preparing: { label: 'Preparing', color: 'info' },
-  ready: { label: 'Ready', color: 'primary' },
-  out_for_delivery: { label: 'On the Way', color: 'info' },
-  delivered: { label: 'Delivered', color: 'success' },
+  draft: { key: 'statusDraft', color: 'neutral' },
+  submitted: { key: 'statusSubmitted', color: 'warning' },
+  preparing: { key: 'statusPreparing', color: 'info' },
+  ready: { key: 'statusReady', color: 'primary' },
+  out_for_delivery: { key: 'statusOnTheWay', color: 'info' },
+  delivered: { key: 'statusDelivered', color: 'success' },
 
   // reservations
-  confirmed: { label: 'Confirmed', color: 'info' },
-  seated: { label: 'Seated', color: 'success' },
-  no_show: { label: 'No Show', color: 'danger' },
+  confirmed: { key: 'statusConfirmed', color: 'info' },
+  seated: { key: 'statusSeated', color: 'success' },
+  no_show: { key: 'statusNoShow', color: 'danger' },
 
   // tables
-  available: { label: 'Available', color: 'success' },
-  occupied: { label: 'Occupied', color: 'danger' },
-  reserved: { label: 'Reserved', color: 'warning' },
-  needs_service: { label: 'Needs Service', color: 'danger' },
-  order_pending: { label: 'Order Pending', color: 'primary' },
-  disabled: { label: 'Disabled', color: 'neutral' },
+  available: { key: 'statusAvailable', color: 'success' },
+  occupied: { key: 'statusOccupied', color: 'danger' },
+  reserved: { key: 'statusReserved', color: 'warning' },
+  needs_service: { key: 'statusNeedsService', color: 'danger' },
+  order_pending: { key: 'statusOrderPending', color: 'primary' },
+  disabled: { key: 'statusDisabled', color: 'neutral' },
 }
 
 export default function StatusBadge({ status, style }) {
-  const config = STATUS_CONFIG[status] || { label: status?.replace(/_/g, ' ') || 'Unknown', color: 'neutral' }
-  return <Badge color={config.color} style={style}>{config.label}</Badge>
+  const { t } = useAppLanguage()
+  const config = STATUS_CONFIG[status]
+  const label = config ? t(config.key) : (status?.replace(/_/g, ' ') || 'Unknown')
+  const color = config?.color || 'neutral'
+  return <Badge color={color} style={style}>{label}</Badge>
 }
