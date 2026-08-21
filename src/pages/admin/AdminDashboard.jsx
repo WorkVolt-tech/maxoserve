@@ -5,21 +5,23 @@ import {
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import Card from '../../components/ui/Card'
 import LoadingState from '../../components/ui/LoadingState'
 import EmptyState from '../../components/ui/EmptyState'
 import StatusBadge from '../../components/ui/StatusBadge'
 
-function greeting() {
+function greetingKey() {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (hour < 12) return 'goodMorning'
+  if (hour < 18) return 'goodAfternoon'
+  return 'goodEvening'
 }
 
 export default function AdminDashboard() {
   const { user } = useAuth()
   const { locations, currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [recentRequests, setRecentRequests] = useState([])
@@ -154,7 +156,7 @@ export default function AdminDashboard() {
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'there'
   const currentLocation = locations.find((l) => l.id === currentLocationId)
 
-  if (loading) return <LoadingState label="Loading dashboard…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   if (!stats) return <p style={{ color: 'var(--color-text-muted)' }}>No data available.</p>
 
@@ -162,39 +164,38 @@ export default function AdminDashboard() {
     {
       icon: LayoutGrid,
       value: `${stats.tablesOccupied} / ${stats.tablesTotal}`,
-      label: 'Tables Occupied',
+      label: t('tablesOccupied'),
       color: 'primary',
     },
     {
       icon: Bell,
       value: stats.openRequests,
-      label: 'Open Requests',
-      meta: stats.openRequests > 0 ? `${stats.openRequests} need attention` : 'All caught up',
+      label: t('openRequests'),
+      meta: stats.openRequests > 0 ? `${stats.openRequests}` : null,
       color: stats.openRequests > 0 ? 'warning' : 'success',
     },
     {
       icon: Clock,
       value: stats.avgResponseMinutes ? `${stats.avgResponseMinutes}m` : '—',
-      label: 'Avg. Response Time',
+      label: t('avgResponseTime'),
       color: 'info',
     },
     {
       icon: ShoppingBag,
       value: stats.ordersToday,
-      label: 'Orders Today',
+      label: t('ordersToday'),
       color: 'primary',
     },
     {
       icon: ChefHat,
       value: stats.ordersPreparing,
-      label: 'Orders Preparing',
-      meta: stats.ordersPreparing > 0 ? 'In the kitchen now' : null,
+      label: t('ordersPreparing'),
       color: stats.ordersPreparing > 0 ? 'warning' : 'success',
     },
     {
       icon: Users,
       value: stats.staffCount,
-      label: 'Staff Members',
+      label: t('staffMembers'),
       color: 'neutral',
     },
   ]
@@ -202,9 +203,9 @@ export default function AdminDashboard() {
   return (
     <div>
       <div style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{greeting()}, {displayName}</h2>
+        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{t(greetingKey())}, {displayName}</h2>
         <p style={{ color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
-          Here's what's happening{currentLocation ? ` at ${currentLocation.name}` : ''}.
+          {t('heresWhatsHappening')}{currentLocation ? ` ${t('at') || 'at'} ${currentLocation.name}` : ''}.
         </p>
       </div>
 
@@ -224,7 +225,7 @@ export default function AdminDashboard() {
       <div style={styles.panelGrid}>
         <Card>
           <div style={styles.panelHeader}>
-            <h3 style={styles.panelTitle}>Service Requests</h3>
+            <h3 style={styles.panelTitle}>{t('requests')}</h3>
             <a href="/staff" style={styles.panelLink}>
               View all <ArrowRight size={13} />
             </a>
