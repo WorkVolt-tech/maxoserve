@@ -1,5 +1,56 @@
 export const translations = {
   en: {
+    // Admin shell
+    dashboard: 'Dashboard',
+    locations: 'Locations',
+    areas: 'Areas',
+    tables: 'Tables',
+    floorPlan: 'Floor Plan',
+    modifiers: 'Modifiers',
+    staff: 'Staff',
+    assignments: 'Assignments',
+    reservations: 'Reservations',
+    events: 'Events',
+    activityLog: 'Activity Log',
+    requestButtons: 'Request Buttons',
+    liveRequests: 'Live Requests',
+    signOut: 'Sign Out',
+    loading: 'Loading…',
+
+    // Common actions
+    add: 'Add',
+    save: 'Save',
+    delete: 'Delete',
+    cancel: 'Cancel',
+    edit: 'Edit',
+    hide: 'Hide',
+    show: 'Show',
+    confirm: 'Confirm',
+
+    // Dashboard
+    heresWhatsHappening: "Here's what's happening",
+    tablesOccupied: 'Tables Occupied',
+    openRequests: 'Open Requests',
+    avgResponseTime: 'Avg. Response Time',
+    ordersToday: 'Orders Today',
+    ordersPreparing: 'Orders Preparing',
+    staffMembers: 'Staff Members',
+
+    // Staff dashboard (requests)
+    requests: 'Requests',
+    new: 'New',
+    assignedToMe: 'Assigned to Me',
+    inProgress: 'In Progress',
+    all: 'All',
+    accept: 'Accept',
+    decline: 'Decline',
+    onMyWay: 'On My Way',
+    complete: 'Complete',
+    waiting: 'Waiting',
+    enableAlerts: 'Enable Alerts',
+    alertsOn: 'Alerts On',
+    noRequestsHere: 'No requests here',
+    allCaughtUp: "You're all caught up for this filter.",
     // Venue header
     goodMorning: 'Good morning',
     goodAfternoon: 'Good afternoon',
