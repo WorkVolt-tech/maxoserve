@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { SlidersHorizontal, Plus, Trash2, Upload, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 import ModifierImportModal from '../../components/ModifierImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -13,6 +14,7 @@ import LoadingState from '../../components/ui/LoadingState'
 
 export default function AdminModifiers() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const [businessId, setBusinessId] = useState(null)
   const [groups, setGroups] = useState([])
   const [options, setOptions] = useState({})
@@ -28,6 +30,9 @@ export default function AdminModifiers() {
   const [error, setError] = useState('')
 
   useEffect(() => { loadInitial() }, [])
+  useEffect(() => {
+    if (businessId && currentLocationId) loadGroups(businessId)
+  }, [currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
@@ -40,8 +45,9 @@ export default function AdminModifiers() {
   }
 
   async function loadGroups(bizId) {
+    if (!currentLocationId) { setGroups([]); return }
     const { data: groupsData, error: groupsError } = await supabase
-      .from('modifier_groups').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
+      .from('modifier_groups').select('*').eq('business_id', bizId).eq('location_id', currentLocationId).order('display_order', { ascending: true })
     if (groupsError) { setError(groupsError.message); return }
     setGroups(groupsData)
 
@@ -62,7 +68,7 @@ export default function AdminModifiers() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('modifier_groups').insert({
-      business_id: businessId, name: groupName, selection_type: selectionType, is_required: isRequired, display_order: groups.length,
+      business_id: businessId, location_id: currentLocationId, name: groupName, selection_type: selectionType, is_required: isRequired, display_order: groups.length,
     })
     if (insertError) { setError(insertError.message); return }
     setGroupName(''); setSelectionType('single'); setIsRequired(false)
