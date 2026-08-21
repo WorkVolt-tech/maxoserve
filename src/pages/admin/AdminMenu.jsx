@@ -10,15 +10,19 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useToast } from '../../contexts/ToastContext'
 
 export default function AdminMenu() {
   const { user } = useAuth()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => { loadInitial() }, [])
 
@@ -47,18 +51,25 @@ export default function AdminMenu() {
     })
     if (insertError) { setError(insertError.message); return }
     setName('')
+    showToast(`"${name}" category added`)
     loadCategories(businessId)
   }
 
   async function handleToggleActive(category) {
     await supabase.from('menu_categories').update({ is_active: !category.is_active }).eq('id', category.id)
+    showToast(category.is_active ? `"${category.name}" hidden` : `"${category.name}" now visible`)
     loadCategories(businessId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this category? All items inside it will also be deleted.')) return
-    const { error: deleteError } = await supabase.from('menu_categories').delete().eq('id', id)
-    if (deleteError) { setError(`Could not delete category: ${deleteError.message}`); return }
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('menu_categories').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete category: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Category deleted')
     loadCategories(businessId)
   }
 
@@ -109,11 +120,21 @@ export default function AdminMenu() {
                 <Button variant="secondary" size="sm" icon={cat.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(cat)}>
                   {cat.is_active ? 'Hide' : 'Show'}
                 </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(cat.id)}>Delete</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(cat)}>Delete</Button>
               </div>
             </Card>
           ))}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="All items inside this category will also be deleted. This can't be undone."
+          confirmLabel="Delete Category"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
