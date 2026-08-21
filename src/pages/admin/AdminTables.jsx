@@ -13,6 +13,7 @@ import LoadingState from '../../components/ui/LoadingState'
 import StatusBadge from '../../components/ui/StatusBadge'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
@@ -27,6 +28,7 @@ export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { showToast } = useToast()
+  const { t } = useAppLanguage()
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [businessId, setBusinessId] = useState(null)
   const [areas, setAreas] = useState([])
@@ -170,7 +172,7 @@ export default function AdminTables() {
 
   return (
     <div>
-      <PageHeader title="Tables" subtitle="Add and manage individual tables within an area." />
+      <PageHeader title={t('tables')} subtitle="Add and manage individual tables within an area." />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <div style={{ marginBottom: '1rem' }}>
@@ -197,7 +199,7 @@ export default function AdminTables() {
             <select value={shape} onChange={(e) => setShape(e.target.value)} style={{ ...styles.select, flex: '0 1 140px' }}>
               {SHAPES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
             </select>
-            <Button type="submit" icon={Plus}>Add Table</Button>
+            <Button type="submit" icon={Plus}>{t('add')}</Button>
           </form>
         )}
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
@@ -208,28 +210,28 @@ export default function AdminTables() {
           <EmptyState icon={LayoutGrid} title="No tables yet" description="Add your first table to this area." />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            {tables.map((t) => {
-              const hasQr = !!qrTokens[t.id]
+            {tables.map((tbl) => {
+              const hasQr = !!qrTokens[tbl.id]
               return (
-                <Card key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+                <Card key={tbl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <strong>{t.name}</strong>
-                      <StatusBadge status={t.status} />
+                      <strong>{tbl.name}</strong>
+                      <StatusBadge status={tbl.status} />
                     </div>
                     <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                      {t.table_number && <>#{t.table_number} · </>}
-                      {t.capacity && <>seats {t.capacity} · </>}
-                      {t.shape.replace('_', ' ')}
+                      {tbl.table_number && <>#{tbl.table_number} · </>}
+                      {tbl.capacity && <>seats {tbl.capacity} · </>}
+                      {tbl.shape.replace('_', ' ')}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     {hasQr ? (
-                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => setQrModalTable(t)}>View QR</Button>
+                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => setQrModalTable(tbl)}>View QR</Button>
                     ) : (
-                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => handleGenerateQr(t)}>Generate QR</Button>
+                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => handleGenerateQr(tbl)}>Generate QR</Button>
                     )}
-                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(t)}>Delete</Button>
+                    <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(tbl)}>{t('delete')}</Button>
                   </div>
                 </Card>
               )
