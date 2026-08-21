@@ -27,7 +27,7 @@ export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { showToast } = useToast()
-  const [deleteTarget, setDeleteTarget] = useState(null))
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [businessId, setBusinessId] = useState(null)
   const [areas, setAreas] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState('')
