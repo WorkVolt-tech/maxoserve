@@ -3,21 +3,12 @@ import { useParams } from 'react-router-dom'
 import {
   Bell, Wine, IceCreamCone, GlassWater, Receipt, Users,
   AlertTriangle, UtensilsCrossed, ShoppingBag, Check, Clock,
-  Plus, Minus, X, ChevronRight,
+  Plus, Minus, X, ChevronRight, Languages,
 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
-
-const STATUS_LABELS = {
-  pending: 'Request sent',
-  accepted: 'Accepted',
-  on_the_way: 'On the way',
-  completed: 'Completed',
-  rejected: 'Unable to assist',
-  cancelled: 'Cancelled',
-}
+import { LanguageProvider, useLanguage } from '../../contexts/LanguageContext'
 
 const ORDER_STEPS = ['submitted', 'accepted', 'preparing', 'ready', 'delivered']
-const ORDER_STEP_LABELS = { submitted: 'Submitted', accepted: 'Accepted', preparing: 'Preparing', ready: 'Ready', delivered: 'Delivered' }
 
 function iconForLabel(label = '') {
   const l = label.toLowerCase()
@@ -30,15 +21,36 @@ function iconForLabel(label = '') {
   return Bell
 }
 
-function greeting() {
+function statusKey(status) {
+  const map = {
+    pending: 'requestSent',
+    accepted: 'accepted',
+    on_the_way: 'onTheWay',
+    completed: 'completed',
+    rejected: 'unableToAssist',
+    cancelled: 'cancelled',
+  }
+  return map[status] || status
+}
+
+function greetingKey() {
   const h = new Date().getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
+  if (h < 12) return 'goodMorning'
+  if (h < 18) return 'goodAfternoon'
+  return 'goodEvening'
 }
 
 export default function TablePage() {
+  return (
+    <LanguageProvider defaultLang="en">
+      <TablePageInner />
+    </LanguageProvider>
+  )
+}
+
+function TablePageInner() {
   const { token } = useParams()
+  const { t, lang, setLang } = useLanguage()
   const [status, setStatus] = useState('loading')
   const [business, setBusiness] = useState(null)
   const [table, setTable] = useState(null)
@@ -208,13 +220,13 @@ export default function TablePage() {
 
   async function handleRequest(type) {
     setRequestError('')
-    if (activeRequestForType(type.id)) { setRequestError('You already have an active request for this.'); return }
+    if (activeRequestForType(type.id)) { setRequestError(t('alreadyActiveRequest')); return }
     setSendingTypeId(type.id)
     const { error: insertError } = await supabase.from('service_requests').insert({
       business_id: session.business_id, table_id: session.table_id, session_id: session.id, request_type_id: type.id,
     })
     setSendingTypeId(null)
-    if (insertError) { setRequestError('You already have an active request for this.'); return }
+    if (insertError) { setRequestError(t('alreadyActiveRequest')); return }
     loadMyRequests(session.id)
   }
 
@@ -291,7 +303,7 @@ export default function TablePage() {
     if (cart.length === 0) return
 
     if (cartTotal >= 100) {
-      const confirmed = window.confirm(`Your order total is $${cartTotal.toFixed(2)}. Confirm order?`)
+      const confirmed = window.confirm(`${t('confirmOrderPrefix')} $${cartTotal.toFixed(2)}${t('confirmOrderSuffix')}`)
       if (!confirmed) return
     }
 
@@ -335,8 +347,8 @@ export default function TablePage() {
       <div style={styles.page}>
         <div style={styles.messageCard}>
           <AlertTriangle size={28} color="var(--color-warning)" />
-          <h2 style={{ margin: '0.75rem 0 0.3rem' }}>This QR code is no longer active</h2>
-          <p style={{ color: '#666', margin: 0 }}>Please ask a staff member for a new code, or check with the venue.</p>
+          <h2 style={{ margin: '0.75rem 0 0.3rem' }}>{t('qrInactiveTitle')}</h2>
+          <p style={{ color: '#666', margin: 0 }}>{t('qrInactiveBody')}</p>
         </div>
       </div>
     )
@@ -346,7 +358,7 @@ export default function TablePage() {
     return (
       <div style={styles.page}>
         <div style={styles.messageCard}>
-          <h2 style={{ margin: '0 0 0.3rem' }}>Something went wrong</h2>
+          <h2 style={{ margin: '0 0 0.3rem' }}>{t('somethingWrong')}</h2>
           <p style={{ color: '#666', margin: 0 }}>{errorMessage}</p>
         </div>
       </div>
@@ -359,14 +371,17 @@ export default function TablePage() {
   return (
     <div style={styles.page}>
       <div style={styles.venueHeader}>
+        <button onClick={() => setLang(lang === 'en' ? 'fr' : 'en')} style={styles.langSwitcher}>
+          <Languages size={13} /> {lang === 'en' ? 'FR' : 'EN'}
+        </button>
         {business?.logo_url && <img src={business.logo_url} alt={business.name} style={styles.logo} />}
-        <h1 style={styles.venueName}>{business?.name || 'Welcome'}</h1>
+        <h1 style={styles.venueName}>{business?.name || t('welcome')}</h1>
         <div style={styles.tableInfoRow}>
           {area && <span>{area.name}</span>}
           {area && <span style={styles.dot}>•</span>}
           <span style={styles.tableBadge}>{table?.name}</span>
         </div>
-        <p style={styles.greetingText}>{greeting()} 👋 How can we help?</p>
+        <p style={styles.greetingText}>{t(greetingKey())} 👋 {t('howCanWeHelp')}</p>
       </div>
 
       <div style={styles.content}>
@@ -383,7 +398,7 @@ export default function TablePage() {
                         <Icon size={17} color="var(--color-primary)" />
                         <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{type?.label || 'Request'}</span>
                       </div>
-                      <span style={styles.activePill}><Clock size={12} /> {STATUS_LABELS[r.status]}</span>
+                      <span style={styles.activePill}><Clock size={12} /> {t(statusKey(r.status))}</span>
                     </div>
                   )
                 })}
@@ -393,7 +408,7 @@ export default function TablePage() {
             {requestError && <p style={styles.errorText}>{requestError}</p>}
 
             <div style={styles.serviceGrid}>
-              {requestTypes.length === 0 && <p style={{ color: '#888', gridColumn: '1 / -1', textAlign: 'center' }}>No service buttons have been set up yet.</p>}
+              {requestTypes.length === 0 && <p style={{ color: '#888', gridColumn: '1 / -1', textAlign: 'center' }}>{t('noServiceButtons')}</p>}
               {requestTypes.map((type) => {
                 const isActive = !!activeRequestForType(type.id)
                 const Icon = iconForLabel(type.label)
@@ -407,7 +422,7 @@ export default function TablePage() {
                   >
                     {isActive ? <Check size={24} color="var(--color-success)" /> : <Icon size={24} color="var(--color-primary)" />}
                     <span style={styles.serviceCardLabel}>{isSending ? '…' : type.label}</span>
-                    {isActive && <span style={styles.serviceCardStatus}>{STATUS_LABELS[activeRequestForType(type.id).status]}</span>}
+                    {isActive && <span style={styles.serviceCardStatus}>{t(statusKey(activeRequestForType(type.id).status))}</span>}
                   </button>
                 )
               })}
@@ -418,7 +433,7 @@ export default function TablePage() {
         {activeTab === 'menu' && (
           <div>
             {categories.length === 0 ? (
-              <p style={{ color: '#888', textAlign: 'center' }}>The menu isn't available yet.</p>
+              <p style={{ color: '#888', textAlign: 'center' }}>{t('menuNotAvailable')}</p>
             ) : (
               <>
                 <div style={styles.categoryTabs}>
@@ -435,7 +450,7 @@ export default function TablePage() {
 
                 <div style={styles.menuItemList}>
                   {(menuItems[activeCategoryId] || []).length === 0 && (
-                    <p style={{ color: '#aaa', textAlign: 'center', fontSize: '0.9rem' }}>No items in this category.</p>
+                    <p style={{ color: '#aaa', textAlign: 'center', fontSize: '0.9rem' }}>{t('noItemsInCategory')}</p>
                   )}
                   {(menuItems[activeCategoryId] || []).map((item) => (
                     <button key={item.id} onClick={() => openItemConfig(item)} style={styles.menuItemCard}>
@@ -458,19 +473,19 @@ export default function TablePage() {
         {activeTab === 'orders' && (
           <div>
             {myOrders.length === 0 ? (
-              <p style={{ color: '#888', textAlign: 'center', padding: '2rem 0' }}>No orders yet this visit.</p>
+              <p style={{ color: '#888', textAlign: 'center', padding: '2rem 0' }}>{t('noOrdersYet')}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 {myOrders.map((o) => (
                   <div key={o.id} style={styles.orderCard}>
                     <div style={styles.orderCardHeader}>
                       <span style={{ fontWeight: 700 }}>Order · ${Number(o.total).toFixed(2)}</span>
-                      <span style={{ fontSize: '0.8rem', color: '#888' }}>{o.items.length} item(s)</span>
+                      <span style={{ fontSize: '0.8rem', color: '#888' }}>{o.items.length} {t('items')}</span>
                     </div>
 
                     {['cancelled', 'rejected'].includes(o.status) ? (
                       <div style={{ color: 'var(--color-danger)', fontWeight: 600, fontSize: '0.88rem', marginTop: '0.5rem' }}>
-                        {o.status === 'cancelled' ? 'Cancelled' : 'Rejected'}
+                        {o.status === 'cancelled' ? t('cancelled') : t('rejected')}
                       </div>
                     ) : (
                       <div style={styles.stepper}>
@@ -488,7 +503,7 @@ export default function TablePage() {
                                 {isDone && <Check size={11} color="#fff" />}
                               </div>
                               <span style={{ ...styles.stepperLabel, color: isDone || isCurrent ? '#14161a' : '#aaa' }}>
-                                {ORDER_STEP_LABELS[step]}
+                                {t(step)}
                               </span>
                               {i < ORDER_STEPS.length - 1 && (
                                 <div style={{ ...styles.stepperLine, background: isDone ? 'var(--color-primary)' : '#e5e7eb' }} />
@@ -508,7 +523,7 @@ export default function TablePage() {
 
       {cart.length > 0 && !cartOpen && activeTab === 'menu' && (
         <button onClick={() => setCartOpen(true)} style={styles.floatingCartButton}>
-          <ShoppingBag size={16} /> View Cart · {cart.length} · ${cartTotal.toFixed(2)}
+          <ShoppingBag size={16} /> {t('viewCart')} · {cart.length} · ${cartTotal.toFixed(2)}
         </button>
       )}
 
@@ -525,7 +540,7 @@ export default function TablePage() {
             {configGroups.map((group) => (
               <div key={group.id} style={{ marginBottom: '1rem' }}>
                 <div style={styles.groupLabel}>
-                  {group.name}{group.is_required && <span style={{ color: '#dc2626' }}> (required)</span>}
+                  {group.name}{group.is_required && <span style={{ color: '#dc2626' }}> ({t('required')})</span>}
                 </div>
                 <div style={styles.optionChoices}>
                   {group.options.map((opt) => {
@@ -545,7 +560,7 @@ export default function TablePage() {
             ))}
 
             <textarea
-              placeholder="Special instructions (optional)"
+              placeholder={t('specialInstructions')}
               value={configNotes}
               onChange={(e) => setConfigNotes(e.target.value)}
               style={styles.notesInput}
@@ -558,7 +573,7 @@ export default function TablePage() {
               <span style={styles.qtyValue}>{configQty}</span>
               <button onClick={() => setConfigQty((q) => q + 1)} style={styles.qtyButton}><Plus size={15} /></button>
               <button onClick={handleAddToCart} style={styles.addToCartButton}>
-                Add to Order · ${configLineTotal().toFixed(2)}
+                {t('addToOrder')} · ${configLineTotal().toFixed(2)}
               </button>
             </div>
           </div>
@@ -570,12 +585,12 @@ export default function TablePage() {
           <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHandle} />
             <div style={styles.sheetHeader}>
-              <h3 style={{ margin: 0 }}>Your Order</h3>
+              <h3 style={{ margin: 0 }}>{t('yourOrder')}</h3>
               <button onClick={() => setCartOpen(false)} style={styles.sheetClose}><X size={18} /></button>
             </div>
 
             {cart.length === 0 ? (
-              <p style={{ color: '#888' }}>Your cart is empty.</p>
+              <p style={{ color: '#888' }}>{t('cartEmpty')}</p>
             ) : (
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
@@ -594,15 +609,15 @@ export default function TablePage() {
                 </div>
 
                 <div style={styles.cartTotals}>
-                  <div style={styles.cartTotalRow}><span>Subtotal</span><span>${cartSubtotal.toFixed(2)}</span></div>
-                  <div style={styles.cartTotalRow}><span>Tax</span><span>${cartTax.toFixed(2)}</span></div>
-                  <div style={{ ...styles.cartTotalRow, fontWeight: 700 }}><span>Total</span><span>${cartTotal.toFixed(2)}</span></div>
+                  <div style={styles.cartTotalRow}><span>{t('subtotal')}</span><span>${cartSubtotal.toFixed(2)}</span></div>
+                  <div style={styles.cartTotalRow}><span>{t('tax')}</span><span>${cartTax.toFixed(2)}</span></div>
+                  <div style={{ ...styles.cartTotalRow, fontWeight: 700 }}><span>{t('total')}</span><span>${cartTotal.toFixed(2)}</span></div>
                 </div>
 
                 {orderError && <p style={styles.errorText}>{orderError}</p>}
 
                 <button onClick={handlePlaceOrder} disabled={placingOrder} style={styles.placeOrderButton}>
-                  {placingOrder ? 'Placing Order…' : 'Place Order'}
+                  {placingOrder ? t('placingOrder') : t('placeOrder')}
                 </button>
               </>
             )}
@@ -612,13 +627,13 @@ export default function TablePage() {
 
       <div style={styles.bottomNav}>
         <button onClick={() => setActiveTab('service')} style={{ ...styles.navItem, ...(activeTab === 'service' ? styles.navItemActive : {}) }}>
-          <Bell size={20} /><span>Service</span>
+          <Bell size={20} /><span>{t('service')}</span>
         </button>
         <button onClick={() => setActiveTab('menu')} style={{ ...styles.navItem, ...(activeTab === 'menu' ? styles.navItemActive : {}) }}>
-          <UtensilsCrossed size={20} /><span>Menu</span>
+          <UtensilsCrossed size={20} /><span>{t('menu')}</span>
         </button>
         <button onClick={() => setActiveTab('orders')} style={{ ...styles.navItem, ...(activeTab === 'orders' ? styles.navItemActive : {}) }}>
-          <ShoppingBag size={20} /><span>Orders</span>
+          <ShoppingBag size={20} /><span>{t('orders')}</span>
         </button>
       </div>
     </div>
@@ -630,7 +645,8 @@ const styles = {
   loadingWrap: { display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' },
   spinner: { width: '28px', height: '28px', borderRadius: '50%', border: '3px solid #e5e7eb', borderTopColor: '#3b6fe0', animation: 'msSpin 0.7s linear infinite', display: 'inline-block' },
   messageCard: { margin: '4rem 1.25rem', background: '#fff', borderRadius: '16px', padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' },
-  venueHeader: { background: 'linear-gradient(180deg, #14161f 0%, #1b2440 100%)', color: '#fff', padding: '2rem 1.5rem 2.5rem', textAlign: 'center', borderRadius: '0 0 28px 28px' },
+  venueHeader: { position: 'relative', background: 'linear-gradient(180deg, #14161f 0%, #1b2440 100%)', color: '#fff', padding: '2rem 1.5rem 2.5rem', textAlign: 'center', borderRadius: '0 0 28px 28px' },
+  langSwitcher: { position: 'absolute', top: '1rem', right: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '999px', padding: '0.35rem 0.7rem', color: '#fff', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' },
   logo: { width: '64px', height: '64px', marginBottom: '0.5rem', borderRadius: '12px' },
   venueName: { fontSize: '1.4rem', margin: '0 0 0.4rem', letterSpacing: '-0.01em' },
   tableInfoRow: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginBottom: '0.75rem' },
