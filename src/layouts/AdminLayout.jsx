@@ -8,50 +8,51 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
+import { useAppLanguage } from '../contexts/AppLanguageContext'
 import { canAccess } from '../lib/permissions'
 import logo from '../assets/maxoserve-logo.png'
 
 const NAV_GROUPS = [
   {
     label: null,
-    items: [{ to: '/admin', label: 'Dashboard', end: true, section: 'dashboard', icon: LayoutDashboard }],
+    items: [{ to: '/admin', labelKey: 'dashboard', end: true, section: 'dashboard', icon: LayoutDashboard }],
   },
   {
-    label: 'Operations',
+    labelKey: 'operations',
     items: [
-      { to: '/admin/floor-plan', label: 'Floor Plan', section: 'floorPlan', icon: PanelsTopLeft },
-      { to: '/admin/tables', label: 'Tables', section: 'tables', icon: LayoutGrid },
-      { to: '/admin/orders', label: 'Orders', section: 'orders', icon: ShoppingBag },
+      { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
+      { to: '/admin/tables', labelKey: 'tables', section: 'tables', icon: LayoutGrid },
+      { to: '/admin/orders', labelKey: 'orders', section: 'orders', icon: ShoppingBag },
     ],
   },
   {
-    label: 'Menu',
+    labelKey: 'menu',
     items: [
-      { to: '/admin/menu', label: 'Menu', section: 'menu', icon: UtensilsCrossed },
-      { to: '/admin/modifiers', label: 'Modifiers', section: 'modifiers', icon: SlidersHorizontal },
+      { to: '/admin/menu', labelKey: 'menu', section: 'menu', icon: UtensilsCrossed },
+      { to: '/admin/modifiers', labelKey: 'modifiers', section: 'modifiers', icon: SlidersHorizontal },
     ],
   },
   {
-    label: 'People',
+    labelKey: 'people',
     items: [
-      { to: '/admin/staff', label: 'Staff', section: 'staff', icon: Users },
-      { to: '/admin/assignments', label: 'Assignments', section: 'assignments', icon: UserRoundCog },
+      { to: '/admin/staff', labelKey: 'staff', section: 'staff', icon: Users },
+      { to: '/admin/assignments', labelKey: 'assignments', section: 'assignments', icon: UserRoundCog },
     ],
   },
   {
-    label: 'Venue',
+    labelKey: 'venue',
     items: [
-      { to: '/admin/locations', label: 'Locations', section: 'locations', icon: MapPin },
-      { to: '/admin/areas', label: 'Areas', section: 'areas', icon: Map },
-      { to: '/admin/reservations', label: 'Reservations', section: 'reservations', icon: CalendarCheck },
-      { to: '/admin/events', label: 'Events', section: 'events', icon: PartyPopper },
+      { to: '/admin/locations', labelKey: 'locations', section: 'locations', icon: MapPin },
+      { to: '/admin/areas', labelKey: 'areas', section: 'areas', icon: Map },
+      { to: '/admin/reservations', labelKey: 'reservations', section: 'reservations', icon: CalendarCheck },
+      { to: '/admin/events', labelKey: 'events', section: 'events', icon: PartyPopper },
     ],
   },
   {
-    label: 'System',
+    labelKey: 'system',
     items: [
-      { to: '/admin/request-types', label: 'Request Buttons', section: 'requestTypes', icon: Bell },
-      { to: '/admin/activity-log', label: 'Activity Log', section: 'activityLogs', icon: ScrollText },
+      { to: '/admin/request-types', labelKey: 'requestButtons', section: 'requestTypes', icon: Bell },
+      { to: '/admin/activity-log', labelKey: 'activityLog', section: 'activityLogs', icon: ScrollText },
     ],
   },
 ]
@@ -62,8 +63,17 @@ function initials(name) {
   return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
+const GROUP_LABEL_KEYS = {
+  operations: { en: 'Operations', fr: 'Opérations' },
+  menu: { en: 'Menu', fr: 'Menu' },
+  people: { en: 'People', fr: 'Personnel' },
+  venue: { en: 'Venue', fr: 'Établissement' },
+  system: { en: 'System', fr: 'Système' },
+}
+
 function SidebarContent({ visibleGroups, onNavigate }) {
   const { signOut, role } = useAuth()
+  const { t, lang } = useAppLanguage()
 
   return (
     <>
@@ -74,7 +84,9 @@ function SidebarContent({ visibleGroups, onNavigate }) {
       <nav style={styles.nav}>
         {visibleGroups.map((group, gi) => (
           <div key={gi} style={styles.navGroup}>
-            {group.label && <div style={styles.navGroupLabel}>{group.label}</div>}
+            {group.labelKey && (
+              <div style={styles.navGroupLabel}>{GROUP_LABEL_KEYS[group.labelKey]?.[lang] || group.labelKey}</div>
+            )}
             {group.items.map((item) => (
               <NavLink
                 key={item.to}
@@ -87,7 +99,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
                 })}
               >
                 <item.icon size={17} strokeWidth={2} />
-                {item.label}
+                {t(item.labelKey)}
               </NavLink>
             ))}
           </div>
@@ -96,10 +108,10 @@ function SidebarContent({ visibleGroups, onNavigate }) {
       <div style={styles.footer}>
         {role && <div style={styles.roleBadge}>{role}</div>}
         <a href="/staff" style={styles.staffLink}>
-          <Bell size={15} /> Live Requests
+          <Bell size={15} /> {t('liveRequests')}
         </a>
         <button onClick={signOut} style={styles.signOut}>
-          <LogOut size={15} /> Sign Out
+          <LogOut size={15} /> {t('signOut')}
         </button>
       </div>
     </>
@@ -109,6 +121,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
 function TopBar({ onOpenDrawer }) {
   const { user, signOut } = useAuth()
   const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
+  const { lang, setLang, t } = useAppLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const routerLocation = useRouterLocation()
   const hideLocationSwitcher = routerLocation.pathname === '/admin/locations' || routerLocation.pathname === '/admin/staff'
@@ -136,7 +149,14 @@ function TopBar({ onOpenDrawer }) {
         </div>
       )}
 
-      <div style={{ flex: 1 }} />
+     <div style={{ flex: 1 }} />
+
+      <button
+        onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
+        style={styles.langToggle}
+      >
+        {lang === 'en' ? 'FR' : 'EN'}
+      </button>
 
       <div style={{ position: 'relative' }}>
         <button style={styles.userButton} onClick={() => setMenuOpen((v) => !v)}>
@@ -150,7 +170,7 @@ function TopBar({ onOpenDrawer }) {
             <div style={styles.userDropdown}>
               <div style={styles.userDropdownName}>{displayName}</div>
               <button onClick={signOut} style={styles.userDropdownItem}>
-                <LogOut size={15} /> Sign Out
+                <LogOut size={15} /> {t('signOut')}
               </button>
             </div>
           </>
@@ -361,6 +381,17 @@ const styles = {
     fontWeight: 600,
     outline: 'none',
     cursor: 'pointer',
+  },
+  langToggle: {
+    padding: '0.4rem 0.7rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-text)',
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    marginRight: '0.75rem',
   },
   userButton: {
     display: 'flex',
