@@ -51,6 +51,7 @@ export const translations = {
     alertsOn: 'Alerts On',
     noRequestsHere: 'No requests here',
     allCaughtUp: "You're all caught up for this filter.",
+    at: 'at',
     // Venue header
     goodMorning: 'Good morning',
     goodAfternoon: 'Good afternoon',
@@ -154,6 +155,7 @@ export const translations = {
     alertsOn: 'Alertes activées',
     noRequestsHere: 'Aucune demande ici',
     allCaughtUp: 'Vous êtes à jour pour ce filtre.',
+    at: 'à',
     goodMorning: 'Bonjour',
     goodAfternoon: 'Bon après-midi',
     goodEvening: 'Bonsoir',
