@@ -3,6 +3,7 @@ import { PartyPopper, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -10,7 +11,6 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminEvents() {
   const { user } = useAuth()
@@ -92,11 +92,11 @@ export default function AdminEvents() {
             <Input placeholder="Event name (e.g. Smith Wedding)" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
-            <label style={styles.dateLabel}>Starts</label>
+            <label style={styles.dateLabel}>{t('startsLabel')}</label>
             <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} required />
           </div>
           <div>
-            <label style={styles.dateLabel}>Ends</label>
+            <label style={styles.dateLabel}>{t('endsLabel')}</label>
             <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required />
           </div>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
@@ -105,7 +105,7 @@ export default function AdminEvents() {
       </Card>
 
       {visibleEvents.length === 0 ? (
-        <EmptyState icon={PartyPopper} title="No events yet" description="Create your first event above." />
+        <EmptyState icon={PartyPopper} title={t('noEventsYet')} description={t('createFirstEvent')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {visibleEvents.map((event) => {
@@ -121,7 +121,7 @@ export default function AdminEvents() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button variant="secondary" size="sm" onClick={() => handleToggleActive(event)}>
-                    {event.is_active ? t('hide') : t('show')}
+                    {event.is_active ? t('disable') : t('enable')}
                   </Button>
                   <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(event.id)}>{t('delete')}</Button>
                 </div>
