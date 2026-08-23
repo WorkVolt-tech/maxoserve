@@ -170,7 +170,7 @@ export default function AdminModifiers() {
                   <strong>{group.name}</strong>
                   {group.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {group.name_fr}</span>}
                   <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                    {' '}· {group.selection_type === 'single' ? 'pick one' : 'pick multiple'}{group.is_required ? ' · required' : ''}
+                    {' '}· {group.selection_type === 'single' ? t('singleChoice') : t('multipleChoices')}{group.is_required ? ` · ${t('requiredCheckbox')}` : ''}
                   </span>
                 </div>
                 <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDeleteGroup(group.id)}>{t('delete')}</Button>
