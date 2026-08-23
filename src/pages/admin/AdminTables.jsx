@@ -200,7 +200,7 @@ export default function AdminTables() {
         ) : (
           <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div style={{ flex: '1 1 180px' }}>
-              <Input placeholder="Table name (e.g. VIP 12)" value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input placeholder={t('phTableName')} value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div style={{ flex: '0 1 120px' }}>
               <Input placeholder={t('tableNumberOptional')} value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} />
