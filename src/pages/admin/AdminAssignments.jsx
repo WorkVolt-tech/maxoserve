@@ -8,10 +8,12 @@ import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminAssignments() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [members, setMembers] = useState([])
   const [profiles, setProfiles] = useState({})
@@ -142,12 +144,12 @@ export default function AdminAssignments() {
     return false
   })
 
-  if (loading) return <LoadingState label="Loading assignments…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
       <PageHeader
-        title="Staff Assignments"
+        title={t('assignments')}
         subtitle="Assign staff to a specific table, a whole area, or an entire location. Remove an assignment to unassign."
       />
 
@@ -186,7 +188,7 @@ export default function AdminAssignments() {
             </select>
           )}
 
-          <Button type="submit" icon={Plus}>Assign</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -201,7 +203,7 @@ export default function AdminAssignments() {
                 <strong>{profiles[a.user_id]?.full_name || profiles[a.user_id]?.email || 'Unknown'}</strong>
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · {describeAssignment(a)}</span>
               </div>
-              <Button variant="danger" size="sm" icon={X} onClick={() => handleRemove(a.id)}>Unassign</Button>
+              <Button variant="danger" size="sm" icon={X} onClick={() => handleRemove(a.id)}>{t('delete')}</Button>
             </Card>
           ))}
         </div>
