@@ -63,7 +63,7 @@ export default function AdminLocations() {
     <div>
       <PageHeader
         title={t('locations')}
-        subtitle='A location is a physical address (e.g. "Club Max — Montreal"). Add each address your business operates at.'
+        subtitle={t('subtitleLocations')}
       />
 
       <Card style={{ marginBottom: '1.5rem' }}>
