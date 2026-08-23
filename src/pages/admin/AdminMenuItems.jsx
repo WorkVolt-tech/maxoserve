@@ -121,7 +121,7 @@ export default function AdminMenuItems() {
     <div>
       <a href="/admin/menu" style={styles.backLink}><ArrowLeft size={14} /> Back to Categories</a>
       <h2 style={{ marginTop: '0.75rem' }}>{category?.name || 'Items'}</h2>
-      <p style={{ color: 'var(--color-text-muted)' }}>Add items to this category.</p>
+      <p style={{ color: 'var(--color-text-muted)' }}>{t('subtitleMenuItems')}</p>
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
