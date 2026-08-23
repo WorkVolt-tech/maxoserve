@@ -131,7 +131,7 @@ export default function AdminFloorPlan() {
   return (
     <div>
       <h2>{t('floorPlan')}</h2>
-      <p style={{ color: '#666' }}>Drag tables to arrange your floor plan. Click Save when done.</p>
+      <p style={{ color: '#666' }}>{t('subtitleFloorPlan')}</p>
 
       <div style={styles.pickerRow}>
         <div>
