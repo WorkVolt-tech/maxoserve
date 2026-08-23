@@ -119,7 +119,7 @@ export default function AdminMenuItems() {
 
   return (
     <div>
-      <a href="/admin/menu" style={styles.backLink}><ArrowLeft size={14} /> Back to Categories</a>
+      <a href="/admin/menu" style={styles.backLink}><ArrowLeft size={14} /> {t('backToCategories')}</a>
       <h2 style={{ marginTop: '0.75rem' }}>{category?.name || 'Items'}</h2>
       <p style={{ color: 'var(--color-text-muted)' }}>{t('subtitleMenuItems')}</p>
 
@@ -145,7 +145,7 @@ export default function AdminMenuItems() {
       </Card>
 
       {items.length === 0 ? (
-        <EmptyState title="No items yet" description="Add your first item to this category above." />
+        <EmptyState title={t('noItemsYetTitle')} description={t('addFirstItem')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {items.map((item) => {
@@ -183,11 +183,11 @@ export default function AdminMenuItems() {
                   <div style={{ padding: '0 1.25rem 1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.75rem' }}>
                     {allModifierGroups.length === 0 ? (
                       <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: 0 }}>
-                        No modifier groups exist yet. Create some on the Modifiers page first.
+                        {t('noModifierGroupsExist')}
                       </p>
                     ) : (
                       <>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>Attach modifier groups to this item:</p>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>{t('attachModifierGroups')}</p>
                         {allModifierGroups.map((group) => (
                           <label key={group.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', padding: '0.2rem 0' }}>
                             <input
