@@ -61,7 +61,7 @@ export default function AdminActivityLog() {
       <PageHeader title={t('activityLog')} subtitle={t('subtitleActivityLog')} />
 
       {logs.length === 0 ? (
-        <EmptyState icon={ScrollText} title="No activity yet" description="Actions taken across your business will show up here." />
+        <EmptyState icon={ScrollText} title={t('noActivityYet')} description={t('activityWillShow')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
           {logs.map((log) => {
