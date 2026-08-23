@@ -10,10 +10,12 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminEvents() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [events, setEvents] = useState([])
 
@@ -76,13 +78,13 @@ export default function AdminEvents() {
     return { label: 'ended', color: 'neutral' }
   }
 
-  if (loading) return <LoadingState label="Loading events…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   const visibleEvents = events.filter((e) => e.location_id === currentLocationId)
 
   return (
     <div>
-      <PageHeader title="Events" subtitle="Create temporary events like weddings, birthdays, or private parties. Reservations can be linked to an event." />
+      <PageHeader title={t('events')} subtitle="Create temporary events like weddings, birthdays, or private parties. Reservations can be linked to an event." />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -97,7 +99,7 @@ export default function AdminEvents() {
             <label style={styles.dateLabel}>Ends</label>
             <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} required />
           </div>
-          <Button type="submit" icon={Plus}>Create Event</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -119,9 +121,9 @@ export default function AdminEvents() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button variant="secondary" size="sm" onClick={() => handleToggleActive(event)}>
-                    {event.is_active ? 'Disable' : 'Enable'}
+                    {event.is_active ? t('hide') : t('show')}
                   </Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(event.id)}>Delete</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(event.id)}>{t('delete')}</Button>
                 </div>
               </Card>
             )
