@@ -3,6 +3,7 @@ import { CalendarCheck, Plus, Trash2, ShoppingBag } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -10,7 +11,6 @@ import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
 import StatusBadge from '../../components/ui/StatusBadge'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show']
 
@@ -230,17 +230,17 @@ export default function AdminReservations() {
             <Input type="datetime-local" value={reservationTime} onChange={(e) => setReservationTime(e.target.value)} required />
           </div>
           <select value={eventId} onChange={(e) => setEventId(e.target.value)} style={styles.select}>
-            <option value="">No event (regular reservation)</option>
+            <option value="">{t('noEventRegular')}</option>
             {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
-          <textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} style={styles.textarea} />
+          <textarea placeholder={t('notesOptional')} value={notes} onChange={(e) => setNotes(e.target.value)} style={styles.textarea} />
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
 
       {visibleReservations.length === 0 ? (
-        <EmptyState icon={CalendarCheck} title="No reservations here" description="Create a reservation above to get started." />
+        <EmptyState icon={CalendarCheck} title={t('noReservationsHere')} description="" />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {visibleReservations.map((r) => {
@@ -271,14 +271,14 @@ export default function AdminReservations() {
                     {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
                   </select>
                   <select value={r.table_id || ''} onChange={(e) => handleAssignTable(r, e.target.value)} style={styles.smallSelect}>
-                    <option value="">No table assigned</option>
+                    <option value="">{t('noTableAssigned')}</option>
                     {tablesForLocation.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                   </select>
                   <Button
                     variant="secondary" size="sm" icon={ShoppingBag}
                     onClick={() => { setExpandedReservationId(isExpanded ? null : r.id); setPreOrderCart([]) }}
                   >
-                    {isExpanded ? 'Close' : existingOrder ? 'Add More' : 'Build Pre-Order'}
+                    {isExpanded ? t('cancel') : existingOrder ? t('addMore') : t('buildPreOrder')}
                   </Button>
                   <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(r.id)}>{t('delete')}</Button>
                 </div>
@@ -297,7 +297,7 @@ export default function AdminReservations() {
                                 onChange={(e) => setItemQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))}
                                 style={styles.qtyInput}
                               />
-                              <Button variant="secondary" size="sm" onClick={() => addToPreOrderCart(item, itemQuantities[item.id] ?? 1)}>+ Add</Button>
+                              <Button variant="secondary" size="sm" onClick={() => addToPreOrderCart(item, itemQuantities[item.id] ?? 1)}>+ {t('add')}</Button>
                             </div>
                           </div>
                         ))}
@@ -317,7 +317,7 @@ export default function AdminReservations() {
                           </div>
                         ))}
                         <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '0.5rem' }}>Total: ${preOrderTotal().toFixed(2)}</div>
-                        <Button onClick={() => handleSavePreOrder(r)} style={{ marginTop: '0.5rem', width: '100%' }}>Save Pre-Order</Button>
+                        <Button onClick={() => handleSavePreOrder(r)} style={{ marginTop: '0.5rem', width: '100%' }}>{t('save')}</Button>
                       </div>
                     )}
                   </div>
