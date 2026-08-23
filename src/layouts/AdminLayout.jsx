@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
 import { useAppLanguage } from '../contexts/AppLanguageContext'
 import { canAccess } from '../lib/permissions'
+import { roleLabel } from '../lib/roleLabels'
 import logo from '../assets/maxoserve-logo.png'
 
 const NAV_GROUPS = [
@@ -57,18 +58,18 @@ const NAV_GROUPS = [
   },
 ]
 
-function initials(name) {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-}
-
 const GROUP_LABEL_KEYS = {
   operations: { en: 'Operations', fr: 'Opérations' },
   menu: { en: 'Menu', fr: 'Menu' },
   people: { en: 'People', fr: 'Personnel' },
   venue: { en: 'Venue', fr: 'Établissement' },
   system: { en: 'System', fr: 'Système' },
+}
+
+function initials(name) {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  return parts.length === 1 ? parts[0][0].toUpperCase() : (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
 
 function SidebarContent({ visibleGroups, onNavigate }) {
@@ -106,7 +107,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
         ))}
       </nav>
       <div style={styles.footer}>
-        {role && <div style={styles.roleBadge}>{role}</div>}
+        {role && <div style={styles.roleBadge}>{roleLabel(role, t)}</div>}
         <a href="/staff" style={styles.staffLink}>
           <Bell size={15} /> {t('liveRequests')}
         </a>
@@ -134,7 +135,7 @@ function TopBar({ onOpenDrawer }) {
         <MenuIcon size={20} />
       </button>
 
-     {!locationsLoading && locations.length > 0 && !hideLocationSwitcher && (
+      {!locationsLoading && locations.length > 0 && !hideLocationSwitcher && (
         <div style={styles.topBarLocation}>
           <MapPin size={15} color="var(--color-text-muted)" />
           <select
@@ -149,7 +150,7 @@ function TopBar({ onOpenDrawer }) {
         </div>
       )}
 
-     <div style={{ flex: 1 }} />
+      <div style={{ flex: 1 }} />
 
       <button
         onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
