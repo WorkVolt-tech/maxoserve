@@ -26,6 +26,7 @@ export const translations = {
     hide: 'Hide',
     show: 'Show',
     confirm: 'Confirm',
+    modifiers: 'Modifiers',
 
     // Dashboard
     heresWhatsHappening: "Here's what's happening",
@@ -154,6 +155,7 @@ export const translations = {
     hide: 'Masquer',
     show: 'Afficher',
     confirm: 'Confirmer',
+    modifiers: 'Modificateurs',
 
     heresWhatsHappening: 'Voici ce qui se passe',
     tablesOccupied: 'Tables occupées',
