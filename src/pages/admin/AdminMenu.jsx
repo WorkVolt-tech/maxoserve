@@ -84,7 +84,7 @@ export default function AdminMenu() {
       <PageHeader
         title={t('menu')}
         subtitle={t('subtitleMenu')}
-        actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
+        actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>{t('importFromFile')}</Button>}
       />
 
       {showImport && (
@@ -110,7 +110,7 @@ export default function AdminMenu() {
       </Card>
 
       {categories.length === 0 ? (
-        <EmptyState icon={UtensilsCrossed} title="No menu categories yet" description="Create your first category to start building your menu." />
+        <EmptyState icon={UtensilsCrossed} title={t('noMenuCategoriesYet')} description={t('createFirstCategory')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {categories.map((cat) => (
