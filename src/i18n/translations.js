@@ -224,6 +224,16 @@ export const translations = {
     flipOrientation: 'Flip Orientation',
     statusLabel: 'Status',
     saving: 'Saving...',
+
+    // Roles
+    roleOwner: 'Owner',
+    roleAdmin: 'Admin',
+    roleManager: 'Manager',
+    roleHostess: 'Hostess',
+    roleServer: 'Server',
+    roleBartender: 'Bartender',
+    roleKitchen: 'Kitchen',
+    roleStaff: 'Staff',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -434,6 +444,15 @@ export const translations = {
     flipOrientation: "Retourner l'orientation",
     statusLabel: 'Statut',
     saving: 'Enregistrement...',
+
+    roleOwner: 'Propriétaire',
+    roleAdmin: 'Administrateur',
+    roleManager: 'Gérant',
+    roleHostess: 'Hôtesse',
+    roleServer: 'Serveur',
+    roleBartender: 'Barman',
+    roleKitchen: 'Cuisine',
+    roleStaff: 'Personnel',
   },
 }
 
