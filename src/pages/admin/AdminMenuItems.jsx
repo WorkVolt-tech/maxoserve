@@ -126,19 +126,19 @@ export default function AdminMenuItems() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Name (English)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phCategoryNameEn')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Name (French, optional)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
+            <Input placeholder={t('phCategoryNameFr')} value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
           </div>
           <div style={{ flex: '0 1 120px' }}>
-            <Input type="number" step="0.01" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} required />
+            <Input type="number" step="0.01" placeholder={t('phItemPrice')} value={price} onChange={(e) => setPrice(e.target.value)} required />
           </div>
           <select value={prepLocation} onChange={(e) => setPrepLocation(e.target.value)} style={styles.select}>
             {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
           </select>
-          <textarea placeholder="Description (English, optional)" value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textarea} />
-          <textarea placeholder="Description (French, optional)" value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} style={styles.textarea} />
+          <textarea placeholder={t('phDescriptionEn')} value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textarea} />
+          <textarea placeholder={t('phDescriptionFr')} value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} style={styles.textarea} />
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
