@@ -83,7 +83,7 @@ export default function AdminMenu() {
     <div>
       <PageHeader
         title={t('menu')}
-        subtitle="Categories organize your menu (e.g. Appetizers, Cocktails, Bottles). Click a category to manage its items."
+        subtitle={t('subtitleMenu')}
         actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
       />
 
