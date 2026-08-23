@@ -97,7 +97,7 @@ export default function AdminRequestTypes() {
 
       {availablePresets.length > 0 && (
         <Card style={{ marginBottom: '1.25rem' }}>
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0 0 0.6rem' }}>Quick add common buttons:</p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: '0 0 0.6rem' }}>{t('quickAddCommon')}</p>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
             {availablePresets.map((p) => (
               <button key={p.label} onClick={() => handleAddPreset(p)} style={styles.presetButton}>+ {p.label}</button>
@@ -123,7 +123,7 @@ export default function AdminRequestTypes() {
       </Card>
 
       {types.length === 0 ? (
-        <EmptyState icon={Bell} title="No request buttons yet" description="Add a preset above or create a custom one." />
+        <EmptyState icon={Bell} title={t('noRequestButtonsYet')} description={t('addPresetOrCustom')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {types.map((rt) => (
@@ -131,8 +131,8 @@ export default function AdminRequestTypes() {
               <div>
                 <strong>{rt.label}</strong>
                 {rt.label_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {rt.label_fr}</span>}
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · routes to {rt.routes_to_role || 'unassigned'}</span>
-                {!rt.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden from customers</Badge>}
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · {t('routesTo')} {rt.routes_to_role || t('unassigned')}</span>
+                {!rt.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>{t('hiddenFromCustomers')}</Badge>}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <Button variant="secondary" size="sm" icon={rt.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(rt)}>
