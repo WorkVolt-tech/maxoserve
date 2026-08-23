@@ -131,7 +131,7 @@ export default function AdminModifiers() {
       <PageHeader
         title={t('modifiers')}
         subtitle={t('subtitleModifiers')}
-        actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
+        actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>{t('importFromFile')}</Button>}
       />
 
       {showImport && (
@@ -147,12 +147,12 @@ export default function AdminModifiers() {
             <Input placeholder="Group name (French, optional)" value={groupNameFr} onChange={(e) => setGroupNameFr(e.target.value)} />
           </div>
           <select value={selectionType} onChange={(e) => setSelectionType(e.target.value)} style={styles.select}>
-            <option value="single">Single choice</option>
-            <option value="multiple">Multiple choices</option>
+            <option value="single">{t('singleChoice')}</option>
+            <option value="multiple">{t('multipleChoices')}</option>
           </select>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
             <input type="checkbox" checked={isRequired} onChange={(e) => setIsRequired(e.target.checked)} />
-            Required
+            {t('requiredCheckbox')}
           </label>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
@@ -160,7 +160,7 @@ export default function AdminModifiers() {
       </Card>
 
       {groups.length === 0 ? (
-        <EmptyState icon={SlidersHorizontal} title="No modifier groups yet" description="Create your first group above to start adding customizations." />
+        <EmptyState icon={SlidersHorizontal} title={t('noModifierGroupsYet')} description={t('createFirstGroup')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {groups.map((group) => (
