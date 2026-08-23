@@ -84,7 +84,7 @@ export default function AdminEvents() {
 
   return (
     <div>
-      <PageHeader title={t('events')} subtitle="Create temporary events like weddings, birthdays, or private parties. Reservations can be linked to an event." />
+      <PageHeader title={t('events')} subtitle={t('subtitleEvents')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
