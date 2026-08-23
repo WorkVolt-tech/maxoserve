@@ -22,6 +22,7 @@ export default function AdminModifiers() {
   const [options, setOptions] = useState({})
 
   const [groupName, setGroupName] = useState('')
+  const [groupNameFr, setGroupNameFr] = useState('')
   const [selectionType, setSelectionType] = useState('single')
   const [isRequired, setIsRequired] = useState(false)
 
@@ -70,10 +71,11 @@ export default function AdminModifiers() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('modifier_groups').insert({
-      business_id: businessId, location_id: currentLocationId, name: groupName, selection_type: selectionType, is_required: isRequired, display_order: groups.length,
+      business_id: businessId, location_id: currentLocationId, name: groupName, name_fr: groupNameFr || null,
+      selection_type: selectionType, is_required: isRequired, display_order: groups.length,
     })
     if (insertError) { setError(insertError.message); return }
-    setGroupName(''); setSelectionType('single'); setIsRequired(false)
+    setGroupName(''); setGroupNameFr(''); setSelectionType('single'); setIsRequired(false)
     loadGroups(businessId)
   }
 
@@ -94,11 +96,11 @@ export default function AdminModifiers() {
     if (!form.name) { setError('Enter an option name.'); return }
     const currentCount = (options[groupId] || []).length
     const { error: insertError } = await supabase.from('modifier_options').insert({
-      business_id: businessId, modifier_group_id: groupId, name: form.name,
+      business_id: businessId, modifier_group_id: groupId, name: form.name, name_fr: form.nameFr || null,
       price_delta: parseFloat(form.priceDelta) || 0, display_order: currentCount,
     })
     if (insertError) { setError(insertError.message); return }
-    setOptionForms((prev) => ({ ...prev, [groupId]: { name: '', priceDelta: '' } }))
+    setOptionForms((prev) => ({ ...prev, [groupId]: { name: '', nameFr: '', priceDelta: '' } }))
     loadGroups(businessId)
   }
 
@@ -139,7 +141,10 @@ export default function AdminModifiers() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Group name (e.g. Choose Mixer)" value={groupName} onChange={(e) => setGroupName(e.target.value)} required />
+            <Input placeholder="Group name (English)" value={groupName} onChange={(e) => setGroupName(e.target.value)} required />
+          </div>
+          <div style={{ flex: '1 1 200px' }}>
+            <Input placeholder="Group name (French, optional)" value={groupNameFr} onChange={(e) => setGroupNameFr(e.target.value)} />
           </div>
           <select value={selectionType} onChange={(e) => setSelectionType(e.target.value)} style={styles.select}>
             <option value="single">Single choice</option>
@@ -163,6 +168,7 @@ export default function AdminModifiers() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                 <div>
                   <strong>{group.name}</strong>
+                  {group.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {group.name_fr}</span>}
                   <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                     {' '}· {group.selection_type === 'single' ? 'pick one' : 'pick multiple'}{group.is_required ? ' · required' : ''}
                   </span>
@@ -175,6 +181,7 @@ export default function AdminModifiers() {
                   <div key={opt.id} style={styles.optionRow}>
                     <span>
                       {opt.name}
+                      {opt.name_fr && <span style={{ color: 'var(--color-text-muted)' }}> / {opt.name_fr}</span>}
                       {opt.price_delta > 0 && <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}> +${Number(opt.price_delta).toFixed(2)}</span>}
                       {!opt.is_available && <Badge color="danger" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
                     </span>
@@ -188,12 +195,18 @@ export default function AdminModifiers() {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <input
-                  type="text" placeholder="Option (e.g. Coke)"
+                  type="text" placeholder="Option (English)"
                   value={optionForms[group.id]?.name || ''}
                   onChange={(e) => updateOptionForm(group.id, 'name', e.target.value)}
-                  style={{ ...styles.optionInput, flex: 1 }}
+                  style={{ ...styles.optionInput, flex: '1 1 140px' }}
+                />
+                <input
+                  type="text" placeholder="Option (French, optional)"
+                  value={optionForms[group.id]?.nameFr || ''}
+                  onChange={(e) => updateOptionForm(group.id, 'nameFr', e.target.value)}
+                  style={{ ...styles.optionInput, flex: '1 1 140px' }}
                 />
                 <input
                   type="number" step="0.01" placeholder="+$ (optional)"
