@@ -9,6 +9,7 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const ROLES = ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
@@ -25,6 +26,7 @@ const PRESETS = [
 
 export default function AdminRequestTypes() {
   const { user } = useAuth()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [types, setTypes] = useState([])
   const [label, setLabel] = useState('')
@@ -82,14 +84,14 @@ export default function AdminRequestTypes() {
     loadTypes(businessId)
   }
 
-  if (loading) return <LoadingState label="Loading request buttons…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   const existingLabels = types.map((t) => t.label)
   const availablePresets = PRESETS.filter((p) => !existingLabels.includes(p.label))
 
   return (
     <div>
-      <PageHeader title="Request Buttons" subtitle="The buttons customers see on their table page (e.g. Call Server, Request Bill). Each one routes to a staff role." />
+      <PageHeader title={t('requestButtons')} subtitle="The buttons customers see on their table page (e.g. Call Server, Request Bill). Each one routes to a staff role." />
 
       {availablePresets.length > 0 && (
         <Card style={{ marginBottom: '1.25rem' }}>
@@ -110,7 +112,7 @@ export default function AdminRequestTypes() {
           <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <Button type="submit" icon={Plus}>Add Button</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -119,18 +121,18 @@ export default function AdminRequestTypes() {
         <EmptyState icon={Bell} title="No request buttons yet" description="Add a preset above or create a custom one." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {types.map((t) => (
-            <Card key={t.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          {types.map((rt) => (
+            <Card key={rt.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
-                <strong>{t.label}</strong>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · routes to {t.routes_to_role || 'unassigned'}</span>
-                {!t.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden from customers</Badge>}
+                <strong>{rt.label}</strong>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · routes to {rt.routes_to_role || 'unassigned'}</span>
+                {!rt.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden from customers</Badge>}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="secondary" size="sm" icon={t.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(t)}>
-                  {t.is_active ? 'Hide' : 'Show'}
+                <Button variant="secondary" size="sm" icon={rt.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(rt)}>
+                  {rt.is_active ? t('hide') : t('show')}
                 </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(t.id)}>Delete</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(rt.id)}>{t('delete')}</Button>
               </div>
             </Card>
           ))}
