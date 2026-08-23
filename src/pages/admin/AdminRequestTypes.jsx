@@ -3,6 +3,7 @@ import { Bell, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { roleLabel } from '../../lib/roleLabels'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -115,7 +116,7 @@ export default function AdminRequestTypes() {
             <Input placeholder="Label (French, optional)" value={labelFr} onChange={(e) => setLabelFr(e.target.value)} />
           </div>
           <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
-            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
           </select>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
@@ -131,7 +132,7 @@ export default function AdminRequestTypes() {
               <div>
                 <strong>{rt.label}</strong>
                 {rt.label_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {rt.label_fr}</span>}
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · {t('routesTo')} {rt.routes_to_role || t('unassigned')}</span>
+                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · {t('routesTo')} {rt.routes_to_role ? roleLabel(rt.routes_to_role, t) : t('unassigned')}</span>
                 {!rt.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>{t('hiddenFromCustomers')}</Badge>}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
