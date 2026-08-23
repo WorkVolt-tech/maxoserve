@@ -172,7 +172,7 @@ export default function AdminTables() {
 
   return (
     <div>
-      <PageHeader title={t('tables')} subtitle="Add and manage individual tables within an area." />
+      <PageHeader title={t('tables')} subtitle={t('subtitleTables')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <div style={{ marginBottom: '1rem' }}>
