@@ -141,10 +141,10 @@ export default function AdminModifiers() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAddGroup} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Group name (English)" value={groupName} onChange={(e) => setGroupName(e.target.value)} required />
+            <Input placeholder={t('phGroupNameEn')} value={groupName} onChange={(e) => setGroupName(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Group name (French, optional)" value={groupNameFr} onChange={(e) => setGroupNameFr(e.target.value)} />
+            <Input placeholder={t('phGroupNameFr')} value={groupNameFr} onChange={(e) => setGroupNameFr(e.target.value)} />
           </div>
           <select value={selectionType} onChange={(e) => setSelectionType(e.target.value)} style={styles.select}>
             <option value="single">{t('singleChoice')}</option>
@@ -197,19 +197,19 @@ export default function AdminModifiers() {
 
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <input
-                  type="text" placeholder="Option (English)"
+                  type="text" placeholder={t('phOptionEn')}
                   value={optionForms[group.id]?.name || ''}
                   onChange={(e) => updateOptionForm(group.id, 'name', e.target.value)}
                   style={{ ...styles.optionInput, flex: '1 1 140px' }}
                 />
                 <input
-                  type="text" placeholder="Option (French, optional)"
+                  type="text" placeholder={t('phOptionFr')}
                   value={optionForms[group.id]?.nameFr || ''}
                   onChange={(e) => updateOptionForm(group.id, 'nameFr', e.target.value)}
                   style={{ ...styles.optionInput, flex: '1 1 140px' }}
                 />
                 <input
-                  type="number" step="0.01" placeholder="+$ (optional)"
+                  type="number" step="0.01" placeholder={t('phPriceAddon')}
                   value={optionForms[group.id]?.priceDelta || ''}
                   onChange={(e) => updateOptionForm(group.id, 'priceDelta', e.target.value)}
                   style={{ ...styles.optionInput, flex: '0 1 100px' }}
