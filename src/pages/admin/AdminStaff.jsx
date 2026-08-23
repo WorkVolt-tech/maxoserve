@@ -108,7 +108,7 @@ export default function AdminStaff() {
 
   return (
     <div>
-      <PageHeader title={t('staff')} subtitle="Invite staff by email. When they sign up with that email, they'll automatically join your business with the role you set." />
+      <PageHeader title={t('staff')} subtitle={t('subtitleStaff')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleInvite} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
