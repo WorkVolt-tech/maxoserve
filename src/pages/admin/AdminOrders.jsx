@@ -5,13 +5,13 @@ import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_FLOW = {
-  submitted: { next: 'accepted', label: 'Accept', color: '#e91e63' },
-  accepted: { next: 'preparing', label: 'Start Preparing', color: '#ff9800' },
-  preparing: { next: 'ready', label: 'Mark Ready', color: '#2196f3' },
-  ready: { next: 'delivered', label: 'Mark Delivered', color: '#9c27b0' },
-  delivered: { next: null, label: null, color: '#4caf50' },
-  cancelled: { next: null, label: null, color: '#9e9e9e' },
-  rejected: { next: null, label: null, color: '#9e9e9e' },
+  submitted: { next: 'accepted', color: '#e91e63' },
+  accepted: { next: 'preparing', color: '#ff9800' },
+  preparing: { next: 'ready', color: '#2196f3' },
+  ready: { next: 'delivered', color: '#9c27b0' },
+  delivered: { next: null, color: '#4caf50' },
+  cancelled: { next: null, color: '#9e9e9e' },
+  rejected: { next: null, color: '#9e9e9e' },
 }
 
 const FILTERS = ['active', 'all', 'kitchen', 'bar', 'bottle_service', 'delivered']
@@ -248,7 +248,7 @@ export default function AdminOrders() {
         <div style={styles.actions}>
           {flow.next && (
             <button onClick={() => updateStatus(order, flow.next)} style={{ ...styles.actionButton, background: flow.color }}>
-              {t(FLOW_LABEL_KEYS[flow.next]) || flow.label}
+              {t(FLOW_LABEL_KEYS[flow.next])}
             </button>
           )}
           {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
@@ -259,11 +259,11 @@ export default function AdminOrders() {
     )
   }
 
-  if (loading) return <div><h2>{t('orders') || 'Orders'}</h2><p>{t('loading')}</p></div>
+  if (loading) return <div><h2>{t('orders')}</h2><p>{t('loading')}</p></div>
 
   return (
     <div>
-      <h2>{t('orders') || 'Orders'}</h2>
+      <h2>{t('orders')}</h2>
       <p style={{ color: '#666' }}>{t('subtitleOrders')}</p>
 
       <div style={styles.filterRow}>
@@ -273,20 +273,20 @@ export default function AdminOrders() {
             onClick={() => setFilter(f)}
             style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
           >
-            {t(FILTER_LABEL_KEYS[f]) || f.replace('_', ' ')}
+            {t(FILTER_LABEL_KEYS[f])}
           </button>
         ))}
         <button
           onClick={() => setGroupByTable((v) => !v)}
           style={{ ...styles.filterButton, ...(groupByTable ? styles.filterButtonActive : {}), marginLeft: 'auto' }}
         >
-          {groupByTable ? '✓ ' : ''}{t('groupByTable') || 'Group by Table'}
+          {groupByTable ? '✓ ' : ''}{t('groupByTable')}
         </button>
       </div>
 
       {groupByTable ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {Object.keys(groupedByTable).length === 0 && <p style={{ color: '#888' }}>{t('noOrdersHere')}</p>}
           {Object.entries(groupedByTable).map(([key, orderList]) => {
             const billableOrders = orderList.filter((o) => !['cancelled', 'rejected'].includes(o.status))
             const groupTotal = billableOrders.reduce((sum, o) => sum + Number(o.total), 0)
@@ -313,7 +313,7 @@ export default function AdminOrders() {
         </div>
       ) : (
         <div style={styles.list}>
-          {visibleOrders.length === 0 && <p style={{ color: '#888' }}>No orders here.</p>}
+          {visibleOrders.length === 0 && <p style={{ color: '#888' }}>{t('noOrdersHere')}</p>}
           {visibleOrders.map((order) => renderOrderCard(order))}
         </div>
       )}
