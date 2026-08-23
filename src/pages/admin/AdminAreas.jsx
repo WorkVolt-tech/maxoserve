@@ -111,7 +111,7 @@ export default function AdminAreas() {
 
   return (
     <div>
-      <PageHeader title={t('areas')} subtitle='Rooms or sections within a location (e.g. "Main Floor", "VIP", "Patio"). Follows the location selected above.' />
+      <PageHeader title={t('areas')} subtitle={t('subtitleAreas')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
