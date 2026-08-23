@@ -227,7 +227,7 @@ export default function AdminDashboard() {
           <div style={styles.panelHeader}>
             <h3 style={styles.panelTitle}>{t('requests')}</h3>
             <a href="/staff" style={styles.panelLink}>
-              View all <ArrowRight size={13} />
+              {t('viewAll')} <ArrowRight size={13} />
             </a>
           </div>
           {recentRequests.length === 0 ? (
@@ -256,9 +256,9 @@ export default function AdminDashboard() {
 
         <Card>
           <div style={styles.panelHeader}>
-            <h3 style={styles.panelTitle}>Recent Activity</h3>
+            <h3 style={styles.panelTitle}>{t('recentActivity')}</h3>
             <a href="/admin/activity-log" style={styles.panelLink}>
-              View all <ArrowRight size={13} />
+              {t('viewAll')} <ArrowRight size={13} />
             </a>
           </div>
           {recentActivity.length === 0 ? (
