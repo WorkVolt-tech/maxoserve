@@ -66,10 +66,10 @@ export default function AdminLocations() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Location name (e.g. Downtown)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phLocationName')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Address (optional)" value={address} onChange={(e) => setAddress(e.target.value)} />
+            <Input placeholder={t('phAddress')} value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
