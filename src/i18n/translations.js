@@ -264,6 +264,12 @@ export const translations = {
     resStatusCompleted: 'completed',
     resStatusCancelled: 'cancelled',
     resStatusNoShow: 'no show',
+    pendingInvites: 'Pending Invites',
+    pending: 'Pending',
+    team: 'Team',
+    noTeamMembersYet: 'No team members yet',
+    inviteFirstStaff: 'Invite your first staff member above.',
+    unknownUser: 'Unknown user',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -512,6 +518,12 @@ export const translations = {
     resStatusCompleted: 'terminée',
     resStatusCancelled: 'annulée',
     resStatusNoShow: 'absence',
+    pendingInvites: 'Invitations en attente',
+    pending: 'En attente',
+    team: 'Équipe',
+    noTeamMembersYet: "Aucun membre de l'équipe pour le moment",
+    inviteFirstStaff: 'Invitez votre premier membre du personnel ci-dessus.',
+    unknownUser: 'Utilisateur inconnu',
   },
 }
 
