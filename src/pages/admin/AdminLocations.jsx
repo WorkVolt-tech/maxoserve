@@ -3,13 +3,13 @@ import { MapPin, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminLocations() {
   const { user } = useAuth()
@@ -61,10 +61,7 @@ export default function AdminLocations() {
 
   return (
     <div>
-      <PageHeader
-        title={t('locations')}
-        subtitle={t('subtitleLocations')}
-      />
+      <PageHeader title={t('locations')} subtitle={t('subtitleLocations')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -82,8 +79,8 @@ export default function AdminLocations() {
       {locations.length === 0 ? (
         <EmptyState
           icon={MapPin}
-          title="No locations yet"
-          description="Create your first location to start setting up your venue."
+          title={t('noLocationsYet')}
+          description={t('createFirstLocation')}
         />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
