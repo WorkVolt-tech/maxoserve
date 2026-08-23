@@ -10,12 +10,14 @@ import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
 import StatusBadge from '../../components/ui/StatusBadge'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show']
 
 export default function AdminReservations() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [tables, setTables] = useState([])
   const [reservations, setReservations] = useState([])
@@ -202,13 +204,13 @@ export default function AdminReservations() {
     loadReservations(businessId)
   }
 
-  if (loading) return <LoadingState label="Loading reservations…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   const visibleReservations = reservations.filter((r) => r.location_id === currentLocationId)
 
   return (
     <div>
-      <PageHeader title="Reservations" subtitle="Take table and bottle reservations over the phone. Assign a table and build a pre-order for arrival." />
+      <PageHeader title={t('reservations')} subtitle="Take table and bottle reservations over the phone. Assign a table and build a pre-order for arrival." />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
@@ -232,7 +234,7 @@ export default function AdminReservations() {
             {events.map((ev) => <option key={ev.id} value={ev.id}>{ev.name}</option>)}
           </select>
           <textarea placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} style={styles.textarea} />
-          <Button type="submit" icon={Plus}>Create Reservation</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -278,7 +280,7 @@ export default function AdminReservations() {
                   >
                     {isExpanded ? 'Close' : existingOrder ? 'Add More' : 'Build Pre-Order'}
                   </Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(r.id)}>Delete</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(r.id)}>{t('delete')}</Button>
                 </div>
 
                 {isExpanded && (
