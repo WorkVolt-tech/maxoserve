@@ -135,7 +135,7 @@ export default function AdminAreas() {
                   <strong>{area.name}</strong>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <Button variant="secondary" size="sm" icon={Copy} onClick={() => openDuplicateForm(area)}>Duplicate</Button>
+                  <Button variant="secondary" size="sm" icon={Copy} onClick={() => openDuplicateForm(area)}>{t('duplicate')}</Button>
                   <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(area.id)}>{t('delete')}</Button>
                 </div>
               </div>
@@ -143,11 +143,11 @@ export default function AdminAreas() {
               {duplicatingAreaId === area.id && (
                 <div style={{ padding: '1rem 1.25rem', background: 'var(--color-bg)', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
-                    <label style={styles.label}>New area name</label>
+                    <label style={styles.label}>{t('newAreaName')}</label>
                     <Input value={duplicateName} onChange={(e) => setDuplicateName(e.target.value)} />
                   </div>
                   <div>
-                    <label style={styles.label}>Copy into location</label>
+                    <label style={styles.label}>{t('copyIntoLocation')}</label>
                     <select
                       value={duplicateTargetLocationId}
                       onChange={(e) => setDuplicateTargetLocationId(e.target.value)}
@@ -158,7 +158,7 @@ export default function AdminAreas() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <Button onClick={() => handleConfirmDuplicate(area)} disabled={duplicating}>
-                      {duplicating ? 'Duplicating…' : 'Confirm Duplicate'}
+                      {duplicating ? t('duplicating') : t('confirmDuplicate')}
                     </Button>
                     <Button variant="secondary" onClick={() => setDuplicatingAreaId(null)}>{t('cancel')}</Button>
                   </div>
