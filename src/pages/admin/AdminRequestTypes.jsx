@@ -110,10 +110,10 @@ export default function AdminRequestTypes() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Label (English)" value={label} onChange={(e) => setLabel(e.target.value)} required />
+            <Input placeholder={t('phCustomButtonLabel')} value={label} onChange={(e) => setLabel(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Label (French, optional)" value={labelFr} onChange={(e) => setLabelFr(e.target.value)} />
+            <Input placeholder={t('phCustomButtonLabelFr')} value={labelFr} onChange={(e) => setLabelFr(e.target.value)} />
           </div>
           <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
             {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
