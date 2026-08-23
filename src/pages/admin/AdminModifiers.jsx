@@ -3,6 +3,7 @@ import { SlidersHorizontal, Plus, Trash2, Upload, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import ModifierImportModal from '../../components/ModifierImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -11,10 +12,10 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminModifiers() {
   const { user } = useAuth()
+  const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [groups, setGroups] = useState([])
