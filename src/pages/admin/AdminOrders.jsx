@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_FLOW = {
   submitted: { next: 'accepted', label: 'Accept', color: '#e91e63' },
@@ -18,6 +19,7 @@ const FILTERS = ['active', 'all', 'kitchen', 'bar', 'bottle_service', 'delivered
 export default function AdminOrders() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [orders, setOrders] = useState([])
   const [orderItems, setOrderItems] = useState({})
@@ -241,11 +243,11 @@ export default function AdminOrders() {
     )
   }
 
-  if (loading) return <div><h2>Orders</h2><p>Loading...</p></div>
+  if (loading) return <div><h2>{t('orders') || 'Orders'}</h2><p>{t('loading')}</p></div>
 
   return (
     <div>
-      <h2>Orders</h2>
+      <h2>{t('orders') || 'Orders'}</h2>
       <p style={{ color: '#666' }}>Incoming orders update here in real time.</p>
 
       <div style={styles.filterRow}>
