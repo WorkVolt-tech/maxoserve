@@ -11,6 +11,28 @@ import LoadingState from '../../components/ui/LoadingState'
 import EmptyState from '../../components/ui/EmptyState'
 import StatusBadge from '../../components/ui/StatusBadge'
 
+function translateAction(action, t) {
+  const match = action.match(/^(accepted|completed|on_the_way|rejected|cancelled|pending)\s+a service request$/)
+  if (match) {
+    const verbKeyMap = {
+      accepted: 'statusAccepted',
+      completed: 'statusCompleted',
+      on_the_way: 'statusOnTheWay',
+      rejected: 'statusRejected',
+      cancelled: 'statusCancelled',
+      pending: 'statusPending',
+    }
+    const verb = t(verbKeyMap[match[1]])
+    return `${verb} — ${t('serviceRequestNoun')}`
+  }
+  return action
+}
+
+function localizedLabel(item, lang) {
+  if (!item) return ''
+  return lang === 'fr' && item.label_fr ? item.label_fr : item.label
+}
+
 function greetingKey() {
   const hour = new Date().getHours()
   if (hour < 12) return 'goodMorning'
@@ -21,7 +43,7 @@ function greetingKey() {
 export default function AdminDashboard() {
   const { user } = useAuth()
   const { locations, currentLocationId } = useCurrentLocation()
-  const { t } = useAppLanguage()
+  const { t, lang } = useAppLanguage()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [recentRequests, setRecentRequests] = useState([])
@@ -205,7 +227,7 @@ export default function AdminDashboard() {
       <div style={{ marginBottom: '1.75rem' }}>
         <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{t(greetingKey())}, {displayName}</h2>
         <p style={{ color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
-          {t('heresWhatsHappening')}{currentLocation ? ` ${t('at') || 'at'} ${currentLocation.name}` : ''}.
+          {t('heresWhatsHappening')}{currentLocation ? ` ${t('at')} ${currentLocation.name}` : ''}.
         </p>
       </div>
 
@@ -242,7 +264,7 @@ export default function AdminDashboard() {
                 <div key={r.id} style={styles.reqRow}>
                   <div>
                     <div style={styles.reqTable}>{tablesMap[r.table_id]?.name || 'Table'}</div>
-                    <div style={styles.reqType}>{requestTypesMap[r.request_type_id]?.label || 'Request'}</div>
+                    <div style={styles.reqType}>{localizedLabel(requestTypesMap[r.request_type_id], lang) || 'Request'}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                     <span style={styles.waitTime}>{minutesAgo(r.created_at)}m</span>
@@ -273,7 +295,7 @@ export default function AdminDashboard() {
                 return (
                   <div key={a.id} style={styles.activityRow}>
                     <span style={styles.activityText}>
-                      <strong>{who}</strong> {a.action}
+                      <strong>{who}</strong> {translateAction(a.action, t)}
                     </span>
                     <span style={styles.waitTime}>{minutesAgo(a.created_at)}m ago</span>
                   </div>
