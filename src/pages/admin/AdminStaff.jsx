@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { roleLabel } from '../../lib/roleLabels'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -116,7 +117,7 @@ export default function AdminStaff() {
             <Input type="email" placeholder="staff@email.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
           </div>
           <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={styles.select}>
-            {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+            {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
           </select>
           <Button type="submit" icon={UserPlus}>{t('add')}</Button>
         </form>
@@ -131,7 +132,7 @@ export default function AdminStaff() {
               <Card key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <strong>{inv.email}</strong>
-                  <Badge color="neutral">{inv.role}</Badge>
+                  <Badge color="neutral">{roleLabel(inv.role, t)}</Badge>
                   <Badge color="warning">pending</Badge>
                 </div>
                 <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>{t('cancel')}</Button>
@@ -163,11 +164,11 @@ export default function AdminStaff() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   {member.role === 'owner' ? (
-                    <Badge color="success">owner</Badge>
+                    <Badge color="success">{roleLabel('owner', t)}</Badge>
                   ) : (
                     <>
                       <select value={member.role} onChange={(e) => handleChangeRole(member, e.target.value)} style={styles.roleSelect}>
-                        {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                        {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
                       </select>
                       <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>{t('remove')}</Button>
                     </>
