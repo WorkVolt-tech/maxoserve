@@ -125,7 +125,7 @@ export default function AdminFloorPlan() {
   if (loading) return <div><h2>{t('floorPlan')}</h2><p>{t('loading')}</p></div>
 
   if (!currentLocationId) {
-    return <div><h2>{t('floorPlan')}</h2><p style={{ color: '#888' }}>Create a location first.</p></div>
+    return <div><h2>{t('floorPlan')}</h2><p style={{ color: '#888' }}>{t('createLocationFirstFloorPlan')}</p></div>
   }
 
   return (
@@ -135,9 +135,9 @@ export default function AdminFloorPlan() {
 
       <div style={styles.pickerRow}>
         <div>
-          <label style={styles.label}>Area:</label>
+          <label style={styles.label}>{t('areas')}:</label>
           <select value={selectedAreaId} onChange={(e) => setSelectedAreaId(e.target.value)} style={styles.select} disabled={areas.length === 0}>
-            {areas.length === 0 && <option>No areas yet</option>}
+            {areas.length === 0 && <option>{t('noAreasOption')}</option>}
             {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
@@ -146,14 +146,14 @@ export default function AdminFloorPlan() {
           disabled={!dirty || saving}
           style={{ ...styles.saveButton, opacity: dirty ? 1 : 0.5 }}
         >
-          {saving ? 'Saving...' : dirty ? t('save') : t('save')}
+          {saving ? t('saving') : t('save')}
         </button>
       </div>
 
       {areas.length === 0 ? (
-        <p style={{ color: '#888' }}>Create an area first, then add tables to it (Tables tab).</p>
+        <p style={{ color: '#888' }}>{t('createAreaThenTables')}</p>
       ) : tables.length === 0 ? (
-        <p style={{ color: '#888' }}>No tables in this area yet. Add some in the Tables tab.</p>
+        <p style={{ color: '#888' }}>{t('noTablesInAreaFloorPlan')}</p>
       ) : (
         <div ref={containerRef} style={styles.canvasWrap}>
           <Stage width={stageWidth} height={800}>
@@ -223,11 +223,11 @@ export default function AdminFloorPlan() {
       {selectedTable && (
         <div style={styles.infoBar}>
           <strong>{selectedTable.name}</strong>
-          <span style={styles.meta}>Status: {selectedTable.status}</span>
-          <span style={styles.meta}>Capacity: {selectedTable.capacity || '—'}</span>
+          <span style={styles.meta}>{t('statusLabel')}: {selectedTable.status}</span>
+          <span style={styles.meta}>{t('capacityLabel')}: {selectedTable.capacity || '—'}</span>
           <span style={styles.meta}>{Math.round(selectedTable.width)} × {Math.round(selectedTable.height)}</span>
           <button onClick={() => handleFlipOrientation(selectedTable.id)} style={styles.flipButton}>
-            Flip Orientation
+            {t('flipOrientation')}
           </button>
         </div>
       )}
