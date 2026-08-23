@@ -16,6 +16,22 @@ const STATUS_FLOW = {
 
 const FILTERS = ['active', 'all', 'kitchen', 'bar', 'bottle_service', 'delivered']
 
+const FILTER_LABEL_KEYS = {
+  active: 'inProgress',
+  all: 'all',
+  kitchen: 'kitchen',
+  bar: 'bar',
+  bottle_service: 'bottleService',
+  delivered: 'statusDelivered',
+}
+
+const FLOW_LABEL_KEYS = {
+  accepted: 'accept',
+  preparing: 'startPreparing',
+  ready: 'markReady',
+  delivered: 'markDelivered',
+}
+
 export default function AdminOrders() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
@@ -232,11 +248,11 @@ export default function AdminOrders() {
         <div style={styles.actions}>
           {flow.next && (
             <button onClick={() => updateStatus(order, flow.next)} style={{ ...styles.actionButton, background: flow.color }}>
-              {flow.label}
+              {t(FLOW_LABEL_KEYS[flow.next]) || flow.label}
             </button>
           )}
           {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
-            <button onClick={() => updateStatus(order, 'cancelled')} style={styles.cancelButton}>Cancel</button>
+            <button onClick={() => updateStatus(order, 'cancelled')} style={styles.cancelButton}>{t('cancel')}</button>
           )}
         </div>
       </div>
@@ -257,14 +273,14 @@ export default function AdminOrders() {
             onClick={() => setFilter(f)}
             style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
           >
-            {f.replace('_', ' ')}
+            {t(FILTER_LABEL_KEYS[f]) || f.replace('_', ' ')}
           </button>
         ))}
         <button
           onClick={() => setGroupByTable((v) => !v)}
           style={{ ...styles.filterButton, ...(groupByTable ? styles.filterButtonActive : {}), marginLeft: 'auto' }}
         >
-          {groupByTable ? '✓ ' : ''}Group by Table
+          {groupByTable ? '✓ ' : ''}{t('groupByTable') || 'Group by Table'}
         </button>
       </div>
 
