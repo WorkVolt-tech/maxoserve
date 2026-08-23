@@ -3,12 +3,12 @@ import { UserRoundCog, Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminAssignments() {
   const { user } = useAuth()
@@ -123,14 +123,12 @@ export default function AdminAssignments() {
   }
 
   function describeAssignment(a) {
-    if (a.table_id) return `Table: ${tables.find((tb) => tb.id === a.table_id)?.name || 'Unknown'}`
-    if (a.area_id) return `Area: ${areas.find((ar) => ar.id === a.area_id)?.name || 'Unknown'}`
-    if (a.location_id) return 'Entire location'
+    if (a.table_id) return `${t('tables')}: ${tables.find((tb) => tb.id === a.table_id)?.name || 'Unknown'}`
+    if (a.area_id) return `${t('areas')}: ${areas.find((ar) => ar.id === a.area_id)?.name || 'Unknown'}`
+    if (a.location_id) return t('entireLocation')
     return 'Unknown scope'
   }
 
-  // IMPORTANT: these two filtered lists are what the dropdowns use, and must
-  // only ever contain areas/tables belonging to the currently selected location.
   const areasForSelectedLocation = areas.filter((a) => a.location_id === currentLocationId)
   const tablesForSelectedLocation = tables.filter((t) => t.location_id === currentLocationId)
 
@@ -156,7 +154,7 @@ export default function AdminAssignments() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} style={styles.select}>
-            <option value="">Select staff member</option>
+            <option value="">{t('selectStaffMember')}</option>
             {members.map((m) => (
               <option key={m.user_id} value={m.user_id}>
                 {profiles[m.user_id]?.full_name || profiles[m.user_id]?.email || 'Unknown'} ({m.role})
@@ -165,14 +163,14 @@ export default function AdminAssignments() {
           </select>
 
           <select value={scopeType} onChange={(e) => setScopeType(e.target.value)} style={styles.select}>
-            <option value="table">Specific table</option>
-            <option value="area">Whole area</option>
-            <option value="location">Entire location</option>
+            <option value="table">{t('specificTable')}</option>
+            <option value="area">{t('wholeArea')}</option>
+            <option value="location">{t('entireLocation')}</option>
           </select>
 
           {scopeType === 'area' && (
             <select value={selectedAreaId} onChange={(e) => setSelectedAreaId(e.target.value)} style={styles.select}>
-              <option value="">Select area</option>
+              <option value="">{t('selectArea')}</option>
               {areasForSelectedLocation.map((a) => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
@@ -181,7 +179,7 @@ export default function AdminAssignments() {
 
           {scopeType === 'table' && (
             <select value={selectedTableId} onChange={(e) => setSelectedTableId(e.target.value)} style={styles.select}>
-              <option value="">Select table</option>
+              <option value="">{t('selectTable')}</option>
               {tablesForSelectedLocation.map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
@@ -194,7 +192,7 @@ export default function AdminAssignments() {
       </Card>
 
       {visibleAssignments.length === 0 ? (
-        <EmptyState icon={UserRoundCog} title="No assignments here" description="Assign staff above to see them here." />
+        <EmptyState icon={UserRoundCog} title={t('noAssignmentsYet')} description={t('assignStaffAbove')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {visibleAssignments.map((a) => (
