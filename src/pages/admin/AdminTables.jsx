@@ -24,6 +24,18 @@ function generateToken() {
   return Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
+function statusBadgeColor(status) {
+  switch (status) {
+    case 'available': return { background: '#e8f5e9', color: '#2e7d32' }
+    case 'occupied': return { background: '#fdecea', color: '#c62828' }
+    case 'reserved': return { background: '#fff3e0', color: '#e65100' }
+    case 'needs_service': return { background: '#fce4ec', color: '#ad1457' }
+    case 'order_pending': return { background: '#f3e5f5', color: '#6a1b9a' }
+    case 'disabled': return { background: '#eceff1', color: '#546e7a' }
+    default: return { background: '#e8f5e9', color: '#2e7d32' }
+  }
+}
+
 export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
@@ -161,10 +173,10 @@ export default function AdminTables() {
     showToast('QR code regenerated — old code is now inactive')
   }
 
-  if (loading) return <LoadingState label="Loading tables…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   if (!currentLocationId) {
-    return <EmptyState icon={LayoutGrid} title="No location selected" description="Create a location first." />
+    return <EmptyState icon={LayoutGrid} title={t('createLocationFirstTables')} description="" />
   }
 
   const activeQrTable = qrModalTable ? qrTokens[qrModalTable.id] : null
@@ -176,25 +188,25 @@ export default function AdminTables() {
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <div style={{ marginBottom: '1rem' }}>
-          <label style={styles.label}>Area</label>
+          <label style={styles.label}>{t('areas')}</label>
           <select value={selectedAreaId} onChange={(e) => setSelectedAreaId(e.target.value)} style={styles.select} disabled={areas.length === 0}>
-            {areas.length === 0 && <option>No areas yet</option>}
+            {areas.length === 0 && <option>{t('noAreasOption')}</option>}
             {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </div>
 
         {areas.length === 0 ? (
-          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Create an area first (Areas tab) before adding tables.</p>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{t('createAreaFirst')}</p>
         ) : (
           <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div style={{ flex: '1 1 180px' }}>
               <Input placeholder="Table name (e.g. VIP 12)" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div style={{ flex: '0 1 120px' }}>
-              <Input placeholder="Table #" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} />
+              <Input placeholder={t('tableNumberOptional')} value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} />
             </div>
             <div style={{ flex: '0 1 100px' }}>
-              <Input type="number" placeholder="Capacity" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+              <Input type="number" placeholder={t('capacityLabel')} value={capacity} onChange={(e) => setCapacity(e.target.value)} />
             </div>
             <select value={shape} onChange={(e) => setShape(e.target.value)} style={{ ...styles.select, flex: '0 1 140px' }}>
               {SHAPES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
@@ -207,7 +219,7 @@ export default function AdminTables() {
 
       {areas.length > 0 && (
         tables.length === 0 ? (
-          <EmptyState icon={LayoutGrid} title="No tables yet" description="Add your first table to this area." />
+          <EmptyState icon={LayoutGrid} title={t('noTablesYet')} description="" />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             {tables.map((tbl) => {
@@ -227,9 +239,9 @@ export default function AdminTables() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     {hasQr ? (
-                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => setQrModalTable(tbl)}>View QR</Button>
+                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => setQrModalTable(tbl)}>{t('viewQr')}</Button>
                     ) : (
-                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => handleGenerateQr(tbl)}>Generate QR</Button>
+                      <Button variant="secondary" size="sm" icon={QrCode} onClick={() => handleGenerateQr(tbl)}>{t('generateQr')}</Button>
                     )}
                     <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(tbl)}>{t('delete')}</Button>
                   </div>
@@ -264,8 +276,6 @@ export default function AdminTables() {
 }
 
 const styles = {
-  label: { fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem', display: 'block' },
-  select: {
-    padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem',
-  },
+  label: { display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.25rem' },
+  select: { padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem' },
 }
