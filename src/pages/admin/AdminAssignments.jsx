@@ -150,7 +150,7 @@ export default function AdminAssignments() {
     <div>
       <PageHeader
         title={t('assignments')}
-        subtitle="Assign staff to a specific table, a whole area, or an entire location. Remove an assignment to unassign."
+        subtitle={t('subtitleAssignments')}
       />
 
       <Card style={{ marginBottom: '1.5rem' }}>
