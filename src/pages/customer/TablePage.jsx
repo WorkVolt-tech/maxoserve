@@ -40,6 +40,11 @@ function greetingKey() {
   return 'goodEvening'
 }
 
+function localizedLabel(item, lang) {
+  if (!item) return ''
+  return lang === 'fr' && item.label_fr ? item.label_fr : item.label
+}
+
 export default function TablePage() {
   return (
     <LanguageProvider defaultLang="en">
@@ -390,13 +395,13 @@ function TablePageInner() {
             {activeRequests.length > 0 && (
               <div style={styles.activeSection}>
                 {activeRequests.map((r) => {
-                  const type = requestTypes.find((t) => t.id === r.request_type_id)
+                  const type = requestTypes.find((rt) => rt.id === r.request_type_id)
                   const Icon = iconForLabel(type?.label)
                   return (
                     <div key={r.id} style={styles.activeCard}>
                       <div style={styles.activeCardLeft}>
                         <Icon size={17} color="var(--color-primary)" />
-                        <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{type?.label || 'Request'}</span>
+                        <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{localizedLabel(type, lang) || 'Request'}</span>
                       </div>
                       <span style={styles.activePill}><Clock size={12} /> {t(statusKey(r.status))}</span>
                     </div>
@@ -421,7 +426,7 @@ function TablePageInner() {
                     style={{ ...styles.serviceCard, ...(isActive ? styles.serviceCardActive : {}) }}
                   >
                     {isActive ? <Check size={24} color="var(--color-success)" /> : <Icon size={24} color="var(--color-primary)" />}
-                    <span style={styles.serviceCardLabel}>{isSending ? '…' : type.label}</span>
+                    <span style={styles.serviceCardLabel}>{isSending ? '…' : localizedLabel(type, lang)}</span>
                     {isActive && <span style={styles.serviceCardStatus}>{t(statusKey(activeRequestForType(type.id).status))}</span>}
                   </button>
                 )
