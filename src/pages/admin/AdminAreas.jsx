@@ -3,13 +3,13 @@ import { Map, Plus, Trash2, Copy } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminAreas() {
   const { user } = useAuth()
@@ -106,7 +106,7 @@ export default function AdminAreas() {
   if (loading) return <LoadingState label={t('loading')} />
 
   if (!currentLocationId) {
-    return <EmptyState icon={Map} title="No location selected" description="Create a location first before adding areas." />
+    return <EmptyState icon={Map} title={t('createLocationFirstAreas')} description="" />
   }
 
   return (
@@ -114,7 +114,7 @@ export default function AdminAreas() {
       <PageHeader title={t('areas')} subtitle={t('subtitleAreas')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
-        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
             <Input placeholder="Area name (e.g. VIP)" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
@@ -124,7 +124,7 @@ export default function AdminAreas() {
       </Card>
 
       {areas.length === 0 ? (
-        <EmptyState icon={Map} title="No areas yet" description="Create your first area for this location." />
+        <EmptyState icon={Map} title={t('noAreasHere')} description="" />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {areas.map((area) => (
@@ -179,7 +179,6 @@ const styles = {
   },
   label: { fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem', display: 'block' },
   select: {
-    padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)',
-    fontSize: '0.9rem', width: '100%',
+    padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem', width: '100%',
   },
 }
