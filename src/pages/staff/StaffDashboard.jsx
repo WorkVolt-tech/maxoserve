@@ -30,6 +30,11 @@ const URGENCY_STYLES = {
   urgent: { border: 'var(--color-danger)', accent: 'var(--color-danger)' },
 }
 
+function localizedLabel(item, lang) {
+  if (!item) return ''
+  return lang === 'fr' && item.label_fr ? item.label_fr : item.label
+}
+
 export default function StaffDashboard() {
   const { user, signOut } = useAuth()
   const { t, lang, setLang } = useAppLanguage()
@@ -65,7 +70,6 @@ export default function StaffDashboard() {
     return () => supabase.removeChannel(channel)
   }, [businessId])
 
-  // Re-render every 20s so wait times / urgency stay fresh without needing a data refetch
   useEffect(() => {
     const t = setInterval(() => forceTick((v) => v + 1), 20000)
     return () => clearInterval(t)
@@ -134,7 +138,7 @@ export default function StaffDashboard() {
     const type = requestTypes[request.request_type_id]
     const table = tables[request.table_id]
     new Notification('New request', {
-      body: `${type?.label || 'Request'} — ${table?.name || 'Unknown table'}`,
+      body: `${localizedLabel(type, lang) || 'Request'} — ${table?.name || 'Unknown table'}`,
     })
     if (navigator.vibrate) navigator.vibrate([200, 100, 200])
   }
@@ -186,7 +190,7 @@ export default function StaffDashboard() {
   if (loading) {
     return (
       <div style={styles.page}>
-        <p style={{ color: '#fff', padding: '2rem' }}>Loading…</p>
+        <p style={{ color: '#fff', padding: '2rem' }}>{t('loading')}</p>
       </div>
     )
   }
@@ -277,7 +281,7 @@ export default function StaffDashboard() {
 
               <div style={styles.requestTop}>
                 <div>
-                  <div style={styles.requestType}>{type?.label || 'Request'}</div>
+                  <div style={styles.requestType}>{localizedLabel(type, lang) || 'Request'}</div>
                   <div style={styles.requestTable}>
                     <MapPin size={12} /> {table?.name || 'Unknown table'}
                   </div>
@@ -340,16 +344,6 @@ const styles = {
     background: 'var(--color-sidebar-bg)',
   },
   headerTitle: { color: '#fff', margin: 0, fontSize: '1.3rem' },
-  signOutButton: {
-    display: 'flex', alignItems: 'center', gap: '0.35rem',
-    padding: '0.45rem 0.8rem',
-    borderRadius: '6px',
-    border: '1px solid var(--color-sidebar-border)',
-    background: 'transparent',
-    color: 'var(--color-sidebar-text)',
-    cursor: 'pointer',
-    fontSize: '0.82rem',
-  },
   langToggle: {
     padding: '0.45rem 0.7rem',
     borderRadius: '6px',
@@ -380,6 +374,16 @@ const styles = {
     fontSize: '0.78rem',
     fontWeight: 600,
     cursor: 'help',
+  },
+  signOutButton: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.45rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid var(--color-sidebar-border)',
+    background: 'transparent',
+    color: 'var(--color-sidebar-text)',
+    cursor: 'pointer',
+    fontSize: '0.82rem',
   },
   locationBar: {
     display: 'flex',
