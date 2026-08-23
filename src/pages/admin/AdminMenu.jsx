@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { UtensilsCrossed, Plus, Trash2, Upload, ChevronRight, EyeOff, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
-import { useCurrentLocation } from '../../contexts/LocationContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useToast } from '../../contexts/ToastContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import MenuImportModal from '../../components/MenuImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -11,27 +13,21 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
-import { useToast } from '../../contexts/ToastContext'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminMenu() {
   const { user } = useAuth()
-  const { currentLocationId } = useCurrentLocation()
   const { showToast } = useToast()
   const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
+  const [nameFr, setNameFr] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
- useEffect(() => { loadInitial() }, [])
-  useEffect(() => {
-    if (businessId && currentLocationId) loadCategories(businessId)
-  }, [currentLocationId])
+  useEffect(() => { loadInitial() }, [])
 
   async function loadInitial() {
     setLoading(true)
@@ -44,9 +40,8 @@ export default function AdminMenu() {
   }
 
   async function loadCategories(bizId) {
-    if (!currentLocationId) { setCategories([]); return }
     const { data, error: catError } = await supabase
-      .from('menu_categories').select('*').eq('business_id', bizId).eq('location_id', currentLocationId).order('display_order', { ascending: true })
+      .from('menu_categories').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
     if (catError) setError(catError.message)
     else setCategories(data)
   }
@@ -55,10 +50,11 @@ export default function AdminMenu() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('menu_categories').insert({
-      business_id: businessId, location_id: currentLocationId, name, display_order: categories.length,
+      business_id: businessId, name, name_fr: nameFr || null, display_order: categories.length,
     })
     if (insertError) { setError(insertError.message); return }
     setName('')
+    setNameFr('')
     showToast(`"${name}" category added`)
     loadCategories(businessId)
   }
@@ -103,7 +99,10 @@ export default function AdminMenu() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Category name (e.g. Appetizers)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder="Name (English)" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input placeholder="Name (French, optional)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
           </div>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
@@ -120,6 +119,7 @@ export default function AdminMenu() {
                 <div style={styles.iconWrap}><UtensilsCrossed size={16} color="var(--color-primary)" /></div>
                 <div>
                   <strong>{cat.name}</strong>
+                  {cat.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {cat.name_fr}</span>}
                   {!cat.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
                 </div>
                 <ChevronRight size={16} color="var(--color-text-faint)" style={{ marginLeft: 'auto' }} />
