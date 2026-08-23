@@ -116,7 +116,7 @@ export default function AdminAreas() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Area name (e.g. VIP)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phAreaName')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
