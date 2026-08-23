@@ -264,7 +264,7 @@ export default function AdminOrders() {
   return (
     <div>
       <h2>{t('orders') || 'Orders'}</h2>
-      <p style={{ color: '#666' }}>Incoming orders update here in real time.</p>
+      <p style={{ color: '#666' }}>{t('subtitleOrders')}</p>
 
       <div style={styles.filterRow}>
         {FILTERS.map((f) => (
