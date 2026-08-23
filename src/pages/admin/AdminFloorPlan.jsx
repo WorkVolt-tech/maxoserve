@@ -3,6 +3,7 @@ import { Stage, Layer, Rect, Circle, Ellipse, Text, Group } from 'react-konva'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const STATUS_COLORS = {
   available: '#4caf50',
@@ -16,6 +17,7 @@ const STATUS_COLORS = {
 export default function AdminFloorPlan() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { t } = useAppLanguage()
   const [areas, setAreas] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
@@ -120,15 +122,15 @@ export default function AdminFloorPlan() {
 
   const selectedTable = tables.find((t) => t.id === selectedTableId)
 
-  if (loading) return <div><h2>Floor Plan</h2><p>Loading...</p></div>
+  if (loading) return <div><h2>{t('floorPlan')}</h2><p>{t('loading')}</p></div>
 
   if (!currentLocationId) {
-    return <div><h2>Floor Plan</h2><p style={{ color: '#888' }}>Create a location first.</p></div>
+    return <div><h2>{t('floorPlan')}</h2><p style={{ color: '#888' }}>Create a location first.</p></div>
   }
 
   return (
     <div>
-      <h2>Floor Plan</h2>
+      <h2>{t('floorPlan')}</h2>
       <p style={{ color: '#666' }}>Drag tables to arrange your floor plan. Click Save when done.</p>
 
       <div style={styles.pickerRow}>
@@ -144,7 +146,7 @@ export default function AdminFloorPlan() {
           disabled={!dirty || saving}
           style={{ ...styles.saveButton, opacity: dirty ? 1 : 0.5 }}
         >
-          {saving ? 'Saving...' : dirty ? 'Save Layout' : 'Saved'}
+          {saving ? 'Saving...' : dirty ? t('save') : t('save')}
         </button>
       </div>
 
@@ -270,6 +272,7 @@ const styles = {
     display: 'flex',
     gap: '1rem',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   meta: { color: '#666', fontSize: '0.9rem' },
 }
