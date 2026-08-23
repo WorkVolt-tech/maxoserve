@@ -210,7 +210,7 @@ export default function AdminReservations() {
 
   return (
     <div>
-      <PageHeader title={t('reservations')} subtitle="Take table and bottle reservations over the phone. Assign a table and build a pre-order for arrival." />
+      <PageHeader title={t('reservations')} subtitle={t('subtitleReservations')} />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
