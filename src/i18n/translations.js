@@ -257,6 +257,13 @@ export const translations = {
     phEmail: 'Email (optional)',
     phPartySize: 'Party size',
     phEventName: 'Event name (e.g. Smith Wedding)',
+    partyOf: 'party of',
+    resStatusPending: 'pending',
+    resStatusConfirmed: 'confirmed',
+    resStatusSeated: 'seated',
+    resStatusCompleted: 'completed',
+    resStatusCancelled: 'cancelled',
+    resStatusNoShow: 'no show',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -498,6 +505,13 @@ export const translations = {
     phEmail: 'Courriel (facultatif)',
     phPartySize: 'Nombre de personnes',
     phEventName: "Nom de l'événement (ex. Mariage Dupont)",
+    partyOf: 'groupe de',
+    resStatusPending: 'en attente',
+    resStatusConfirmed: 'confirmée',
+    resStatusSeated: 'installée',
+    resStatusCompleted: 'terminée',
+    resStatusCancelled: 'annulée',
+    resStatusNoShow: 'absence',
   },
 }
 
