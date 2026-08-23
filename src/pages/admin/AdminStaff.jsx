@@ -126,14 +126,14 @@ export default function AdminStaff() {
 
       {invites.length > 0 && (
         <>
-          <h3 style={styles.sectionTitle}>Pending Invites</h3>
+          <h3 style={styles.sectionTitle}>{t('pendingInvites')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
             {invites.map((inv) => (
               <Card key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                   <strong>{inv.email}</strong>
                   <Badge color="neutral">{roleLabel(inv.role, t)}</Badge>
-                  <Badge color="warning">pending</Badge>
+                  <Badge color="warning">{t('pending')}</Badge>
                 </div>
                 <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>{t('cancel')}</Button>
               </Card>
@@ -142,9 +142,9 @@ export default function AdminStaff() {
         </>
       )}
 
-      <h3 style={styles.sectionTitle}>{t('staff')}</h3>
+      <h3 style={styles.sectionTitle}>{t('team')}</h3>
       {members.length === 0 ? (
-        <EmptyState icon={Users} title="No team members yet" description="Invite your first staff member above." />
+        <EmptyState icon={Users} title={t('noTeamMembersYet')} description={t('inviteFirstStaff')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {members.map((member) => {
@@ -156,7 +156,7 @@ export default function AdminStaff() {
                     {(profile?.full_name || profile?.email || '?')[0].toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600 }}>{profile?.full_name || profile?.email || 'Unknown user'}</div>
+                    <div style={{ fontWeight: 600 }}>{profile?.full_name || profile?.email || t('unknownUser')}</div>
                     {profile?.email && profile?.full_name && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{profile.email}</div>
                     )}
