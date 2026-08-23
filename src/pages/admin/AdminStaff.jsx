@@ -11,12 +11,14 @@ import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const ROLES = ['admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
 export default function AdminStaff() {
   const { user } = useAuth()
   const { showToast } = useToast()
+  const { t } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
   const [removeTarget, setRemoveTarget] = useState(null)
   const [members, setMembers] = useState([])
@@ -102,11 +104,11 @@ export default function AdminStaff() {
     loadMembers(businessId)
   }
 
-  if (loading) return <LoadingState label="Loading staff…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
-      <PageHeader title="Staff" subtitle="Invite staff by email. When they sign up with that email, they'll automatically join your business with the role you set." />
+      <PageHeader title={t('staff')} subtitle="Invite staff by email. When they sign up with that email, they'll automatically join your business with the role you set." />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleInvite} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
@@ -116,7 +118,7 @@ export default function AdminStaff() {
           <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={styles.select}>
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
-          <Button type="submit" icon={UserPlus}>Send Invite</Button>
+          <Button type="submit" icon={UserPlus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -132,7 +134,7 @@ export default function AdminStaff() {
                   <Badge color="neutral">{inv.role}</Badge>
                   <Badge color="warning">pending</Badge>
                 </div>
-                <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>Cancel</Button>
+                <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>{t('cancel')}</Button>
               </Card>
             ))}
           </div>
@@ -167,7 +169,7 @@ export default function AdminStaff() {
                       <select value={member.role} onChange={(e) => handleChangeRole(member, e.target.value)} style={styles.roleSelect}>
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
-                      <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>Remove</Button>
+                      <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>{t('remove') || 'Remove'}</Button>
                     </>
                   )}
                 </div>
