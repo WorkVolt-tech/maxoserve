@@ -130,7 +130,7 @@ export default function AdminModifiers() {
     <div>
       <PageHeader
         title={t('modifiers')}
-        subtitle='Reusable customizations (e.g. "Choose Mixer", "Add-ons") you can attach to menu items.'
+        subtitle={t('subtitleModifiers')}
         actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
       />
 
