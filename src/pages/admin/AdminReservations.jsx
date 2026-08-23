@@ -14,6 +14,15 @@ import StatusBadge from '../../components/ui/StatusBadge'
 
 const STATUS_OPTIONS = ['pending', 'confirmed', 'seated', 'completed', 'cancelled', 'no_show']
 
+const STATUS_OPTION_KEYS = {
+  pending: 'resStatusPending',
+  confirmed: 'resStatusConfirmed',
+  seated: 'resStatusSeated',
+  completed: 'resStatusCompleted',
+  cancelled: 'resStatusCancelled',
+  no_show: 'resStatusNoShow',
+}
+
 export default function AdminReservations() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
@@ -215,16 +224,16 @@ export default function AdminReservations() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 160px' }}>
-            <Input placeholder="Customer name" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phCustomerName')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 140px' }}>
-            <Input type="tel" placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Input type="tel" placeholder={t('phPhone')} value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div style={{ flex: '1 1 160px' }}>
-            <Input type="email" placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input type="email" placeholder={t('phEmail')} value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div style={{ flex: '0 1 100px' }}>
-            <Input type="number" min="1" placeholder="Party size" value={partySize} onChange={(e) => setPartySize(e.target.value)} />
+            <Input type="number" min="1" placeholder={t('phPartySize')} value={partySize} onChange={(e) => setPartySize(e.target.value)} />
           </div>
           <div style={{ flex: '1 1 200px' }}>
             <Input type="datetime-local" value={reservationTime} onChange={(e) => setReservationTime(e.target.value)} required />
@@ -253,7 +262,7 @@ export default function AdminReservations() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
                   <div>
                     <strong>{r.customer_name}</strong>
-                    <span style={styles.meta}> · party of {r.party_size}</span>
+                    <span style={styles.meta}> · {t('partyOf')} {r.party_size}</span>
                     <span style={styles.meta}> · {new Date(r.reservation_time).toLocaleString()}</span>
                     {r.customer_phone && <span style={styles.meta}> · {r.customer_phone}</span>}
                     {r.notes && <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.3rem 0 0' }}>{r.notes}</p>}
@@ -268,7 +277,7 @@ export default function AdminReservations() {
 
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <select value={r.status} onChange={(e) => handleStatusChange(r, e.target.value)} style={styles.smallSelect}>
-                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                    {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{t(STATUS_OPTION_KEYS[s])}</option>)}
                   </select>
                   <select value={r.table_id || ''} onChange={(e) => handleAssignTable(r, e.target.value)} style={styles.smallSelect}>
                     <option value="">{t('noTableAssigned')}</option>
