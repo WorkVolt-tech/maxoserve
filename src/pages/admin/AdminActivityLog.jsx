@@ -2,11 +2,28 @@ import { useEffect, useState } from 'react'
 import { ScrollText } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
+
+function translateAction(action, t) {
+  const match = action.match(/^(accepted|completed|on_the_way|rejected|cancelled|pending)\s+a service request$/)
+  if (match) {
+    const verbKeyMap = {
+      accepted: 'statusAccepted',
+      completed: 'statusCompleted',
+      on_the_way: 'statusOnTheWay',
+      rejected: 'statusRejected',
+      cancelled: 'statusCancelled',
+      pending: 'statusPending',
+    }
+    const verb = t(verbKeyMap[match[1]])
+    return `${verb} — ${t('serviceRequestNoun')}`
+  }
+  return action
+}
 
 export default function AdminActivityLog() {
   const { user } = useAuth()
@@ -52,7 +69,7 @@ export default function AdminActivityLog() {
             return (
               <Card key={log.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem' }} padding="0.85rem 1.1rem">
                 <div>
-                  <span style={{ fontSize: '0.9rem' }}><strong>{who}</strong> — {log.action}</span>
+                  <span style={{ fontSize: '0.9rem' }}><strong>{who}</strong> — {translateAction(log.action, t)}</span>
                   {log.details && <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>{JSON.stringify(log.details)}</div>}
                 </div>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-faint)', whiteSpace: 'nowrap' }}>
