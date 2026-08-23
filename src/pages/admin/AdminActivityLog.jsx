@@ -58,7 +58,7 @@ export default function AdminActivityLog() {
 
   return (
     <div>
-      <PageHeader title={t('activityLog')} subtitle="The last 100 actions taken across your business." />
+      <PageHeader title={t('activityLog')} subtitle={t('subtitleActivityLog')} />
 
       {logs.length === 0 ? (
         <EmptyState icon={ScrollText} title="No activity yet" description="Actions taken across your business will show up here." />
