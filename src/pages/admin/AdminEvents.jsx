@@ -89,7 +89,7 @@ export default function AdminEvents() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleCreate} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Event name (e.g. Smith Wedding)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phEventName')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div>
             <label style={styles.dateLabel}>{t('startsLabel')}</label>
