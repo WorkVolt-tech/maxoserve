@@ -45,6 +45,16 @@ function localizedLabel(item, lang) {
   return lang === 'fr' && item.label_fr ? item.label_fr : item.label
 }
 
+function localizedName(item, lang) {
+  if (!item) return ''
+  return lang === 'fr' && item.name_fr ? item.name_fr : item.name
+}
+
+function localizedDescription(item, lang) {
+  if (!item) return ''
+  return lang === 'fr' && item.description_fr ? item.description_fr : item.description
+}
+
 export default function TablePage() {
   return (
     <LanguageProvider defaultLang="en">
@@ -271,7 +281,7 @@ function TablePageInner() {
     const groups = modifierGroups[configItem.id] || []
     for (const group of groups) {
       if (group.is_required && (!selectedOptions[group.id] || selectedOptions[group.id].length === 0)) {
-        setOrderError(`Please select an option for "${group.name}".`)
+        setOrderError(`Please select an option for "${localizedName(group, lang)}".`)
         return
       }
     }
@@ -448,7 +458,7 @@ function TablePageInner() {
                       onClick={() => setActiveCategoryId(cat.id)}
                       style={{ ...styles.categoryTab, ...(activeCategoryId === cat.id ? styles.categoryTabActive : {}) }}
                     >
-                      {cat.name}
+                      {localizedName(cat, lang)}
                     </button>
                   ))}
                 </div>
@@ -460,8 +470,8 @@ function TablePageInner() {
                   {(menuItems[activeCategoryId] || []).map((item) => (
                     <button key={item.id} onClick={() => openItemConfig(item)} style={styles.menuItemCard}>
                       <div style={{ textAlign: 'left' }}>
-                        <div style={styles.menuItemName}>{item.name}</div>
-                        {item.description && <div style={styles.menuItemDesc}>{item.description}</div>}
+                        <div style={styles.menuItemName}>{localizedName(item, lang)}</div>
+                        {localizedDescription(item, lang) && <div style={styles.menuItemDesc}>{localizedDescription(item, lang)}</div>}
                       </div>
                       <div style={styles.menuItemRight}>
                         <span style={styles.menuItemPrice}>${Number(item.price).toFixed(2)}</span>
@@ -537,15 +547,15 @@ function TablePageInner() {
           <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div style={styles.sheetHandle} />
             <div style={styles.sheetHeader}>
-              <h3 style={{ margin: 0 }}>{configItem.name}</h3>
+              <h3 style={{ margin: 0 }}>{localizedName(configItem, lang)}</h3>
               <button onClick={() => setConfigItem(null)} style={styles.sheetClose}><X size={18} /></button>
             </div>
-            {configItem.description && <p style={{ color: '#888', fontSize: '0.85rem', marginTop: '-0.5rem' }}>{configItem.description}</p>}
+            {localizedDescription(configItem, lang) && <p style={{ color: '#888', fontSize: '0.85rem', marginTop: '-0.5rem' }}>{localizedDescription(configItem, lang)}</p>}
 
             {configGroups.map((group) => (
               <div key={group.id} style={{ marginBottom: '1rem' }}>
                 <div style={styles.groupLabel}>
-                  {group.name}{group.is_required && <span style={{ color: '#dc2626' }}> ({t('required')})</span>}
+                  {localizedName(group, lang)}{group.is_required && <span style={{ color: '#dc2626' }}> ({t('required')})</span>}
                 </div>
                 <div style={styles.optionChoices}>
                   {group.options.map((opt) => {
@@ -556,7 +566,7 @@ function TablePageInner() {
                         onClick={() => toggleOption(group, opt)}
                         style={{ ...styles.optionChoice, ...(chosen ? styles.optionChoiceActive : {}) }}
                       >
-                        {opt.name}{opt.price_delta > 0 && ` +$${Number(opt.price_delta).toFixed(2)}`}
+                        {localizedName(opt, lang)}{opt.price_delta > 0 && ` +$${Number(opt.price_delta).toFixed(2)}`}
                       </button>
                     )
                   })}
@@ -602,8 +612,8 @@ function TablePageInner() {
                   {cart.map((line) => (
                     <div key={line.tempId} style={styles.cartLine}>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{line.quantity}× {line.item.name}</div>
-                        {line.options.length > 0 && <div style={{ color: '#888', fontSize: '0.8rem' }}>{line.options.map((o) => o.name).join(', ')}</div>}
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{line.quantity}× {localizedName(line.item, lang)}</div>
+                        {line.options.length > 0 && <div style={{ color: '#888', fontSize: '0.8rem' }}>{line.options.map((o) => localizedName(o, lang)).join(', ')}</div>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span>${cartLineTotal(line).toFixed(2)}</span>
