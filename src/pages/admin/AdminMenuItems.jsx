@@ -3,13 +3,13 @@ import { useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, SlidersHorizontal, EyeOff, Eye } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const PREP_LOCATIONS = ['kitchen', 'bar', 'bottle_service']
 
@@ -25,7 +25,9 @@ export default function AdminMenuItems() {
   const [expandedItemId, setExpandedItemId] = useState(null)
 
   const [name, setName] = useState('')
+  const [nameFr, setNameFr] = useState('')
   const [description, setDescription] = useState('')
+  const [descriptionFr, setDescriptionFr] = useState('')
   const [price, setPrice] = useState('')
   const [prepLocation, setPrepLocation] = useState('kitchen')
 
@@ -74,11 +76,12 @@ export default function AdminMenuItems() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('menu_items').insert({
-      business_id: businessId, category_id: categoryId, name, description: description || null,
+      business_id: businessId, category_id: categoryId, name, name_fr: nameFr || null,
+      description: description || null, description_fr: descriptionFr || null,
       price: parseFloat(price) || 0, prep_location: prepLocation, display_order: items.length,
     })
     if (insertError) { setError(insertError.message); return }
-    setName(''); setDescription(''); setPrice(''); setPrepLocation('kitchen')
+    setName(''); setNameFr(''); setDescription(''); setDescriptionFr(''); setPrice(''); setPrepLocation('kitchen')
     loadItems()
   }
 
@@ -123,7 +126,10 @@ export default function AdminMenuItems() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 200px' }}>
-            <Input placeholder="Item name (e.g. Loaded Nachos)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder="Name (English)" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+          <div style={{ flex: '1 1 200px' }}>
+            <Input placeholder="Name (French, optional)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
           </div>
           <div style={{ flex: '0 1 120px' }}>
             <Input type="number" step="0.01" placeholder="Price" value={price} onChange={(e) => setPrice(e.target.value)} required />
@@ -131,7 +137,8 @@ export default function AdminMenuItems() {
           <select value={prepLocation} onChange={(e) => setPrepLocation(e.target.value)} style={styles.select}>
             {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
           </select>
-          <textarea placeholder="Description (optional)" value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textarea} />
+          <textarea placeholder="Description (English, optional)" value={description} onChange={(e) => setDescription(e.target.value)} style={styles.textarea} />
+          <textarea placeholder="Description (French, optional)" value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} style={styles.textarea} />
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
@@ -148,12 +155,14 @@ export default function AdminMenuItems() {
               <Card key={item.id} padding="0">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', padding: '1rem 1.25rem' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <strong>{item.name}</strong>
+                      {item.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {item.name_fr}</span>}
                       <span style={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.9rem' }}>${Number(item.price).toFixed(2)}</span>
                       {!item.is_available && <Badge color="danger">unavailable</Badge>}
                     </div>
                     {item.description && <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{item.description}</p>}
+                    {item.description_fr && <p style={{ color: 'var(--color-text-faint)', fontSize: '0.8rem', margin: '0.15rem 0 0', fontStyle: 'italic' }}>{item.description_fr}</p>}
                     <div style={{ fontSize: '0.8rem', color: 'var(--color-text-faint)', marginTop: '0.25rem' }}>
                       {item.prep_location.replace('_', ' ')}
                       {linkedGroupIds.length > 0 && <> · {linkedGroupIds.length} modifier group(s)</>}
