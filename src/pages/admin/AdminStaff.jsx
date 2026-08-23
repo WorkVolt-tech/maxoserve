@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react'
 import { Users, UserPlus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { useToast } from '../../contexts/ToastContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -9,9 +12,6 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import ConfirmationModal from '../../components/ui/ConfirmationModal'
-import { useToast } from '../../contexts/ToastContext'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const ROLES = ['admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
@@ -141,7 +141,7 @@ export default function AdminStaff() {
         </>
       )}
 
-      <h3 style={styles.sectionTitle}>Team</h3>
+      <h3 style={styles.sectionTitle}>{t('staff')}</h3>
       {members.length === 0 ? (
         <EmptyState icon={Users} title="No team members yet" description="Invite your first staff member above." />
       ) : (
@@ -169,7 +169,7 @@ export default function AdminStaff() {
                       <select value={member.role} onChange={(e) => handleChangeRole(member, e.target.value)} style={styles.roleSelect}>
                         {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                       </select>
-                      <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>{t('remove') || 'Remove'}</Button>
+                      <Button variant="danger" size="sm" onClick={() => setRemoveTarget(member)}>{t('remove')}</Button>
                     </>
                   )}
                 </div>
