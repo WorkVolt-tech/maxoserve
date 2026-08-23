@@ -93,7 +93,7 @@ export default function AdminRequestTypes() {
 
   return (
     <div>
-      <PageHeader title={t('requestButtons')} subtitle="The buttons customers see on their table page (e.g. Call Server, Request Bill). Each one routes to a staff role." />
+      <PageHeader title={t('requestButtons')} subtitle={t('subtitleRequestButtons')} />
 
       {availablePresets.length > 0 && (
         <Card style={{ marginBottom: '1.25rem' }}>
