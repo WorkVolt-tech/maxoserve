@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { roleLabel } from '../../lib/roleLabels'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -157,7 +158,7 @@ export default function AdminAssignments() {
             <option value="">{t('selectStaffMember')}</option>
             {members.map((m) => (
               <option key={m.user_id} value={m.user_id}>
-                {profiles[m.user_id]?.full_name || profiles[m.user_id]?.email || 'Unknown'} ({m.role})
+                {profiles[m.user_id]?.full_name || profiles[m.user_id]?.email || 'Unknown'} ({roleLabel(m.role, t)})
               </option>
             ))}
           </select>
