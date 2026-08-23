@@ -99,10 +99,10 @@ export default function AdminMenu() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Name (English)" value={name} onChange={(e) => setName(e.target.value)} required />
+            <Input placeholder={t('phCategoryNameEn')} value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Name (French, optional)" value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
+            <Input placeholder={t('phCategoryNameFr')} value={nameFr} onChange={(e) => setNameFr(e.target.value)} />
           </div>
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
