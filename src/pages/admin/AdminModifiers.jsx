@@ -121,12 +121,12 @@ export default function AdminModifiers() {
     loadGroups(businessId)
   }
 
-  if (loading) return <LoadingState label="Loading modifiers…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
       <PageHeader
-        title="Modifiers"
+        title={t('modifiers')}
         subtitle='Reusable customizations (e.g. "Choose Mixer", "Add-ons") you can attach to menu items.'
         actions={<Button variant="secondary" icon={Upload} onClick={() => setShowImport(true)}>Import from File</Button>}
       />
@@ -148,7 +148,7 @@ export default function AdminModifiers() {
             <input type="checkbox" checked={isRequired} onChange={(e) => setIsRequired(e.target.checked)} />
             Required
           </label>
-          <Button type="submit" icon={Plus}>Add Group</Button>
+          <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
@@ -166,7 +166,7 @@ export default function AdminModifiers() {
                     {' '}· {group.selection_type === 'single' ? 'pick one' : 'pick multiple'}{group.is_required ? ' · required' : ''}
                   </span>
                 </div>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDeleteGroup(group.id)}>Delete Group</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDeleteGroup(group.id)}>{t('delete')}</Button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.75rem' }}>
@@ -179,7 +179,7 @@ export default function AdminModifiers() {
                     </span>
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button onClick={() => handleToggleOptionAvailable(opt)} style={styles.smallToggleButton}>
-                        {opt.is_available ? 'Hide' : 'Show'}
+                        {opt.is_available ? t('hide') : t('show')}
                       </button>
                       <button onClick={() => handleDeleteOption(opt.id)} style={styles.smallDeleteButton}><X size={14} /></button>
                     </div>
@@ -200,7 +200,7 @@ export default function AdminModifiers() {
                   onChange={(e) => updateOptionForm(group.id, 'priceDelta', e.target.value)}
                   style={{ ...styles.optionInput, flex: '0 1 100px' }}
                 />
-                <Button variant="secondary" size="sm" onClick={() => handleAddOption(group.id)}>Add</Button>
+                <Button variant="secondary" size="sm" onClick={() => handleAddOption(group.id)}>{t('add')}</Button>
               </div>
             </Card>
           ))}
