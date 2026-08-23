@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Bell, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -9,19 +10,18 @@ import Input from '../../components/ui/Input'
 import Badge from '../../components/ui/Badge'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
-import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 const ROLES = ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff']
 
 const PRESETS = [
-  { label: 'Call Server', routes_to_role: 'server' },
-  { label: 'Call Hostess', routes_to_role: 'hostess' },
-  { label: 'Request Bill', routes_to_role: 'server' },
-  { label: 'Request Water', routes_to_role: 'server' },
-  { label: 'Request Ice', routes_to_role: 'bartender' },
-  { label: 'Request Cups', routes_to_role: 'bartender' },
-  { label: 'Request Napkins', routes_to_role: 'server' },
-  { label: 'Report a Problem', routes_to_role: 'manager' },
+  { label: 'Call Server', label_fr: 'Appeler le serveur', routes_to_role: 'server' },
+  { label: 'Call Hostess', label_fr: "Appeler l'hôtesse", routes_to_role: 'hostess' },
+  { label: 'Request Bill', label_fr: "Demander l'addition", routes_to_role: 'server' },
+  { label: 'Request Water', label_fr: "Demander de l'eau", routes_to_role: 'server' },
+  { label: 'Request Ice', label_fr: 'Demander de la glace', routes_to_role: 'bartender' },
+  { label: 'Request Cups', label_fr: 'Demander des verres', routes_to_role: 'bartender' },
+  { label: 'Request Napkins', label_fr: 'Demander des serviettes', routes_to_role: 'server' },
+  { label: 'Report a Problem', label_fr: 'Signaler un problème', routes_to_role: 'manager' },
 ]
 
 export default function AdminRequestTypes() {
@@ -30,6 +30,7 @@ export default function AdminRequestTypes() {
   const [businessId, setBusinessId] = useState(null)
   const [types, setTypes] = useState([])
   const [label, setLabel] = useState('')
+  const [labelFr, setLabelFr] = useState('')
   const [routesToRole, setRoutesToRole] = useState('server')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -57,17 +58,18 @@ export default function AdminRequestTypes() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('service_request_types').insert({
-      business_id: businessId, label, routes_to_role: routesToRole, display_order: types.length,
+      business_id: businessId, label, label_fr: labelFr || null, routes_to_role: routesToRole, display_order: types.length,
     })
     if (insertError) { setError(insertError.message); return }
     setLabel('')
+    setLabelFr('')
     loadTypes(businessId)
   }
 
   async function handleAddPreset(preset) {
     setError('')
     const { error: insertError } = await supabase.from('service_request_types').insert({
-      business_id: businessId, label: preset.label, routes_to_role: preset.routes_to_role, display_order: types.length,
+      business_id: businessId, label: preset.label, label_fr: preset.label_fr, routes_to_role: preset.routes_to_role, display_order: types.length,
     })
     if (insertError) { setError(insertError.message); return }
     loadTypes(businessId)
@@ -86,7 +88,7 @@ export default function AdminRequestTypes() {
 
   if (loading) return <LoadingState label={t('loading')} />
 
-  const existingLabels = types.map((t) => t.label)
+  const existingLabels = types.map((rt) => rt.label)
   const availablePresets = PRESETS.filter((p) => !existingLabels.includes(p.label))
 
   return (
@@ -107,7 +109,10 @@ export default function AdminRequestTypes() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <Input placeholder="Custom button label (e.g. Bottle Service)" value={label} onChange={(e) => setLabel(e.target.value)} required />
+            <Input placeholder="Label (English)" value={label} onChange={(e) => setLabel(e.target.value)} required />
+          </div>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input placeholder="Label (French, optional)" value={labelFr} onChange={(e) => setLabelFr(e.target.value)} />
           </div>
           <select value={routesToRole} onChange={(e) => setRoutesToRole(e.target.value)} style={styles.select}>
             {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -125,6 +130,7 @@ export default function AdminRequestTypes() {
             <Card key={rt.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <strong>{rt.label}</strong>
+                {rt.label_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {rt.label_fr}</span>}
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> · routes to {rt.routes_to_role || 'unassigned'}</span>
                 {!rt.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden from customers</Badge>}
               </div>
