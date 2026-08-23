@@ -6,9 +6,11 @@ import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
 import LoadingState from '../../components/ui/LoadingState'
+import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
 export default function AdminActivityLog() {
   const { user } = useAuth()
+  const { t } = useAppLanguage()
   const [logs, setLogs] = useState([])
   const [profiles, setProfiles] = useState({})
   const [loading, setLoading] = useState(true)
@@ -35,11 +37,11 @@ export default function AdminActivityLog() {
     setLoading(false)
   }
 
-  if (loading) return <LoadingState label="Loading activity…" />
+  if (loading) return <LoadingState label={t('loading')} />
 
   return (
     <div>
-      <PageHeader title="Activity Log" subtitle="The last 100 actions taken across your business." />
+      <PageHeader title={t('activityLog')} subtitle="The last 100 actions taken across your business." />
 
       {logs.length === 0 ? (
         <EmptyState icon={ScrollText} title="No activity yet" description="Actions taken across your business will show up here." />
