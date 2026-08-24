@@ -24,18 +24,6 @@ function generateToken() {
   return Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
-function statusBadgeColor(status) {
-  switch (status) {
-    case 'available': return { background: '#e8f5e9', color: '#2e7d32' }
-    case 'occupied': return { background: '#fdecea', color: '#c62828' }
-    case 'reserved': return { background: '#fff3e0', color: '#e65100' }
-    case 'needs_service': return { background: '#fce4ec', color: '#ad1457' }
-    case 'order_pending': return { background: '#f3e5f5', color: '#6a1b9a' }
-    case 'disabled': return { background: '#eceff1', color: '#546e7a' }
-    default: return { background: '#e8f5e9', color: '#2e7d32' }
-  }
-}
-
 export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
@@ -58,6 +46,9 @@ export default function AdminTables() {
 
   const [qrModalTable, setQrModalTable] = useState(null)
   const [regenerating, setRegenerating] = useState(false)
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkScope, setBulkScope] = useState('area')
+  const [bulkProcessing, setBulkProcessing] = useState(false)
 
   useEffect(() => { loadInitial() }, [])
   useEffect(() => {
@@ -173,6 +164,47 @@ export default function AdminTables() {
     showToast('QR code regenerated — old code is now inactive')
   }
 
+  async function handleBulkGenerate() {
+    setBulkProcessing(true)
+    setError('')
+
+    let targetTables = tables
+    if (bulkScope === 'location') {
+      const { data: allAreasForLocation } = await supabase
+        .from('areas').select('id').eq('location_id', currentLocationId)
+      const areaIds = (allAreasForLocation || []).map((a) => a.id)
+      const { data: allTablesForLocation } = await supabase
+        .from('tables').select('*').in('area_id', areaIds)
+      targetTables = allTablesForLocation || []
+    }
+
+    for (const table of targetTables) {
+      const { data: existingTokens } = await supabase
+        .from('table_qr_tokens')
+        .select('*')
+        .eq('table_id', table.id)
+        .eq('is_active', true)
+
+      if (existingTokens && existingTokens.length > 0) {
+        for (const existingToken of existingTokens) {
+          await supabase.from('table_qr_tokens')
+            .update({ is_active: false, disabled_at: new Date().toISOString() })
+            .eq('id', existingToken.id)
+        }
+      }
+
+      const token = generateToken()
+      await supabase.from('table_qr_tokens').insert({
+        business_id: businessId, table_id: table.id, token,
+      })
+    }
+
+    setBulkProcessing(false)
+    setBulkModalOpen(false)
+    showToast(t('bulkQrDone'))
+    loadTables(selectedAreaId)
+  }
+
   if (loading) return <LoadingState label={t('loading')} />
 
   if (!currentLocationId) {
@@ -184,7 +216,17 @@ export default function AdminTables() {
 
   return (
     <div>
-      <PageHeader title={t('tables')} subtitle={t('subtitleTables')} />
+      <PageHeader
+        title={t('tables')}
+        subtitle={t('subtitleTables')}
+        actions={
+          tables.length > 0 && (
+            <Button variant="secondary" icon={QrCode} onClick={() => setBulkModalOpen(true)}>
+              {t('bulkRegenerateQr')}
+            </Button>
+          )
+        }
+      />
 
       <Card style={{ marginBottom: '1.5rem' }}>
         <div style={{ marginBottom: '1rem' }}>
@@ -271,6 +313,45 @@ export default function AdminTables() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+
+      {bulkModalOpen && (
+        <div style={styles.bulkOverlay} onClick={() => !bulkProcessing && setBulkModalOpen(false)}>
+          <div style={styles.bulkModal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>{t('bulkQrConfirmTitle')}</h3>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>{t('bulkQrConfirmDesc')}</p>
+
+            <div style={styles.bulkScopeRow}>
+              <label style={styles.bulkScopeOption}>
+                <input
+                  type="radio"
+                  name="bulkScope"
+                  checked={bulkScope === 'area'}
+                  onChange={() => setBulkScope('area')}
+                />
+                {t('bulkQrScopeArea')}
+              </label>
+              <label style={styles.bulkScopeOption}>
+                <input
+                  type="radio"
+                  name="bulkScope"
+                  checked={bulkScope === 'location'}
+                  onChange={() => setBulkScope('location')}
+                />
+                {t('bulkQrScopeLocation')}
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <Button variant="secondary" onClick={() => setBulkModalOpen(false)} disabled={bulkProcessing}>
+                {t('cancel')}
+              </Button>
+              <Button onClick={handleBulkGenerate} disabled={bulkProcessing}>
+                {bulkProcessing ? t('bulkQrProgress') : t('bulkRegenerateQr')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -278,4 +359,19 @@ export default function AdminTables() {
 const styles = {
   label: { display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.25rem' },
   select: { padding: '0.6rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem' },
+  bulkOverlay: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500, padding: '1rem',
+  },
+  bulkModal: {
+    background: '#fff', borderRadius: '16px', padding: '1.5rem',
+    maxWidth: '420px', width: '100%',
+  },
+  bulkScopeRow: {
+    display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem',
+    background: 'var(--color-bg)', padding: '0.75rem', borderRadius: '8px',
+  },
+  bulkScopeOption: {
+    display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer',
+  },
 }
