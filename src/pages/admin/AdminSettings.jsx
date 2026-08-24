@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Settings2 } from 'lucide-react'
+import { Settings2, Image } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
@@ -15,8 +15,11 @@ export default function AdminSettings() {
   const [businessId, setBusinessId] = useState(null)
   const [showServiceTab, setShowServiceTab] = useState(true)
   const [showMenuTab, setShowMenuTab] = useState(true)
+  const [logoUrl, setLogoUrl] = useState('')
+  const [logoInput, setLogoInput] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingLogo, setSavingLogo] = useState(false)
 
   useEffect(() => { loadSettings() }, [])
 
@@ -37,7 +40,37 @@ export default function AdminSettings() {
       setShowServiceTab(data.show_service_tab)
       setShowMenuTab(data.show_menu_tab)
     }
+
+    const { data: businessData } = await supabase
+      .from('businesses')
+      .select('logo_url')
+      .eq('id', membership.business_id)
+      .single()
+
+    if (businessData?.logo_url) {
+      setLogoUrl(businessData.logo_url)
+      setLogoInput(businessData.logo_url)
+    }
+
     setLoading(false)
+  }
+
+  async function handleSaveLogo(e) {
+    e.preventDefault()
+    setSavingLogo(true)
+    const { error } = await supabase
+      .from('businesses')
+      .update({ logo_url: logoInput.trim() || null })
+      .eq('id', businessId)
+    setSavingLogo(false)
+
+    if (error) {
+      showToast(`Could not save logo: ${error.message}`, 'error')
+      return
+    }
+
+    setLogoUrl(logoInput.trim())
+    showToast(t('settingsSaved'))
   }
 
   async function handleToggle(field, currentValue, otherValue) {
@@ -75,6 +108,42 @@ export default function AdminSettings() {
 
   return (
     <div>
+      <PageHeader title={t('businessLogo')} subtitle={t('businessLogoDesc')} />
+
+      <Card style={{ marginBottom: '1.5rem' }}>
+        <form onSubmit={handleSaveLogo} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 280px' }}>
+            <input
+              type="url"
+              placeholder={t('logoUrlPlaceholder')}
+              value={logoInput}
+              onChange={(e) => setLogoInput(e.target.value)}
+              style={styles.logoInput}
+            />
+          </div>
+          <button type="submit" disabled={savingLogo} style={styles.saveLogoButton}>
+            {savingLogo ? '...' : t('save')}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '1rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>{t('logoPreview')}</div>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt="Business logo"
+              style={styles.logoPreviewImg}
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+          ) : (
+            <div style={{ color: 'var(--color-text-faint)', fontSize: '0.85rem' }}>
+              <Image size={16} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
+              {t('noLogoSet')}
+            </div>
+          )}
+        </div>
+      </Card>
+
       <PageHeader title={t('customerPageSettings')} subtitle={t('customerPageSettingsDesc')} />
 
       <Card>
@@ -121,6 +190,31 @@ export default function AdminSettings() {
 }
 
 const styles = {
+  logoInput: {
+    width: '100%',
+    padding: '0.65rem 0.85rem',
+    borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-border)',
+    fontSize: '0.9rem',
+  },
+  saveLogoButton: {
+    padding: '0.65rem 1.2rem',
+    borderRadius: 'var(--radius-sm)',
+    border: 'none',
+    background: 'var(--color-primary)',
+    color: '#fff',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: '0.9rem',
+  },
+  logoPreviewImg: {
+    maxWidth: '160px',
+    maxHeight: '100px',
+    borderRadius: '8px',
+    border: '1px solid var(--color-border)',
+    padding: '0.5rem',
+    background: '#fff',
+  },
   row: {
     display: 'flex',
     justifyContent: 'space-between',
