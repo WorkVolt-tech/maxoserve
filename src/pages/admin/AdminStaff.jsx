@@ -208,7 +208,7 @@ export default function AdminStaff() {
                   <Badge color="neutral">{roleLabel(inv.role, t)}</Badge>
                   <Badge color="warning">{t('pending')}</Badge>
                   {inv.expires_at && (
-                    <Badge color="info">{t('accessExpires')}: {new Date(inv.expires_at).toLocaleDateString()}</Badge>
+                    <Badge color="info">{t('accessExpires')}: {new Date(inv.expires_at).toLocaleString()}</Badge>
                   )}
                 </div>
                 <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>{t('cancel')}</Button>
@@ -238,7 +238,7 @@ export default function AdminStaff() {
                     )}
                     {member.expires_at && (
                       <div style={{ fontSize: '0.78rem', color: 'var(--color-warning)', marginTop: '0.15rem' }}>
-                        {t('accessExpires')}: {new Date(member.expires_at).toLocaleDateString()}
+                        {t('accessExpires')}: {new Date(member.expires_at).toLocaleString()}
                       </div>
                     )}
                   </div>
