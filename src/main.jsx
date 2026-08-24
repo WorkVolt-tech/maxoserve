@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ToastProvider } from './contexts/ToastContext.jsx'
 import { AppLanguageProvider } from './contexts/AppLanguageContext.jsx'
+import { TourProvider } from './contexts/TourContext.jsx'
 import './styles/index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -12,9 +13,11 @@ createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <AppLanguageProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
+          <TourProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </TourProvider>
         </AppLanguageProvider>
       </AuthProvider>
     </BrowserRouter>
