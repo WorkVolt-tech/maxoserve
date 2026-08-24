@@ -73,6 +73,8 @@ function TablePageInner() {
   const [session, setSession] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [taxRate, setTaxRate] = useState(0)
+  const [showServiceTab, setShowServiceTab] = useState(true)
+  const [showMenuTab, setShowMenuTab] = useState(true)
 
   const [requestTypes, setRequestTypes] = useState([])
   const [myRequests, setMyRequests] = useState([])
@@ -106,6 +108,7 @@ function TablePageInner() {
     loadMyRequests(session.id)
     loadMenu(session.business_id)
     loadTaxRate(session.business_id)
+    loadTabSettings(session.business_id)
     loadMyOrders(session.id)
 
     const requestsChannel = supabase
@@ -179,6 +182,26 @@ function TablePageInner() {
   async function loadTaxRate(businessId) {
     const { data } = await supabase.from('business_settings').select('tax_rate').eq('business_id', businessId).single()
     setTaxRate(data?.tax_rate ? Number(data.tax_rate) : 0)
+  }
+
+  async function loadTabSettings(businessId) {
+    const { data } = await supabase
+      .from('business_settings')
+      .select('show_service_tab, show_menu_tab')
+      .eq('business_id', businessId)
+      .single()
+
+    if (data) {
+      setShowServiceTab(data.show_service_tab)
+      setShowMenuTab(data.show_menu_tab)
+      // If the current active tab just got hidden, switch to whichever tab is still visible
+      if (!data.show_service_tab && activeTab === 'service') {
+        setActiveTab(data.show_menu_tab ? 'menu' : 'orders')
+      }
+      if (!data.show_menu_tab && activeTab === 'menu') {
+        setActiveTab(data.show_service_tab ? 'service' : 'orders')
+      }
+    }
   }
 
   async function loadMyOrders(sessionId) {
@@ -400,7 +423,7 @@ function TablePageInner() {
       </div>
 
       <div style={styles.content}>
-        {activeTab === 'service' && (
+        {activeTab === 'service' && showServiceTab && (
           <>
             {activeRequests.length > 0 && (
               <div style={styles.activeSection}>
@@ -445,7 +468,7 @@ function TablePageInner() {
           </>
         )}
 
-        {activeTab === 'menu' && (
+        {activeTab === 'menu' && showMenuTab && (
           <div>
             {categories.length === 0 ? (
               <p style={{ color: '#888', textAlign: 'center' }}>{t('menuNotAvailable')}</p>
@@ -641,12 +664,16 @@ function TablePageInner() {
       )}
 
       <div style={styles.bottomNav}>
-        <button onClick={() => setActiveTab('service')} style={{ ...styles.navItem, ...(activeTab === 'service' ? styles.navItemActive : {}) }}>
-          <Bell size={20} /><span>{t('service')}</span>
-        </button>
-        <button onClick={() => setActiveTab('menu')} style={{ ...styles.navItem, ...(activeTab === 'menu' ? styles.navItemActive : {}) }}>
-          <UtensilsCrossed size={20} /><span>{t('menu')}</span>
-        </button>
+        {showServiceTab && (
+          <button onClick={() => setActiveTab('service')} style={{ ...styles.navItem, ...(activeTab === 'service' ? styles.navItemActive : {}) }}>
+            <Bell size={20} /><span>{t('service')}</span>
+          </button>
+        )}
+        {showMenuTab && (
+          <button onClick={() => setActiveTab('menu')} style={{ ...styles.navItem, ...(activeTab === 'menu' ? styles.navItemActive : {}) }}>
+            <UtensilsCrossed size={20} /><span>{t('menu')}</span>
+          </button>
+        )}
         <button onClick={() => setActiveTab('orders')} style={{ ...styles.navItem, ...(activeTab === 'orders' ? styles.navItemActive : {}) }}>
           <ShoppingBag size={20} /><span>{t('orders')}</span>
         </button>
