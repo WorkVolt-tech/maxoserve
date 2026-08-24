@@ -335,6 +335,9 @@ export const translations = {
     logoUrlPlaceholder: 'https://...',
     logoPreview: 'Preview',
     noLogoSet: 'No logo set yet',
+    printTemplate: 'Print Template',
+    scanToOrder: 'Scan to Order',
+    poweredByMaxoServe: 'Powered by MaxoServe',
   },
   fr: {
     goodMorning: 'Bonjour',
