@@ -304,6 +304,7 @@ export const translations = {
     showMenuTabDesc: 'Browsable menu with ordering.',
     settingsSaved: 'Settings saved',
     atLeastOneTabWarning: 'At least one tab must stay enabled.',
+    settings: 'Settings',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -592,6 +593,7 @@ export const translations = {
     showMenuTabDesc: 'Menu consultable avec possibilité de commander.',
     settingsSaved: 'Paramètres enregistrés',
     atLeastOneTabWarning: 'Au moins un onglet doit rester activé.',
+    settings: 'Paramètres',
   },
 }
 
