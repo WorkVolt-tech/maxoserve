@@ -29,6 +29,7 @@ const SECTION_ACCESS = {
   activityLogs: ['owner', 'admin'],
   orders: ['owner', 'admin', 'manager', 'bartender', 'kitchen', 'server'],
   requestTypes: ['owner', 'admin'],
+  settings: ['owner', 'admin'],
 }
 
 export function canAccess(role, section) {
