@@ -14,6 +14,7 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { shapeLabel } from '../../lib/roleLabels'
 
 const SHAPES = ['round', 'square', 'rectangle', 'oval', 'booth', 'bar_seat', 'vip_section', 'custom']
 
@@ -251,7 +252,7 @@ export default function AdminTables() {
               <Input type="number" placeholder={t('capacityLabel')} value={capacity} onChange={(e) => setCapacity(e.target.value)} />
             </div>
             <select value={shape} onChange={(e) => setShape(e.target.value)} style={{ ...styles.select, flex: '0 1 140px' }}>
-              {SHAPES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+              {SHAPES.map((s) => <option key={s} value={s}>{shapeLabel(s, t)}</option>)}
             </select>
             <Button type="submit" icon={Plus}>{t('add')}</Button>
           </form>
@@ -276,7 +277,7 @@ export default function AdminTables() {
                     <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                       {tbl.table_number && <>#{tbl.table_number} · </>}
                       {tbl.capacity && <>seats {tbl.capacity} · </>}
-                      {tbl.shape.replace('_', ' ')}
+                      {shapeLabel(tbl.shape, t)}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
