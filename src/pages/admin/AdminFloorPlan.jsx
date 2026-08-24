@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Stage, Layer, Rect, Circle, Ellipse, Text, Group } from 'react-konva'
+import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
@@ -27,7 +28,10 @@ export default function AdminFloorPlan() {
   const [selectedTableId, setSelectedTableId] = useState(null)
 
   const containerRef = useRef(null)
+  const stageRef = useRef(null)
   const [stageWidth, setStageWidth] = useState(800)
+  const [stageScale, setStageScale] = useState(1)
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     loadInitial()
@@ -99,6 +103,54 @@ export default function AdminFloorPlan() {
     setDirty(true)
   }
 
+  function handleWheel(e) {
+    e.evt.preventDefault()
+    const scaleBy = 1.08
+    const stage = stageRef.current
+    const oldScale = stage.scaleX()
+    const pointer = stage.getPointerPosition()
+
+    const mousePointTo = {
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
+    }
+
+    const direction = e.evt.deltaY > 0 ? -1 : 1
+    const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy
+    const clampedScale = Math.max(0.3, Math.min(3, newScale))
+
+    setStageScale(clampedScale)
+    setStagePos({
+      x: pointer.x - mousePointTo.x * clampedScale,
+      y: pointer.y - mousePointTo.y * clampedScale,
+    })
+  }
+
+  function handleZoomButton(direction) {
+    const stage = stageRef.current
+    const oldScale = stageScale
+    const newScale = direction > 0 ? oldScale * 1.2 : oldScale / 1.2
+    const clampedScale = Math.max(0.3, Math.min(3, newScale))
+
+    const centerX = stageWidth / 2
+    const centerY = 400
+    const mousePointTo = {
+      x: (centerX - stagePos.x) / oldScale,
+      y: (centerY - stagePos.y) / oldScale,
+    }
+
+    setStageScale(clampedScale)
+    setStagePos({
+      x: centerX - mousePointTo.x * clampedScale,
+      y: centerY - mousePointTo.y * clampedScale,
+    })
+  }
+
+  function handleResetView() {
+    setStageScale(1)
+    setStagePos({ x: 0, y: 0 })
+  }
+
   async function handleSaveLayout() {
     setSaving(true)
     for (const t of tables) {
@@ -156,7 +208,35 @@ export default function AdminFloorPlan() {
         <p style={{ color: '#888' }}>{t('noTablesInAreaFloorPlan')}</p>
       ) : (
         <div ref={containerRef} style={styles.canvasWrap}>
-          <Stage width={stageWidth} height={800}>
+          <div style={styles.zoomControls}>
+            <button onClick={() => handleZoomButton(1)} style={styles.zoomButton} title="Zoom in">
+              <ZoomIn size={16} />
+            </button>
+            <button onClick={() => handleZoomButton(-1)} style={styles.zoomButton} title="Zoom out">
+              <ZoomOut size={16} />
+            </button>
+            <button onClick={handleResetView} style={styles.zoomButton} title="Reset view">
+              <Maximize2 size={16} />
+            </button>
+            <span style={styles.zoomPercent}>{Math.round(stageScale * 100)}%</span>
+          </div>
+          <Stage
+            ref={stageRef}
+            width={stageWidth}
+            height={800}
+            draggable
+            x={stagePos.x}
+            y={stagePos.y}
+            scaleX={stageScale}
+            scaleY={stageScale}
+            onWheel={handleWheel}
+            onDragEnd={(e) => {
+              // Only update pan position if the Stage itself was dragged (not a table inside it)
+              if (e.target === e.target.getStage()) {
+                setStagePos({ x: e.target.x(), y: e.target.y() })
+              }
+            }}
+          >
             <Layer>
               {tables.map((t) => (
                 <Group
@@ -164,14 +244,6 @@ export default function AdminFloorPlan() {
                   x={t.pos_x}
                   y={t.pos_y}
                   draggable
-                  dragBoundFunc={(pos) => {
-                    const halfW = (t.width || 80) / 2
-                    const halfH = (t.height || 80) / 2
-                    return {
-                      x: Math.max(halfW, Math.min(stageWidth - halfW, pos.x)),
-                      y: Math.max(halfH, Math.min(800 - halfH, pos.y)),
-                    }
-                  }}
                   onDragMove={(e) => handleDragMove(t.id, e.target.x(), e.target.y())}
                   onClick={() => setSelectedTableId(t.id)}
                   onTap={() => setSelectedTableId(t.id)}
@@ -253,6 +325,39 @@ const styles = {
     border: '1px solid #e2e4e9',
     borderRadius: '8px',
     overflow: 'hidden',
+    position: 'relative',
+  },
+  zoomControls: {
+    position: 'absolute',
+    top: '0.75rem',
+    right: '0.75rem',
+    zIndex: 10,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.3rem',
+    background: '#fff',
+    border: '1px solid #e2e4e9',
+    borderRadius: '8px',
+    padding: '0.3rem',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  },
+  zoomButton: {
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid #e2e4e9',
+    borderRadius: '6px',
+    background: '#fff',
+    cursor: 'pointer',
+    color: '#333',
+  },
+  zoomPercent: {
+    fontSize: '0.75rem',
+    color: '#888',
+    minWidth: '36px',
+    textAlign: 'center',
   },
   flipButton: {
     marginLeft: 'auto',
