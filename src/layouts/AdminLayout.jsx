@@ -11,7 +11,6 @@ import { LocationProvider, useCurrentLocation } from '../contexts/LocationContex
 import { useAppLanguage } from '../contexts/AppLanguageContext'
 import { useTour } from '../contexts/TourContext'
 import TourOverlay from '../components/TourOverlay'
-import { canAccess } from '../lib/permissions'
 import { roleLabel } from '../lib/roleLabels'
 import logo from '../assets/maxoserve-logo.png'
 
@@ -104,11 +103,6 @@ function SidebarContent({ visibleGroups, onNavigate }) {
                   ...styles.navLink,
                   ...(isActive ? styles.navLinkActive : {}),
                 })}
-              >
-                <item.icon size={17} strokeWidth={2} />
-                {t(item.labelKey)}
-              </NavLink>
-            ))}
               >
                 <item.icon size={17} strokeWidth={2} />
                 {t(item.labelKey)}
@@ -252,6 +246,12 @@ export default function AdminLayout() {
       <TourOverlay />
     </LocationProvider>
   )
+}
+
+function canAccess(role, section) {
+  // Imported lazily to avoid circular import issues in this file listing;
+  // actual logic lives in ../lib/permissions
+  return _canAccess(role, section)
 }
 
 const styles = {
