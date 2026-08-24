@@ -29,6 +29,7 @@ export default function AdminMenuItems() {
   const [description, setDescription] = useState('')
   const [descriptionFr, setDescriptionFr] = useState('')
   const [price, setPrice] = useState('')
+  const [cost, setCost] = useState('')
   const [prepLocation, setPrepLocation] = useState('kitchen')
 
   const [loading, setLoading] = useState(true)
@@ -78,10 +79,11 @@ export default function AdminMenuItems() {
     const { error: insertError } = await supabase.from('menu_items').insert({
       business_id: businessId, category_id: categoryId, name, name_fr: nameFr || null,
       description: description || null, description_fr: descriptionFr || null,
-      price: parseFloat(price) || 0, prep_location: prepLocation, display_order: items.length,
+      price: parseFloat(price) || 0, cost: cost ? parseFloat(cost) : null,
+      prep_location: prepLocation, display_order: items.length,
     })
     if (insertError) { setError(insertError.message); return }
-    setName(''); setNameFr(''); setDescription(''); setDescriptionFr(''); setPrice(''); setPrepLocation('kitchen')
+    setName(''); setNameFr(''); setDescription(''); setDescriptionFr(''); setPrice(''); setCost(''); setPrepLocation('kitchen')
     loadItems()
   }
 
@@ -134,6 +136,9 @@ export default function AdminMenuItems() {
           <div style={{ flex: '0 1 120px' }}>
             <Input type="number" step="0.01" placeholder={t('phItemPrice')} value={price} onChange={(e) => setPrice(e.target.value)} required />
           </div>
+          <div style={{ flex: '0 1 120px' }}>
+            <Input type="number" step="0.01" placeholder={t('phCost')} value={cost} onChange={(e) => setCost(e.target.value)} />
+          </div>
           <select value={prepLocation} onChange={(e) => setPrepLocation(e.target.value)} style={styles.select}>
             {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
           </select>
@@ -159,6 +164,11 @@ export default function AdminMenuItems() {
                       <strong>{item.name}</strong>
                       {item.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {item.name_fr}</span>}
                       <span style={{ color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.9rem' }}>${Number(item.price).toFixed(2)}</span>
+                      {item.cost != null && (
+                        <span style={{ color: 'var(--color-text-faint)', fontSize: '0.8rem' }}>
+                          {t('costLabel')}: ${Number(item.cost).toFixed(2)} · {t('margin')}: {(((item.price - item.cost) / item.price) * 100).toFixed(0)}%
+                        </span>
+                      )}
                       {!item.is_available && <Badge color="danger">unavailable</Badge>}
                     </div>
                     {item.description && <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{item.description}</p>}
