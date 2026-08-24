@@ -32,7 +32,7 @@ export default function AdminStaff() {
   const [existingEmail, setExistingEmail] = useState('')
   const [existingRole, setExistingRole] = useState('server')
   const [isTemporary, setIsTemporary] = useState(false)
-  const [expiresAt, setExpiresAt] = useState('')
+  const [durationHours, setDurationHours] = useState('')
   const [existingError, setExistingError] = useState('')
 
   const [loading, setLoading] = useState(true)
@@ -90,10 +90,16 @@ export default function AdminStaff() {
     e.preventDefault()
     setExistingError('')
 
-    if (isTemporary && !expiresAt) {
-      setExistingError('Select an expiration date, or switch to permanent access.')
+    const hours = parseFloat(durationHours)
+
+    if (isTemporary && (!durationHours || isNaN(hours) || hours <= 0)) {
+      setExistingError('Enter how many hours access should last, or switch to permanent access.')
       return
     }
+
+    const expiresAtValue = isTemporary
+      ? new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
+      : null
 
     const { error: insertError } = await supabase.from('staff_invites').insert({
       business_id: businessId,
@@ -101,7 +107,7 @@ export default function AdminStaff() {
       role: existingRole,
       invited_by: user.id,
       for_existing_user: true,
-      expires_at: isTemporary ? new Date(expiresAt).toISOString() : null,
+      expires_at: expiresAtValue,
     })
 
     if (insertError) {
@@ -110,7 +116,7 @@ export default function AdminStaff() {
     }
 
     showToast(`Invite created for ${existingEmail} — they'll gain access next time they log in`)
-    setExistingEmail(''); setExistingRole('server'); setIsTemporary(false); setExpiresAt('')
+    setExistingEmail(''); setExistingRole('server'); setIsTemporary(false); setDurationHours('')
     loadInvites(businessId)
   }
 
@@ -176,11 +182,14 @@ export default function AdminStaff() {
           </label>
           {isTemporary && (
             <input
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-              style={styles.select}
-              min={new Date().toISOString().split('T')[0]}
+              type="number"
+              min="1"
+              step="1"
+              placeholder={t('accessDurationPlaceholder')}
+              value={durationHours}
+              onChange={(e) => setDurationHours(e.target.value)}
+              style={{ ...styles.select, width: '90px' }}
+              title={t('accessDurationHours')}
             />
           )}
           <Button type="submit" icon={UserPlus}>{t('add')}</Button>
