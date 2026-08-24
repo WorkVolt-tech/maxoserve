@@ -204,9 +204,9 @@ export default function AdminOrders() {
   function groupLabel(key) {
     if (key.startsWith('reservation-')) {
       const resId = key.replace('reservation-', '')
-      return `Reservation: ${reservations[resId]?.customer_name || 'Unknown'}`
+      return `${t('reservationPrefix')} ${reservations[resId]?.customer_name || 'Unknown'}`
     }
-    return tables[key]?.name || 'Unassigned table'
+    return tables[key]?.name || t('unassignedTable')
   }
 
   function renderOrderCard(order) {
@@ -220,8 +220,8 @@ export default function AdminOrders() {
           <div>
             <strong>
               {table?.name || (order.reservation_id && reservations[order.reservation_id]
-                ? `Reservation: ${reservations[order.reservation_id].customer_name}`
-                : 'Unassigned')}
+                ? `${t('reservationPrefix')} ${reservations[order.reservation_id].customer_name}`
+                : t('unassignedTable'))}
             </strong>
             <span style={styles.orderMeta}> · ${Number(order.total).toFixed(2)} · {minutesAgo(order.created_at)}m ago</span>
           </div>
