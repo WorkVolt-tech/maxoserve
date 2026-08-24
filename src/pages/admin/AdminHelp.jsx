@@ -33,7 +33,11 @@ export default function AdminHelp() {
 
   return (
     <div>
-      <PageHeader title={t('helpCenterTitle')} subtitle={t('helpCenterDesc')} />
+      <PageHeader
+        title={t('helpCenterTitle')}
+        subtitle={t('helpCenterDesc')}
+        actions={<Button icon={PlayCircle} onClick={startTour}>{t('startTour')}</Button>}
+      />
 
       <div style={styles.searchWrap}>
         <Search size={16} color="var(--color-text-faint)" />
