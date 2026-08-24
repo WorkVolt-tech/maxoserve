@@ -30,6 +30,7 @@ const SECTION_ACCESS = {
   orders: ['owner', 'admin', 'manager', 'bartender', 'kitchen', 'server'],
   requestTypes: ['owner', 'admin'],
   settings: ['owner', 'admin'],
+  marginReport: ['owner', 'admin'],
 }
 
 export function canAccess(role, section) {
