@@ -657,6 +657,9 @@ export const translations = {
     logoUrlPlaceholder: 'https://...',
     logoPreview: 'Aperçu',
     noLogoSet: 'Aucun logo défini',
+    printTemplate: "Modèle d'impression",
+    scanToOrder: 'Scannez pour commander',
+    poweredByMaxoServe: 'Propulsé par MaxoServe',
   },
 }
 
