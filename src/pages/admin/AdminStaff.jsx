@@ -29,6 +29,12 @@ export default function AdminStaff() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('server')
 
+  const [existingEmail, setExistingEmail] = useState('')
+  const [existingRole, setExistingRole] = useState('server')
+  const [isTemporary, setIsTemporary] = useState(false)
+  const [expiresAt, setExpiresAt] = useState('')
+  const [existingError, setExistingError] = useState('')
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -77,6 +83,36 @@ export default function AdminStaff() {
     }
     showToast(`Invite sent to ${inviteEmail}`)
     setInviteEmail(''); setInviteRole('server')
+    loadInvites(businessId)
+  }
+
+  async function handleInviteExisting(e) {
+    e.preventDefault()
+    setExistingError('')
+
+    if (isTemporary && !expiresAt) {
+      setExistingError('Select an expiration date, or switch to permanent access.')
+      return
+    }
+
+    // Create a staff_invite marked for_existing_user; the invited person needs to log in
+    // (not sign up) for the trigger/function-based acceptance to apply.
+    const { error: insertError } = await supabase.from('staff_invites').insert({
+      business_id: businessId,
+      email: existingEmail.trim().toLowerCase(),
+      role: existingRole,
+      invited_by: user.id,
+      for_existing_user: true,
+      expires_at: isTemporary ? new Date(expiresAt).toISOString() : null,
+    })
+
+    if (insertError) {
+      setExistingError(insertError.code === '23505' ? 'An invite for this email already exists.' : insertError.message)
+      return
+    }
+
+    showToast(`Invite created for ${existingEmail} — they'll gain access next time they log in`)
+    setExistingEmail(''); setExistingRole('server'); setIsTemporary(false); setExpiresAt('')
     loadInvites(businessId)
   }
 
