@@ -18,6 +18,7 @@ import AdminEvents from './pages/admin/AdminEvents'
 import AdminActivityLog from './pages/admin/AdminActivityLog'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminMarginReport from './pages/admin/AdminMarginReport'
+import AdminHelp from './pages/admin/AdminHelp'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminRequestTypes from './pages/admin/AdminRequestTypes'
 import RequireRole from './components/RequireRole'
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="activity-log" element={<RequireRole section="activityLogs"><AdminActivityLog /></RequireRole>} />
         <Route path="settings" element={<RequireRole section="settings"><AdminSettings /></RequireRole>} />
         <Route path="margin-report" element={<RequireRole section="marginReport"><AdminMarginReport /></RequireRole>} />
+        <Route path="help" element={<RequireRole section="help"><AdminHelp /></RequireRole>} />
         <Route path="orders" element={<RequireRole section="orders"><AdminOrders /></RequireRole>} />
         <Route path="request-types" element={<RequireRole section="requestTypes"><AdminRequestTypes /></RequireRole>} />
       </Route>
