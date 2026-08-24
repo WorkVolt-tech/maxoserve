@@ -268,7 +268,7 @@ export default function AdminReservations() {
                     {r.notes && <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.3rem 0 0' }}>{r.notes}</p>}
                     {existingOrder && (
                       <p style={{ color: 'var(--color-primary)', fontSize: '0.85rem', margin: '0.3rem 0 0', fontWeight: 600 }}>
-                        Pre-order: {existingOrder.items.reduce((sum, i) => sum + i.quantity, 0)} item(s) · ${Number(existingOrder.total).toFixed(2)}
+                        {t('preOrderLabel')} {existingOrder.items.reduce((sum, i) => sum + i.quantity, 0)} {t('items')} · ${Number(existingOrder.total).toFixed(2)}
                       </p>
                     )}
                   </div>
@@ -315,7 +315,7 @@ export default function AdminReservations() {
 
                     {preOrderCart.length > 0 && (
                       <div style={styles.cartPreview}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>New items to add:</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>{t('newItemsToAdd')}</div>
                         {preOrderCart.map((line) => (
                           <div key={line.tempId} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', padding: '0.15rem 0' }}>
                             <span>{line.item.name}</span>
@@ -325,7 +325,7 @@ export default function AdminReservations() {
                             </div>
                           </div>
                         ))}
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '0.5rem' }}>Total: ${preOrderTotal().toFixed(2)}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginTop: '0.5rem' }}>{t('totalLabel')} ${preOrderTotal().toFixed(2)}</div>
                         <Button onClick={() => handleSavePreOrder(r)} style={{ marginTop: '0.5rem', width: '100%' }}>{t('save')}</Button>
                       </div>
                     )}
