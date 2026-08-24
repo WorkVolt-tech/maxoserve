@@ -4,7 +4,7 @@ import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
   CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
-  LogOut, Menu as MenuIcon, X, ChevronDown,
+  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
@@ -54,6 +54,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin/request-types', labelKey: 'requestButtons', section: 'requestTypes', icon: Bell },
       { to: '/admin/activity-log', labelKey: 'activityLog', section: 'activityLogs', icon: ScrollText },
+      { to: '/admin/settings', labelKey: 'settings', section: 'settings', icon: Settings2 },
     ],
   },
 ]
