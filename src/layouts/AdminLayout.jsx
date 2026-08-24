@@ -12,6 +12,7 @@ import { useAppLanguage } from '../contexts/AppLanguageContext'
 import { useTour } from '../contexts/TourContext'
 import TourOverlay from '../components/TourOverlay'
 import { roleLabel } from '../lib/roleLabels'
+import { canAccess } from '../lib/permissions'
 import logo from '../assets/maxoserve-logo.png'
 
 const NAV_GROUPS = [
@@ -246,12 +247,6 @@ export default function AdminLayout() {
       <TourOverlay />
     </LocationProvider>
   )
-}
-
-function canAccess(role, section) {
-  // Imported lazily to avoid circular import issues in this file listing;
-  // actual logic lives in ../lib/permissions
-  return _canAccess(role, section)
 }
 
 const styles = {
