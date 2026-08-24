@@ -20,6 +20,9 @@ export default function AdminSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [savingLogo, setSavingLogo] = useState(false)
+  const [autoShowTour, setAutoShowTour] = useState(
+    localStorage.getItem('maxoserve_tour_autoshow_off') !== 'true'
+  )
 
   useEffect(() => { loadSettings() }, [])
 
@@ -104,6 +107,13 @@ export default function AdminSettings() {
     showToast(t('settingsSaved'))
   }
 
+  function handleToggleAutoTour() {
+    const newValue = !autoShowTour
+    setAutoShowTour(newValue)
+    localStorage.setItem('maxoserve_tour_autoshow_off', newValue ? 'false' : 'true')
+    showToast(t('settingsSaved'))
+  }
+
   if (loading) return <LoadingState label={t('loading')} />
 
   return (
@@ -166,7 +176,7 @@ export default function AdminSettings() {
           </label>
         </div>
 
-        <div style={{ ...styles.row, borderBottom: 'none' }}>
+        <div style={styles.row}>
           <div>
             <div style={styles.rowTitle}>{t('showMenuTab')}</div>
             <div style={styles.rowDesc}>{t('showMenuTabDesc')}</div>
@@ -181,6 +191,24 @@ export default function AdminSettings() {
             />
             <span style={{ ...styles.switchTrack, background: showMenuTab ? 'var(--color-primary)' : '#d1d5db' }}>
               <span style={{ ...styles.switchThumb, transform: showMenuTab ? 'translateX(18px)' : 'translateX(0)' }} />
+            </span>
+          </label>
+        </div>
+
+        <div style={{ ...styles.row, borderBottom: 'none' }}>
+          <div>
+            <div style={styles.rowTitle}>{t('autoShowTour')}</div>
+            <div style={styles.rowDesc}>{t('autoShowTourDesc')}</div>
+          </div>
+          <label style={styles.switch}>
+            <input
+              type="checkbox"
+              checked={autoShowTour}
+              onChange={handleToggleAutoTour}
+              style={{ display: 'none' }}
+            />
+            <span style={{ ...styles.switchTrack, background: autoShowTour ? 'var(--color-primary)' : '#d1d5db' }}>
+              <span style={{ ...styles.switchThumb, transform: autoShowTour ? 'translateX(18px)' : 'translateX(0)' }} />
             </span>
           </label>
         </div>
