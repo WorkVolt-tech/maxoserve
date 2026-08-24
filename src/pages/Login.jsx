@@ -4,6 +4,39 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import logo from '../assets/maxoserve-logo.png'
 
+// Checks for a pending invite matching this email and, if found, joins the
+// business and marks the invite accepted. Returns 'joined', 'none', or 'error'.
+async function tryAcceptInvite(email, userId) {
+  const { data: invite } = await supabase
+    .from('staff_invites')
+    .select('*')
+    .eq('email', email.trim().toLowerCase())
+    .is('accepted_at', null)
+    .limit(1)
+    .single()
+
+  if (!invite) return 'none'
+
+  const { error: memberError } = await supabase.from('business_members').insert({
+    business_id: invite.business_id,
+    user_id: userId,
+    role: invite.role,
+    expires_at: invite.expires_at || null,
+  })
+
+  if (memberError) {
+    console.error('Failed to join business from invite:', memberError)
+    return 'error'
+  }
+
+  await supabase
+    .from('staff_invites')
+    .update({ accepted_at: new Date().toISOString() })
+    .eq('id', invite.id)
+
+  return 'joined'
+}
+
 export default function Login() {
   const navigate = useNavigate()
   const { refreshRole } = useAuth()
@@ -32,9 +65,9 @@ export default function Login() {
         return
       }
 
-      // Profile creation and invite-joining are now handled automatically by a
-      // database trigger the moment the account is created — no client-side
-      // follow-up needed. Give it a brief moment, then check where to land.
+      // Profile creation and invite-joining for brand-new signups are handled
+      // automatically by a database trigger the moment the account is created.
+      // Give it a brief moment, then check where to land.
       await new Promise((resolve) => setTimeout(resolve, 600))
 
       const { data: membership } = await supabase
@@ -43,18 +76,24 @@ export default function Login() {
         .limit(1)
         .single()
 
-      if (membership) {
-        await refreshRole()
-      }
-
       navigate(membership ? '/admin' : '/admin/create-business')
     } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
       if (signInError) {
         setError(signInError.message)
         setLoading(false)
         return
+      }
+
+      // If this account has a pending invite that never got joined (e.g. a
+      // brand-new invite for an existing user, or a prior failed signup
+      // attempt), try to complete it now on login.
+      if (signInData.user) {
+        const result = await tryAcceptInvite(email, signInData.user.id)
+        if (result === 'joined') {
+          await refreshRole()
+        }
       }
 
       navigate('/admin')
