@@ -1,8 +1,25 @@
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
+import { supabase } from '../lib/supabaseClient'
+import { useAppLanguage } from '../contexts/AppLanguageContext'
 
 export default function QrCodeModal({ table, url, onClose, onRegenerate, regenerating }) {
   const wrapRef = useRef(null)
+  const { t } = useAppLanguage()
+  const [business, setBusiness] = useState(null)
+
+  useEffect(() => {
+    async function loadBusiness() {
+      if (!table?.business_id) return
+      const { data } = await supabase
+        .from('businesses')
+        .select('name, logo_url')
+        .eq('id', table.business_id)
+        .single()
+      setBusiness(data)
+    }
+    loadBusiness()
+  }, [table])
 
   function handleDownload() {
     const canvas = wrapRef.current?.querySelector('canvas')
@@ -17,14 +34,66 @@ export default function QrCodeModal({ table, url, onClose, onRegenerate, regener
     const canvas = wrapRef.current?.querySelector('canvas')
     if (!canvas) return
     const dataUrl = canvas.toDataURL('image/png')
+    const logoHtml = business?.logo_url
+      ? `<img src="${business.logo_url}" style="max-width:140px; max-height:90px; margin-bottom:1rem;" />`
+      : ''
+    const businessName = business?.name || ''
+
     const printWindow = window.open('', '_blank')
     printWindow.document.write(`
       <html>
-        <head><title>${table.name} - QR Code</title></head>
-        <body style="text-align:center; font-family: system-ui, sans-serif; padding: 2rem;">
-          <h2>${table.name}</h2>
-          <p>Scan for Service</p>
-          <img src="${dataUrl}" style="width:300px;height:300px;" />
+        <head>
+          <title>${table.name} - QR Code</title>
+          <style>
+            @page { size: 4in 6in; margin: 0.3in; }
+            body {
+              font-family: 'Segoe UI', system-ui, sans-serif;
+              text-align: center;
+              padding: 1.5rem 1rem;
+              margin: 0;
+            }
+            .card {
+              border: 2px solid #14161f;
+              border-radius: 16px;
+              padding: 1.75rem 1.25rem;
+              max-width: 340px;
+              margin: 0 auto;
+            }
+            h1 { font-size: 1.3rem; margin: 0 0 0.15rem; color: #14161f; }
+            .table-name {
+              display: inline-block;
+              background: #3b6fe0;
+              color: #fff;
+              padding: 0.4rem 1.1rem;
+              border-radius: 999px;
+              font-weight: 700;
+              font-size: 1rem;
+              margin: 0.85rem 0 1.25rem;
+            }
+            .scan-label {
+              font-size: 1rem;
+              font-weight: 700;
+              color: #14161f;
+              margin: 1rem 0 0.25rem;
+            }
+            .footer {
+              font-size: 0.7rem;
+              color: #9ca3af;
+              margin-top: 1.25rem;
+            }
+            img.qr { width: 220px; height: 220px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            ${logoHtml}
+            <h1>${businessName}</h1>
+            <div class="table-name">${table.name}</div>
+            <br />
+            <img class="qr" src="${dataUrl}" />
+            <div class="scan-label">${t('scanToOrder')}</div>
+            <div class="footer">${t('poweredByMaxoServe')}</div>
+          </div>
         </body>
       </html>
     `)
