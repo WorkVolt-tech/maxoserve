@@ -330,6 +330,11 @@ export const translations = {
     marginColumn: 'Margin %',
     avgMargin: 'Average Margin',
     totalItemsCosted: 'Items with cost data',
+    businessLogo: 'Business Logo',
+    businessLogoDesc: "Paste a link to your logo image (upload it to Google Drive, Imgur, Dropbox, or anywhere else, then set it to \"anyone with the link can view\" and paste that link here).",
+    logoUrlPlaceholder: 'https://...',
+    logoPreview: 'Preview',
+    noLogoSet: 'No logo set yet',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -644,6 +649,11 @@ export const translations = {
     marginColumn: 'Marge %',
     avgMargin: 'Marge moyenne',
     totalItemsCosted: 'Articles avec données de coût',
+    businessLogo: "Logo de l'entreprise",
+    businessLogoDesc: "Collez un lien vers votre image de logo (téléversez-la sur Google Drive, Imgur, Dropbox ou ailleurs, définissez-la comme « visible par toute personne ayant le lien », puis collez ce lien ici).",
+    logoUrlPlaceholder: 'https://...',
+    logoPreview: 'Aperçu',
+    noLogoSet: 'Aucun logo défini',
   },
 }
 
