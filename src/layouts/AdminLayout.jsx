@@ -4,7 +4,7 @@ import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
   CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
-  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp,
+  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
@@ -56,6 +56,7 @@ const NAV_GROUPS = [
       { to: '/admin/activity-log', labelKey: 'activityLog', section: 'activityLogs', icon: ScrollText },
       { to: '/admin/settings', labelKey: 'settings', section: 'settings', icon: Settings2 },
       { to: '/admin/margin-report', labelKey: 'marginReport', section: 'marginReport', icon: TrendingUp },
+      { to: '/admin/help', labelKey: 'help', section: 'help', icon: HelpCircle },
     ],
   },
 ]
