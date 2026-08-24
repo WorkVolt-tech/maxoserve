@@ -95,8 +95,6 @@ export default function AdminStaff() {
       return
     }
 
-    // Create a staff_invite marked for_existing_user; the invited person needs to log in
-    // (not sign up) for the trigger/function-based acceptance to apply.
     const { error: insertError } = await supabase.from('staff_invites').insert({
       business_id: businessId,
       email: existingEmail.trim().toLowerCase(),
@@ -150,7 +148,7 @@ export default function AdminStaff() {
       <Card style={{ marginBottom: '1.5rem' }}>
         <form onSubmit={handleInvite} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 220px' }}>
-            <Input type="email" placeholder="staff@email.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
+            <Input type="email" placeholder={t('phStaffEmail')} value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
           </div>
           <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)} style={styles.select}>
             {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
@@ -160,16 +158,49 @@ export default function AdminStaff() {
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
 
+      <Card style={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '0.75rem' }}>
+          <strong>{t('inviteExisting')}</strong>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0' }}>{t('inviteExistingDesc')}</p>
+        </div>
+        <form onSubmit={handleInviteExisting} style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input type="email" placeholder={t('phStaffEmail')} value={existingEmail} onChange={(e) => setExistingEmail(e.target.value)} required />
+          </div>
+          <select value={existingRole} onChange={(e) => setExistingRole(e.target.value)} style={styles.select}>
+            {ROLES.map((r) => <option key={r} value={r}>{roleLabel(r, t)}</option>)}
+          </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem' }}>
+            <input type="checkbox" checked={isTemporary} onChange={(e) => setIsTemporary(e.target.checked)} />
+            {t('temporaryAccess')}
+          </label>
+          {isTemporary && (
+            <input
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+              style={styles.select}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          )}
+          <Button type="submit" icon={UserPlus}>{t('add')}</Button>
+        </form>
+        {existingError && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{existingError}</p>}
+      </Card>
+
       {invites.length > 0 && (
         <>
           <h3 style={styles.sectionTitle}>{t('pendingInvites')}</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
             {invites.map((inv) => (
-              <Card key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Card key={inv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <strong>{inv.email}</strong>
                   <Badge color="neutral">{roleLabel(inv.role, t)}</Badge>
                   <Badge color="warning">{t('pending')}</Badge>
+                  {inv.expires_at && (
+                    <Badge color="info">{t('accessExpires')}: {new Date(inv.expires_at).toLocaleDateString()}</Badge>
+                  )}
                 </div>
                 <Button variant="danger" size="sm" icon={X} onClick={() => handleCancelInvite(inv.id)}>{t('cancel')}</Button>
               </Card>
@@ -195,6 +226,11 @@ export default function AdminStaff() {
                     <div style={{ fontWeight: 600 }}>{profile?.full_name || profile?.email || t('unknownUser')}</div>
                     {profile?.email && profile?.full_name && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{profile.email}</div>
+                    )}
+                    {member.expires_at && (
+                      <div style={{ fontSize: '0.78rem', color: 'var(--color-warning)', marginTop: '0.15rem' }}>
+                        {t('accessExpires')}: {new Date(member.expires_at).toLocaleDateString()}
+                      </div>
                     )}
                   </div>
                 </div>
