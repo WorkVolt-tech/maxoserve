@@ -338,6 +338,11 @@ export const translations = {
     printTemplate: 'Print Template',
     scanToOrder: 'Scan to Order',
     poweredByMaxoServe: 'Powered by MaxoServe',
+    help: 'Help',
+    helpCenterTitle: 'Help Center',
+    helpCenterDesc: 'A guide to everything you can do with MaxoServe.',
+    helpSearchPlaceholder: 'Search the guide…',
+    helpNoResults: 'No matching topics found.',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -660,6 +665,11 @@ export const translations = {
     printTemplate: "Modèle d'impression",
     scanToOrder: 'Scannez pour commander',
     poweredByMaxoServe: 'Propulsé par MaxoServe',
+    help: 'Aide',
+    helpCenterTitle: "Centre d'aide",
+    helpCenterDesc: 'Un guide pour tout ce que vous pouvez faire avec MaxoServe.',
+    helpSearchPlaceholder: 'Rechercher dans le guide…',
+    helpNoResults: 'Aucun sujet correspondant trouvé.',
   },
 }
 
