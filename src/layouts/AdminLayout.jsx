@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useLocation as useRouterLocation } from 'react-router-dom'
 import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
@@ -9,6 +9,8 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
 import { useAppLanguage } from '../contexts/AppLanguageContext'
+import { useTour } from '../contexts/TourContext'
+import TourOverlay from '../components/TourOverlay'
 import { canAccess } from '../lib/permissions'
 import { roleLabel } from '../lib/roleLabels'
 import logo from '../assets/maxoserve-logo.png'
@@ -97,10 +99,16 @@ function SidebarContent({ visibleGroups, onNavigate }) {
                 to={item.to}
                 end={item.end}
                 onClick={onNavigate}
+                data-tour={`nav-${item.section}`}
                 style={({ isActive }) => ({
                   ...styles.navLink,
                   ...(isActive ? styles.navLinkActive : {}),
                 })}
+              >
+                <item.icon size={17} strokeWidth={2} />
+                {t(item.labelKey)}
+              </NavLink>
+            ))}
               >
                 <item.icon size={17} strokeWidth={2} />
                 {t(item.labelKey)}
@@ -111,7 +119,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
       </nav>
       <div style={styles.footer}>
         {role && <div style={styles.roleBadge}>{roleLabel(role, t)}</div>}
-        <a href="/staff" style={styles.staffLink}>
+        <a href="/staff" style={styles.staffLink} data-tour="sidebar-live-requests">
           <Bell size={15} /> {t('liveRequests')}
         </a>
         <button onClick={signOut} style={styles.signOut}>
@@ -139,7 +147,7 @@ function TopBar({ onOpenDrawer }) {
       </button>
 
       {!locationsLoading && locations.length > 0 && !hideLocationSwitcher && (
-        <div style={styles.topBarLocation}>
+        <div style={styles.topBarLocation} data-tour="topbar-location">
           <MapPin size={15} color="var(--color-text-muted)" />
           <select
             value={currentLocationId}
@@ -158,6 +166,7 @@ function TopBar({ onOpenDrawer }) {
       <button
         onClick={() => setLang(lang === 'en' ? 'fr' : 'en')}
         style={styles.langToggle}
+        data-tour="topbar-lang"
       >
         {lang === 'en' ? 'FR' : 'EN'}
       </button>
@@ -185,8 +194,20 @@ function TopBar({ onOpenDrawer }) {
 }
 
 export default function AdminLayout() {
-  const { role, roleLoading } = useAuth()
+  const { role, roleLoading, user } = useAuth()
+  const { startTour } = useTour()
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    const key = `maxoserve_tour_seen_${user.id}`
+    const autoShowDisabled = localStorage.getItem('maxoserve_tour_autoshow_off') === 'true'
+    if (!localStorage.getItem(key) && !autoShowDisabled) {
+      localStorage.setItem(key, 'true')
+      const timer = setTimeout(() => startTour(), 800)
+      return () => clearTimeout(timer)
+    }
+  }, [user])
 
   if (roleLoading) {
     return (
@@ -228,6 +249,7 @@ export default function AdminLayout() {
           </main>
         </div>
       </div>
+      <TourOverlay />
     </LocationProvider>
   )
 }
