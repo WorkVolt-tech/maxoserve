@@ -1,13 +1,16 @@
 import { useState } from 'react'
-import { HelpCircle, Search, ChevronDown } from 'lucide-react'
+import { HelpCircle, Search, ChevronDown, PlayCircle } from 'lucide-react'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useTour } from '../../contexts/TourContext'
 import { helpTopics } from '../../lib/helpContent'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
+import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 
 export default function AdminHelp() {
   const { t, lang } = useAppLanguage()
+  const { startTour } = useTour()
   const [query, setQuery] = useState('')
   const [openItems, setOpenItems] = useState({})
 
