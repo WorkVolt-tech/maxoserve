@@ -314,6 +314,8 @@ export const translations = {
     noExpiration: 'No expiration',
     inviteSentExisting: 'Access granted',
     userNotFound: "No account found with that email. They'll need to sign up first.",
+    accessDurationHours: 'Access duration (hours)',
+    accessDurationPlaceholder: 'e.g. 8',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -612,6 +614,8 @@ export const translations = {
     noExpiration: "Pas d'expiration",
     inviteSentExisting: 'Accès accordé',
     userNotFound: 'Aucun compte trouvé avec ce courriel. Cette personne doit d\'abord créer un compte.',
+    accessDurationHours: "Durée d'accès (heures)",
+    accessDurationPlaceholder: 'ex. 8',
   },
 }
 
