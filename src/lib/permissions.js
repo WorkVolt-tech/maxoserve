@@ -32,6 +32,7 @@ const SECTION_ACCESS = {
   settings: ['owner', 'admin'],
   marginReport: ['owner', 'admin'],
   help: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff'],
+  about: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff'],
 }
 
 export function canAccess(role, section) {
