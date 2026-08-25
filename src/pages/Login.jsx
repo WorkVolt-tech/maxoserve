@@ -46,6 +46,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
+  const [confirmEmailSent, setConfirmEmailSent] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -59,7 +60,7 @@ export default function Login() {
         return
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
@@ -67,6 +68,14 @@ export default function Login() {
 
       if (signUpError) {
         setError(signUpError.message)
+        setLoading(false)
+        return
+      }
+
+      // With email confirmation required, signUp does NOT return a live
+      // session — the person must click the emailed link first.
+      if (!signUpData.session) {
+        setConfirmEmailSent(true)
         setLoading(false)
         return
       }
@@ -100,6 +109,27 @@ export default function Login() {
     }
 
     setLoading(false)
+  }
+
+  if (confirmEmailSent) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <img src={logo} alt="MaxoServe" style={styles.logo} />
+          <h2 style={styles.forgotTitle}>Confirm your email</h2>
+          <p style={styles.forgotBody}>
+            We've sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then come back here to log in.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setMode('login'); setConfirmEmailSent(false) }}
+            style={styles.submit}
+          >
+            Back to Log In
+          </button>
+        </div>
+      </div>
+    )
   }
 
   async function handleForgotPassword(e) {
