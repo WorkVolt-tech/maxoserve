@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 
 const STATUS_FLOW = {
   submitted: { next: 'accepted', color: '#e91e63' },
@@ -36,8 +38,10 @@ export default function AdminOrders() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [orders, setOrders] = useState([])
+  const [cancelTarget, setCancelTarget] = useState(null)
   const [orderItems, setOrderItems] = useState({})
   const [tables, setTables] = useState({})
   const [reservations, setReservations] = useState({})
@@ -159,8 +163,19 @@ export default function AdminOrders() {
     else if (newStatus === 'delivered') updates.delivered_at = now
     else if (newStatus === 'cancelled') updates.cancelled_at = now
 
-    await supabase.from('orders').update(updates).eq('id', order.id)
+    const { error } = await supabase.from('orders').update(updates).eq('id', order.id)
+    if (error) {
+      showToast(`Could not update: ${error.message}`, 'error')
+      return
+    }
     loadOrders(businessId)
+  }
+
+  async function confirmCancel() {
+    if (!cancelTarget) return
+    await updateStatus(cancelTarget, 'cancelled')
+    setCancelTarget(null)
+    showToast('Order cancelled')
   }
 
   function minutesAgo(dateStr) {
@@ -252,7 +267,7 @@ export default function AdminOrders() {
             </button>
           )}
           {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
-            <button onClick={() => updateStatus(order, 'cancelled')} style={styles.cancelButton}>{t('cancel')}</button>
+            <button onClick={() => setCancelTarget(order)} style={styles.cancelButton}>{t('cancel')}</button>
           )}
         </div>
       </div>
@@ -316,6 +331,16 @@ export default function AdminOrders() {
           {visibleOrders.length === 0 && <p style={{ color: '#888' }}>{t('noOrdersHere')}</p>}
           {visibleOrders.map((order) => renderOrderCard(order))}
         </div>
+      )}
+
+      {cancelTarget && (
+        <ConfirmationModal
+          title="Cancel this order?"
+          description="The customer and kitchen/bar will be notified this order was cancelled."
+          confirmLabel="Cancel Order"
+          onConfirm={confirmCancel}
+          onCancel={() => setCancelTarget(null)}
+        />
       )}
     </div>
   )
