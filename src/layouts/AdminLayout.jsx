@@ -190,7 +190,7 @@ function TopBar({ onOpenDrawer }) {
 
 export default function AdminLayout() {
   const { role, roleLoading, user } = useAuth()
-  const { startTour, isActive, stepIndex, steps } = useTour()
+  const { startTour } = useTour()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
@@ -203,22 +203,6 @@ export default function AdminLayout() {
       return () => clearTimeout(timer)
     }
   }, [user])
-
-  // While the tour is active, auto-open the mobile drawer for steps that
-  // target something inside the sidebar (which is otherwise hidden behind
-  // the hamburger menu on narrow screens), and close it for other steps.
-  useEffect(() => {
-    if (!isActive) return
-    const step = steps[stepIndex]
-    if (!step?.target) { setDrawerOpen(false); return }
-
-    const isSidebarTarget = step.target.startsWith('nav-') || step.target === 'sidebar-live-requests'
-    if (!isSidebarTarget) { setDrawerOpen(false); return }
-
-    const desktopSidebar = document.querySelector('.ms-sidebar-desktop')
-    const desktopVisible = desktopSidebar && desktopSidebar.offsetParent !== null
-    if (!desktopVisible) setDrawerOpen(true)
-  }, [isActive, stepIndex, steps])
 
   if (roleLoading) {
     return (
