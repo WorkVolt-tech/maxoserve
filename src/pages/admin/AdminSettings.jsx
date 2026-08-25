@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import LoadingState from '../../components/ui/LoadingState'
@@ -12,7 +13,8 @@ export default function AdminSettings() {
   const { user } = useAuth()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const { currentBusinessId } = useCurrentBusiness()
+  const businessId = currentBusinessId
   const [showServiceTab, setShowServiceTab] = useState(true)
   const [showMenuTab, setShowMenuTab] = useState(true)
   const [logoUrl, setLogoUrl] = useState('')
@@ -24,19 +26,15 @@ export default function AdminSettings() {
     localStorage.getItem('maxoserve_tour_autoshow_off') !== 'true'
   )
 
-  useEffect(() => { loadSettings() }, [])
+  useEffect(() => { if (currentBusinessId) loadSettings() }, [currentBusinessId])
 
   async function loadSettings() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
 
     const { data } = await supabase
       .from('business_settings')
       .select('show_service_tab, show_menu_tab')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
       .single()
 
     if (data) {
@@ -47,7 +45,7 @@ export default function AdminSettings() {
     const { data: businessData } = await supabase
       .from('businesses')
       .select('logo_url')
-      .eq('id', membership.business_id)
+      .eq('id', currentBusinessId)
       .single()
 
     if (businessData?.logo_url) {
