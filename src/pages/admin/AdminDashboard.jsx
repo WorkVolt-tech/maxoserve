@@ -5,6 +5,7 @@ import {
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import Card from '../../components/ui/Card'
 import LoadingState from '../../components/ui/LoadingState'
@@ -43,6 +44,7 @@ function greetingKey() {
 export default function AdminDashboard() {
   const { user } = useAuth()
   const { locations, currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t, lang } = useAppLanguage()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -53,26 +55,15 @@ export default function AdminDashboard() {
   const [requestTypesMap, setRequestTypesMap] = useState({})
 
   useEffect(() => {
+    if (!currentBusinessId) return
     loadStats()
     loadSidePanels()
-  }, [])
+  }, [currentBusinessId])
 
   async function loadStats() {
     setLoading(true)
 
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-
-    const businessId = membership.business_id
+    const businessId = currentBusinessId
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
@@ -119,15 +110,7 @@ export default function AdminDashboard() {
   }
 
   async function loadSidePanels() {
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) return
-    const businessId = membership.business_id
+    const businessId = currentBusinessId
 
     const { data: requestsData } = await supabase
       .from('service_requests')
