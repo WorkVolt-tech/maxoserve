@@ -18,18 +18,32 @@ export default function TourOverlay() {
       return
     }
 
-    const el = document.querySelector(`[data-tour="${step.target}"]`)
+    // There can be two elements sharing this data-tour attribute (one in the
+    // desktop sidebar, one in the mobile drawer) — only one is ever actually
+    // visible at a time. Find whichever one is currently on-screen.
+    const candidates = document.querySelectorAll(`[data-tour="${step.target}"]`)
+    let el = null
+    for (const candidate of candidates) {
+      if (candidate.offsetParent !== null) { el = candidate; break }
+    }
+
     if (!el) {
+      // Nothing visible to point at — fall back to a centered tooltip
+      // rather than leaving a dimmed screen with nothing to interact with.
       setRect(null)
       return
     }
 
     el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    // Small delay to let scroll settle before measuring
     const timer = setTimeout(() => {
       const r = el.getBoundingClientRect()
-      setRect(r)
-    }, 200)
+      // A zero-size rect (hidden/collapsed element) is as good as not found.
+      if (r.width === 0 && r.height === 0) {
+        setRect(null)
+      } else {
+        setRect(r)
+      }
+    }, 250)
 
     return () => clearTimeout(timer)
   }, [isActive, stepIndex, step])
