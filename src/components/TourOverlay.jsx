@@ -3,6 +3,29 @@ import { X } from 'lucide-react'
 import { useTour } from '../contexts/TourContext'
 import { useAppLanguage } from '../contexts/AppLanguageContext'
 
+function findVisibleRect(target) {
+  const scopes = []
+  const mobileDrawer = document.querySelector('.ms-sidebar-mobile')
+  if (mobileDrawer) scopes.push(mobileDrawer)
+  const desktopSidebar = document.querySelector('.ms-sidebar-desktop')
+  if (desktopSidebar) scopes.push(desktopSidebar)
+  scopes.push(document)
+
+  for (const scope of scopes) {
+    const el = scope.querySelector(`[data-tour="${target}"]`)
+    if (!el) continue
+    if (el.offsetParent === null) continue
+
+    const r = el.getBoundingClientRect()
+    const onScreen =
+      r.width > 0 && r.height > 0 &&
+      r.right > 0 && r.left < window.innerWidth &&
+      r.bottom > 0 && r.top < window.innerHeight
+    if (onScreen) return r
+  }
+  return null
+}
+
 export default function TourOverlay() {
   const { isActive, stepIndex, steps, next, back, skip } = useTour()
   const { t } = useAppLanguage()
@@ -18,81 +41,44 @@ export default function TourOverlay() {
       return
     }
 
-    // There can be two elements sharing this data-tour attribute (one in the
-    // desktop sidebar, one in the mobile drawer) — only one is ever actually
-    // visible at a time. Find whichever one is currently on-screen.
-    const candidates = document.querySelectorAll(`[data-tour="${step.target}"]`)
-    let el = null
-    for (const candidate of candidates) {
-      if (candidate.offsetParent !== null) { el = candidate; break }
-    }
+    let settled = false
+    let giveUpTimer = null
 
-    if (!el) {
-      // Nothing visible to point at — fall back to a centered tooltip
-      // rather than leaving a dimmed screen with nothing to interact with.
-      setRect(null)
-      return
-    }
-
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-
-    let cancelled = false
-    let attempts = 0
-
-    function findVisibleRect(target) {
-      // There are up to two copies of each sidebar link in the DOM: one in
-      // the always-mounted desktop sidebar, one in the mobile drawer (only
-      // mounted while open). Rather than guessing which is "visible" via
-      // CSS checks, explicitly search the mobile drawer first if it's
-      // currently mounted, then the desktop sidebar, then the rest of the
-      // page (for topbar targets, which live outside both).
-      const scopes = []
-      const mobileDrawer = document.querySelector('.ms-sidebar-mobile')
-      if (mobileDrawer) scopes.push(mobileDrawer)
-      const desktopSidebar = document.querySelector('.ms-sidebar-desktop')
-      if (desktopSidebar) scopes.push(desktopSidebar)
-      scopes.push(document)
-
-      for (const scope of scopes) {
-        const el = scope.querySelector(`[data-tour="${target}"]`)
-        if (!el) continue
-        if (el.offsetParent === null) continue
-
-        const r = el.getBoundingClientRect()
-        const onScreen =
-          r.width > 0 && r.height > 0 &&
-          r.right > 0 && r.left < window.innerWidth &&
-          r.bottom > 0 && r.top < window.innerHeight
-        if (onScreen) return r
-      }
-      return null
-    }
-
-    function measure() {
-      if (cancelled) return
-      attempts += 1
-
+    function tryResolve() {
+      if (settled) return
       const r = findVisibleRect(step.target)
       if (r) {
+        settled = true
         setRect(r)
-        return
+        const el = document.querySelector(`[data-tour="${step.target}"]`)
+        if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        cleanup()
       }
+    }
 
-      // Not ready yet — keep retrying for up to ~2.5s (drawer open animation,
-      // first paint, etc. can all take longer than a single fixed delay).
-      if (attempts < 12) {
-        setTimeout(measure, 200)
-      } else {
+    // React to any DOM change (drawer opening/closing, elements mounting)
+    // instead of guessing a fixed delay is long enough.
+    const observer = new MutationObserver(() => tryResolve())
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true })
+
+    function cleanup() {
+      observer.disconnect()
+      if (giveUpTimer) clearTimeout(giveUpTimer)
+    }
+
+    // Try immediately in case it's already there, then give the observer
+    // up to 4 seconds to catch a delayed mount before falling back to a
+    // centered tooltip (never leaving a dead, unclickable screen).
+    tryResolve()
+    giveUpTimer = setTimeout(() => {
+      if (!settled) {
+        settled = true
         setRect(null)
+        cleanup()
       }
-    }
+    }, 4000)
 
-    const initialTimer = setTimeout(measure, 150)
-
-    return () => {
-      cancelled = true
-      clearTimeout(initialTimer)
-    }
+    return cleanup
   }, [isActive, stepIndex, step])
 
   if (!isActive || !step) return null
@@ -139,7 +125,6 @@ export default function TourOverlay() {
             boxShadow: '0 0 0 4000px rgba(0,0,0,0.55)',
             zIndex: 2001,
             pointerEvents: 'none',
-            transition: 'all 0.2s ease',
           }}
         />
       )}
