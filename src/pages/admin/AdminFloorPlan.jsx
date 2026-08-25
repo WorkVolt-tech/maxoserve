@@ -4,6 +4,7 @@ import { ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 
@@ -19,6 +20,7 @@ const STATUS_COLORS = {
 export default function AdminFloorPlan() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
   const [areas, setAreas] = useState([])
@@ -37,7 +39,7 @@ export default function AdminFloorPlan() {
 
   useEffect(() => {
     loadInitial()
-  }, [])
+  }, [currentBusinessId])
 
   useEffect(() => {
     if (currentLocationId) loadAreasForLocation(currentLocationId)
@@ -63,15 +65,6 @@ export default function AdminFloorPlan() {
   }, [tables])
 
   async function loadInitial() {
-    setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) { setLoading(false); return }
     setLoading(false)
   }
 
