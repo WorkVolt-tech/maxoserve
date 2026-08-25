@@ -30,6 +30,7 @@ export default function AdminMenuItems() {
   const [descriptionFr, setDescriptionFr] = useState('')
   const [price, setPrice] = useState('')
   const [cost, setCost] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
   const [prepLocation, setPrepLocation] = useState('kitchen')
 
   const [loading, setLoading] = useState(true)
@@ -80,10 +81,11 @@ export default function AdminMenuItems() {
       business_id: businessId, category_id: categoryId, name, name_fr: nameFr || null,
       description: description || null, description_fr: descriptionFr || null,
       price: parseFloat(price) || 0, cost: cost ? parseFloat(cost) : null,
+      image_url: imageUrl.trim() || null,
       prep_location: prepLocation, display_order: items.length,
     })
     if (insertError) { setError(insertError.message); return }
-    setName(''); setNameFr(''); setDescription(''); setDescriptionFr(''); setPrice(''); setCost(''); setPrepLocation('kitchen')
+    setName(''); setNameFr(''); setDescription(''); setDescriptionFr(''); setPrice(''); setCost(''); setImageUrl(''); setPrepLocation('kitchen')
     loadItems()
   }
 
@@ -139,6 +141,9 @@ export default function AdminMenuItems() {
           <div style={{ flex: '0 1 120px' }}>
             <Input type="number" step="0.01" placeholder={t('phCost')} value={cost} onChange={(e) => setCost(e.target.value)} />
           </div>
+          <div style={{ flex: '1 1 220px' }}>
+            <Input type="url" placeholder={t('phImageUrl')} value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
+          </div>
           <select value={prepLocation} onChange={(e) => setPrepLocation(e.target.value)} style={styles.select}>
             {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
           </select>
@@ -146,6 +151,7 @@ export default function AdminMenuItems() {
           <textarea placeholder={t('phDescriptionFr')} value={descriptionFr} onChange={(e) => setDescriptionFr(e.target.value)} style={styles.textarea} />
           <Button type="submit" icon={Plus}>{t('add')}</Button>
         </form>
+        <p style={{ color: 'var(--color-text-faint)', fontSize: '0.78rem', marginTop: '0.6rem' }}>{t('imageUrlHint')}</p>
         {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.75rem' }}>{error}</p>}
       </Card>
 
@@ -158,8 +164,16 @@ export default function AdminMenuItems() {
             const isExpanded = expandedItemId === item.id
             return (
               <Card key={item.id} padding="0">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem', padding: '1rem 1.25rem' }}>
-                  <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', padding: '1rem 1.25rem' }}>
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={styles.itemThumb}
+                      onError={(e) => { e.target.style.display = 'none' }}
+                    />
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                       <strong>{item.name}</strong>
                       {item.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {item.name_fr}</span>}
@@ -223,6 +237,10 @@ export default function AdminMenuItems() {
 
 const styles = {
   backLink: { display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 600 },
+  itemThumb: {
+    width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover',
+    border: '1px solid var(--color-border)', flexShrink: 0,
+  },
   select: { padding: '0.65rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem' },
   textarea: { padding: '0.65rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.9rem', width: '100%', minHeight: '55px', fontFamily: 'inherit' },
 }
