@@ -3,6 +3,7 @@ import { UserRoundCog, Plus, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { roleLabel } from '../../lib/roleLabels'
 import PageHeader from '../../components/ui/PageHeader'
@@ -14,8 +15,9 @@ import LoadingState from '../../components/ui/LoadingState'
 export default function AdminAssignments() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [members, setMembers] = useState([])
   const [profiles, setProfiles] = useState({})
   const [areas, setAreas] = useState([])
@@ -31,28 +33,16 @@ export default function AdminAssignments() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    loadInitial()
-  }, [currentLocationId])
+    if (currentBusinessId) loadInitial()
+  }, [currentLocationId, currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-    setBusinessId(membership.business_id)
 
     const { data: membersData } = await supabase
       .from('business_members')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
     setMembers(membersData || [])
 
     if (membersData && membersData.length > 0) {
@@ -66,16 +56,16 @@ export default function AdminAssignments() {
     const { data: areasData } = await supabase
       .from('areas')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
     setAreas(areasData || [])
 
     const { data: tablesData } = await supabase
       .from('tables')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
     setTables(tablesData || [])
 
-    await loadAssignments(membership.business_id)
+    await loadAssignments(currentBusinessId)
     setLoading(false)
   }
 
