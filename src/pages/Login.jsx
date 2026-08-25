@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import logo from '../assets/maxoserve-logo.png'
 
-// Checks for a pending invite matching this email and, if found, joins the
-// business and marks the invite accepted. Returns 'joined', 'none', or 'error'.
 async function tryAcceptInvite(email, userId) {
   const { data: invite } = await supabase
     .from('staff_invites')
@@ -40,12 +38,14 @@ async function tryAcceptInvite(email, userId) {
 export default function Login() {
   const navigate = useNavigate()
   const { refreshRole } = useAuth()
-  const [mode, setMode] = useState('login')
+  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'forgot'
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -53,6 +53,12 @@ export default function Login() {
     setLoading(true)
 
     if (mode === 'signup') {
+      if (password !== confirmPassword) {
+        setError("Passwords don't match.")
+        setLoading(false)
+        return
+      }
+
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -65,9 +71,6 @@ export default function Login() {
         return
       }
 
-      // Profile creation and invite-joining for brand-new signups are handled
-      // automatically by a database trigger the moment the account is created.
-      // Give it a brief moment, then check where to land.
       await new Promise((resolve) => setTimeout(resolve, 600))
 
       const { data: membership } = await supabase
@@ -86,9 +89,6 @@ export default function Login() {
         return
       }
 
-      // If this account has a pending invite that never got joined (e.g. a
-      // brand-new invite for an existing user, or a prior failed signup
-      // attempt), try to complete it now on login.
       if (signInData.user) {
         const result = await tryAcceptInvite(email, signInData.user.id)
         if (result === 'joined') {
@@ -100,6 +100,77 @@ export default function Login() {
     }
 
     setLoading(false)
+  }
+
+  async function handleForgotPassword(e) {
+    e.preventDefault()
+    setError('')
+    setLoading(true)
+
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+
+    setLoading(false)
+
+    if (resetError) {
+      setError(resetError.message)
+      return
+    }
+
+    setForgotSent(true)
+  }
+
+  if (mode === 'forgot') {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <img src={logo} alt="MaxoServe" style={styles.logo} />
+
+          {forgotSent ? (
+            <>
+              <h2 style={styles.forgotTitle}>Check your email</h2>
+              <p style={styles.forgotBody}>
+                If an account exists for <strong>{email}</strong>, we've sent a link to reset your password.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setForgotSent(false) }}
+                style={styles.submit}
+              >
+                Back to Log In
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 style={styles.forgotTitle}>Reset your password</h2>
+              <p style={styles.forgotBody}>Enter your email and we'll send you a link to reset it.</p>
+              <form onSubmit={handleForgotPassword} style={styles.form}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  style={styles.input}
+                />
+                {error && <p style={styles.error}>{error}</p>}
+                <button type="submit" disabled={loading} style={styles.submit}>
+                  {loading ? 'Sending…' : 'Send Reset Link'}
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => setMode('login')}
+                style={styles.linkButton}
+              >
+                Back to Log In
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -153,6 +224,27 @@ export default function Login() {
             minLength={6}
             style={styles.input}
           />
+          {mode === 'signup' && (
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={6}
+              style={styles.input}
+            />
+          )}
+
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setError('') }}
+              style={styles.forgotLink}
+            >
+              Forgot password?
+            </button>
+          )}
 
           {error && <p style={styles.error}>{error}</p>}
 
@@ -229,6 +321,17 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.15s',
   },
+  forgotLink: {
+    background: 'transparent',
+    border: 'none',
+    color: '#3b6fe0',
+    fontSize: '0.82rem',
+    fontWeight: 600,
+    cursor: 'pointer',
+    textAlign: 'right',
+    padding: 0,
+    marginTop: '-0.4rem',
+  },
   submit: {
     marginTop: '0.4rem',
     padding: '0.8rem',
@@ -242,4 +345,15 @@ const styles = {
     boxShadow: '0 4px 14px rgba(59,111,224,0.35)',
   },
   error: { color: '#dc2626', fontSize: '0.85rem', margin: 0 },
+  forgotTitle: { fontSize: '1.25rem', margin: '0.5rem 0 0.4rem' },
+  forgotBody: { color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.5rem', lineHeight: 1.5 },
+  linkButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#6b7280',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    marginTop: '1rem',
+    textDecoration: 'underline',
+  },
 }
