@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -27,8 +29,10 @@ export default function AdminReservations() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [tables, setTables] = useState([])
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [reservations, setReservations] = useState([])
   const [categories, setCategories] = useState([])
   const [menuItems, setMenuItems] = useState({})
@@ -159,9 +163,15 @@ export default function AdminReservations() {
     loadReservations(businessId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this reservation?')) return
-    await supabase.from('reservations').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('reservations').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Reservation deleted')
     loadReservations(businessId)
   }
 
@@ -289,7 +299,7 @@ export default function AdminReservations() {
                   >
                     {isExpanded ? t('cancel') : existingOrder ? t('addMore') : t('buildPreOrder')}
                   </Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(r.id)}>{t('delete')}</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(r)}>{t('delete')}</Button>
                 </div>
 
                 {isExpanded && (
@@ -335,6 +345,16 @@ export default function AdminReservations() {
             )
           })}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete reservation for "${deleteTarget.customer_name}"?`}
+          description="This can't be undone."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
