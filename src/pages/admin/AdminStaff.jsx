@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { roleLabel } from '../../lib/roleLabels'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -20,7 +21,8 @@ export default function AdminStaff() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const { t } = useAppLanguage()
-  const [businessId, setBusinessId] = useState(null)
+  const { currentBusinessId } = useCurrentBusiness()
+  const businessId = currentBusinessId
   const [removeTarget, setRemoveTarget] = useState(null)
   const [members, setMembers] = useState([])
   const [invites, setInvites] = useState([])
@@ -38,16 +40,12 @@ export default function AdminStaff() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    await loadMembers(membership.business_id)
-    await loadInvites(membership.business_id)
+    await loadMembers(currentBusinessId)
+    await loadInvites(currentBusinessId)
     setLoading(false)
   }
 
