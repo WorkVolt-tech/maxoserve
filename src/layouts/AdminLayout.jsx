@@ -4,7 +4,7 @@ import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
   CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
-  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle,
+  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle, Info,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
@@ -60,6 +60,7 @@ const NAV_GROUPS = [
       { to: '/admin/settings', labelKey: 'settings', section: 'settings', icon: Settings2 },
       { to: '/admin/margin-report', labelKey: 'marginReport', section: 'marginReport', icon: TrendingUp },
       { to: '/admin/help', labelKey: 'help', section: 'help', icon: HelpCircle },
+      { to: '/admin/about', labelKey: 'about', section: 'about', icon: Info },
     ],
   },
 ]
@@ -121,6 +122,9 @@ function SidebarContent({ visibleGroups, onNavigate }) {
         <button onClick={signOut} style={styles.signOut}>
           <LogOut size={15} /> {t('signOut')}
         </button>
+        <a href="https://chezmaxo.ca" target="_blank" rel="noopener noreferrer" style={styles.creditLink}>
+          v1.0.2 · ChezMaxo
+        </a>
       </div>
     </>
   )
@@ -372,6 +376,13 @@ const styles = {
     textDecoration: 'none',
     fontSize: '0.85rem',
     fontWeight: 600,
+  },
+  creditLink: {
+    textAlign: 'center',
+    fontSize: '0.68rem',
+    color: '#5c6178',
+    textDecoration: 'none',
+    marginTop: '0.2rem',
   },
   signOut: {
     display: 'flex',
