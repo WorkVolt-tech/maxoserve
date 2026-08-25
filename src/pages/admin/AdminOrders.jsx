@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -37,9 +38,10 @@ const FLOW_LABEL_KEYS = {
 export default function AdminOrders() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [orders, setOrders] = useState([])
   const [cancelTarget, setCancelTarget] = useState(null)
   const [orderItems, setOrderItems] = useState({})
@@ -55,8 +57,8 @@ export default function AdminOrders() {
   }
 
   useEffect(() => {
-    init()
-  }, [])
+    if (currentBusinessId) init()
+  }, [currentBusinessId])
 
   useEffect(() => {
     if (!businessId) return
@@ -76,24 +78,10 @@ export default function AdminOrders() {
   async function init() {
     setLoading(true)
 
-    const { data: membership } = await supabase
-      .from('business_members')
-      .select('business_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-
-    if (!membership) {
-      setLoading(false)
-      return
-    }
-
-    setBusinessId(membership.business_id)
-
     const { data: tablesData } = await supabase
       .from('tables')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
 
     const tablesMap = {}
     for (const t of tablesData || []) tablesMap[t.id] = t
@@ -102,13 +90,13 @@ export default function AdminOrders() {
     const { data: reservationsData } = await supabase
       .from('reservations')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
 
     const reservationsMap = {}
     for (const r of reservationsData || []) reservationsMap[r.id] = r
     setReservations(reservationsMap)
 
-    await loadOrders(membership.business_id)
+    await loadOrders(currentBusinessId)
     setLoading(false)
   }
 
