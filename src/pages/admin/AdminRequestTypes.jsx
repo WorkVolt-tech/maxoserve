@@ -3,6 +3,7 @@ import { Bell, Plus, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { roleLabel } from '../../lib/roleLabels'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -31,7 +32,8 @@ export default function AdminRequestTypes() {
   const { user } = useAuth()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const { currentBusinessId } = useCurrentBusiness()
+  const businessId = currentBusinessId
   const [types, setTypes] = useState([])
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [label, setLabel] = useState('')
@@ -40,15 +42,11 @@ export default function AdminRequestTypes() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    await loadTypes(membership.business_id)
+    await loadTypes(currentBusinessId)
     setLoading(false)
   }
 
