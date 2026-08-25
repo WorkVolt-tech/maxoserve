@@ -6,6 +6,10 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useCurrentBusiness } from '../../contexts/BusinessContext'
+import { useToast } from '../../contexts/ToastContext'
+import { supabase } from '../../lib/supabaseClient'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { RotateCcw } from 'lucide-react'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import Card from '../../components/ui/Card'
 import LoadingState from '../../components/ui/LoadingState'
@@ -44,8 +48,11 @@ function greetingKey() {
 export default function AdminDashboard() {
   const { user } = useAuth()
   const { locations, currentLocationId } = useCurrentLocation()
-  const { currentBusinessId } = useCurrentBusiness()
+  const { businesses, currentBusinessId } = useCurrentBusiness()
   const { t, lang } = useAppLanguage()
+  const { showToast } = useToast()
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [recentRequests, setRecentRequests] = useState([])
@@ -161,6 +168,23 @@ export default function AdminDashboard() {
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'there'
   const currentLocation = locations.find((l) => l.id === currentLocationId)
 
+  const isDemoBusiness = businesses.find((b) => b.business_id === currentBusinessId)?.is_demo
+
+  async function handleResetDemo() {
+    setResetting(true)
+    const { error } = await supabase.rpc('reset_demo_data')
+    setResetting(false)
+    setShowResetConfirm(false)
+
+    if (error) {
+      showToast(`Could not reset: ${error.message}`, 'error')
+      return
+    }
+
+    showToast(t('demoResetDone'))
+    setTimeout(() => window.location.reload(), 800)
+  }
+
   if (loading) return <LoadingState label={t('loading')} />
 
   if (!stats) return <p style={{ color: 'var(--color-text-muted)' }}>No data available.</p>
@@ -207,12 +231,23 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div style={{ marginBottom: '1.75rem' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{t(greetingKey())}, {displayName}</h2>
-        <p style={{ color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
-          {t('heresWhatsHappening')}{currentLocation ? ` ${t('at')} ${currentLocation.name}` : ''}.
-        </p>
+      <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{t(greetingKey())}, {displayName}</h2>
+          <p style={{ color: 'var(--color-text-muted)', marginTop: '0.3rem' }}>
+            {t('heresWhatsHappening')}{currentLocation ? ` ${t('at')} ${currentLocation.name}` : ''}.
+          </p>
+        </div>
+        {isDemoBusiness && (
+          <button onClick={() => setShowResetConfirm(true)} style={styles.demoResetBtn}>
+            <RotateCcw size={14} /> {t('demoResetButton')}
+          </button>
+        )}
       </div>
+
+      {isDemoBusiness && (
+        <div style={styles.demoBanner}>{t('demoBanner')}</div>
+      )}
 
       <div style={styles.grid}>
         {cards.map((c) => (
@@ -288,6 +323,16 @@ export default function AdminDashboard() {
           )}
         </Card>
       </div>
+
+      {showResetConfirm && (
+        <ConfirmationModal
+          title={t('demoResetTitle')}
+          description={t('demoResetDesc')}
+          confirmLabel={resetting ? '...' : t('demoResetButton')}
+          onConfirm={handleResetDemo}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      )}
     </div>
   )
 }
@@ -313,6 +358,17 @@ function colorFg(color) {
 }
 
 const styles = {
+  demoResetBtn: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    padding: '0.55rem 1rem', borderRadius: 'var(--radius-sm)',
+    border: '1.5px solid var(--color-warning)', background: '#fff',
+    color: 'var(--color-warning)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+  },
+  demoBanner: {
+    background: 'var(--color-warning-soft)', color: 'var(--color-warning)',
+    padding: '0.7rem 1rem', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem',
+    marginBottom: '1.5rem', fontWeight: 500,
+  },
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
