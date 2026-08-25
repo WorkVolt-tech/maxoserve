@@ -4,12 +4,13 @@ import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
   CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
-  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle,
+  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle, Users,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
 import { useAppLanguage } from '../contexts/AppLanguageContext'
 import { useTour } from '../contexts/TourContext'
+import { useCurrentBusiness } from '../contexts/BusinessContext'
 import TourOverlay from '../components/TourOverlay'
 import { roleLabel } from '../lib/roleLabels'
 import { canAccess } from '../lib/permissions'
@@ -128,6 +129,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
 function TopBar({ onOpenDrawer }) {
   const { user, signOut } = useAuth()
   const { locations, currentLocationId, setCurrentLocationId, locationsLoading } = useCurrentLocation()
+  const { businesses, currentBusinessId, setCurrentBusinessId, businessesLoading } = useCurrentBusiness()
   const { lang, setLang, t } = useAppLanguage()
   const [menuOpen, setMenuOpen] = useState(false)
   const routerLocation = useRouterLocation()
@@ -140,6 +142,21 @@ function TopBar({ onOpenDrawer }) {
       <button style={styles.hamburger} className="ms-hamburger" onClick={onOpenDrawer} aria-label="Open menu">
         <MenuIcon size={20} />
       </button>
+
+      {!businessesLoading && businesses.length > 1 && (
+        <div style={styles.topBarBusiness}>
+          <Users size={15} color="var(--color-text-muted)" />
+          <select
+            value={currentBusinessId || ''}
+            onChange={(e) => setCurrentBusinessId(e.target.value)}
+            style={styles.topBarSelect}
+          >
+            {businesses.map((b) => (
+              <option key={b.business_id} value={b.business_id}>{b.business_name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {!locationsLoading && locations.length > 0 && !hideLocationSwitcher && (
         <div style={styles.topBarLocation} data-tour="topbar-location">
@@ -385,6 +402,16 @@ const styles = {
     cursor: 'pointer',
     padding: '0.3rem',
     color: 'var(--color-text)',
+  },
+  topBarBusiness: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    background: 'var(--color-primary-soft)',
+    border: '1px solid var(--color-primary)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '0.3rem 0.6rem',
+    marginRight: '0.5rem',
   },
   topBarLocation: {
     display: 'flex',
