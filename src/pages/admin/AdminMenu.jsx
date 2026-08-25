@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import MenuImportModal from '../../components/MenuImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -18,7 +19,8 @@ export default function AdminMenu() {
   const { user } = useAuth()
   const { showToast } = useToast()
   const { t } = useAppLanguage()
-  const [businessId, setBusinessId] = useState(null)
+  const { currentBusinessId } = useCurrentBusiness()
+  const businessId = currentBusinessId
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
   const [nameFr, setNameFr] = useState('')
@@ -27,18 +29,13 @@ export default function AdminMenu() {
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    await loadCategories(membership.business_id)
+    await loadCategories(currentBusinessId)
     setLoading(false)
   }
-
   async function loadCategories(bizId) {
     const { data, error: catError } = await supabase
       .from('menu_categories').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
