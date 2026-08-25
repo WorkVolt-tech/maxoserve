@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -15,8 +17,10 @@ export default function AdminAreas() {
   const { user } = useAuth()
   const { currentLocationId, locations } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [areas, setAreas] = useState([])
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -60,9 +64,15 @@ export default function AdminAreas() {
     loadAreas(currentLocationId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this area? This will also delete its tables.')) return
-    await supabase.from('areas').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('areas').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Area deleted')
     loadAreas(currentLocationId)
   }
 
@@ -136,7 +146,7 @@ export default function AdminAreas() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button variant="secondary" size="sm" icon={Copy} onClick={() => openDuplicateForm(area)}>{t('duplicate')}</Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(area.id)}>{t('delete')}</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(area)}>{t('delete')}</Button>
                 </div>
               </div>
 
@@ -167,6 +177,16 @@ export default function AdminAreas() {
             </Card>
           ))}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="This will also delete its tables. This can't be undone."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
