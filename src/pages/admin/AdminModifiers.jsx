@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import ModifierImportModal from '../../components/ModifierImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -17,8 +19,10 @@ export default function AdminModifiers() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [groups, setGroups] = useState([])
+  const [deleteGroupTarget, setDeleteGroupTarget] = useState(null)
   const [options, setOptions] = useState({})
 
   const [groupName, setGroupName] = useState('')
@@ -79,10 +83,15 @@ export default function AdminModifiers() {
     loadGroups(businessId)
   }
 
-  async function handleDeleteGroup(id) {
-    if (!confirm('Delete this modifier group and all its options?')) return
-    const { error: deleteError } = await supabase.from('modifier_groups').delete().eq('id', id)
-    if (deleteError) { setError(`Could not delete group: ${deleteError.message}`); return }
+  async function confirmDeleteGroup() {
+    if (!deleteGroupTarget) return
+    const { error: deleteError } = await supabase.from('modifier_groups').delete().eq('id', deleteGroupTarget.id)
+    setDeleteGroupTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete group: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Modifier group deleted')
     loadGroups(businessId)
   }
 
@@ -173,7 +182,7 @@ export default function AdminModifiers() {
                     {' '}· {group.selection_type === 'single' ? t('singleChoice') : t('multipleChoices')}{group.is_required ? ` · ${t('requiredCheckbox')}` : ''}
                   </span>
                 </div>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDeleteGroup(group.id)}>{t('delete')}</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteGroupTarget(group)}>{t('delete')}</Button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.75rem' }}>
@@ -219,6 +228,16 @@ export default function AdminModifiers() {
             </Card>
           ))}
         </div>
+      )}
+
+      {deleteGroupTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteGroupTarget.name}"?`}
+          description="This will also delete all its options. This can't be undone."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDeleteGroup}
+          onCancel={() => setDeleteGroupTarget(null)}
+        />
       )}
     </div>
   )
