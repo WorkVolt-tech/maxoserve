@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2, SlidersHorizontal, EyeOff, Eye } from 'lucide-
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -17,7 +18,8 @@ export default function AdminMenuItems() {
   const { categoryId } = useParams()
   const { user } = useAuth()
   const { t } = useAppLanguage()
-  const [businessId, setBusinessId] = useState(null)
+  const { currentBusinessId } = useCurrentBusiness()
+  const businessId = currentBusinessId
   const [category, setCategory] = useState(null)
   const [items, setItems] = useState([])
   const [allModifierGroups, setAllModifierGroups] = useState([])
@@ -36,20 +38,15 @@ export default function AdminMenuItems() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [categoryId])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [categoryId, currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-
     const { data: catData } = await supabase.from('menu_categories').select('*').eq('id', categoryId).single()
     setCategory(catData)
 
     const { data: groupsData } = await supabase
-      .from('modifier_groups').select('*').eq('business_id', membership.business_id).order('display_order', { ascending: true })
+      .from('modifier_groups').select('*').eq('business_id', currentBusinessId).order('display_order', { ascending: true })
     setAllModifierGroups(groupsData || [])
 
     await loadItems()
