@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -15,8 +17,10 @@ export default function AdminLocations() {
   const { user } = useAuth()
   const { reloadLocations } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [locations, setLocations] = useState([])
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [name, setName] = useState('')
   const [address, setAddress] = useState('')
   const [loading, setLoading] = useState(true)
@@ -50,9 +54,15 @@ export default function AdminLocations() {
     reloadLocations()
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this location? This will also delete its areas and tables.')) return
-    await supabase.from('locations').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('locations').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Location deleted')
     loadData()
     reloadLocations()
   }
@@ -93,10 +103,20 @@ export default function AdminLocations() {
                   {loc.address && <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{loc.address}</div>}
                 </div>
               </div>
-              <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(loc.id)}>{t('delete')}</Button>
+              <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(loc)}>{t('delete')}</Button>
             </Card>
           ))}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="This will also delete its areas and tables. This can't be undone."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
