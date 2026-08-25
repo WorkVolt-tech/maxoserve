@@ -244,7 +244,7 @@ export default function AdminLayout() {
 
         {drawerOpen && (
           <div style={styles.drawerOverlay} onClick={() => setDrawerOpen(false)}>
-            <aside style={styles.sidebarMobile} onClick={(e) => e.stopPropagation()}>
+            <aside style={styles.sidebarMobile} className="ms-sidebar-mobile" onClick={(e) => e.stopPropagation()}>
               <button style={styles.drawerClose} onClick={() => setDrawerOpen(false)}>
                 <X size={20} />
               </button>
