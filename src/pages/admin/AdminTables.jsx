@@ -3,6 +3,7 @@ import { LayoutGrid, Plus, Trash2, QrCode } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import QrCodeModal from '../../components/QrCodeModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -28,10 +29,11 @@ function generateToken() {
 export default function AdminTables() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { showToast } = useToast()
   const { t } = useAppLanguage()
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [areas, setAreas] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
@@ -51,7 +53,7 @@ export default function AdminTables() {
   const [bulkScope, setBulkScope] = useState('area')
   const [bulkProcessing, setBulkProcessing] = useState(false)
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { setLoading(false) }, [currentBusinessId])
   useEffect(() => {
     if (currentLocationId) loadAreasForLocation(currentLocationId)
     else { setAreas([]); setSelectedAreaId('') }
@@ -60,15 +62,6 @@ export default function AdminTables() {
     if (selectedAreaId) loadTables(selectedAreaId)
     else setTables([])
   }, [selectedAreaId])
-
-  async function loadInitial() {
-    setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    setLoading(false)
-  }
 
   async function loadAreasForLocation(locationId) {
     const { data, error: areasError } = await supabase
