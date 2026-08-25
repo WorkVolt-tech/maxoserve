@@ -39,22 +39,31 @@ export default function TourOverlay() {
     let cancelled = false
     let attempts = 0
 
+    function findVisibleRect(target) {
+      const candidates = document.querySelectorAll(`[data-tour="${target}"]`)
+      for (const candidate of candidates) {
+        if (candidate.offsetParent === null) continue
+        const r = candidate.getBoundingClientRect()
+        // Must have real size AND actually sit within the visible viewport —
+        // this rules out an off-canvas duplicate (e.g. the desktop sidebar
+        // copy while the mobile drawer copy is the one really on screen).
+        const onScreen =
+          r.width > 0 && r.height > 0 &&
+          r.right > 0 && r.left < window.innerWidth &&
+          r.bottom > 0 && r.top < window.innerHeight
+        if (onScreen) return r
+      }
+      return null
+    }
+
     function measure() {
       if (cancelled) return
       attempts += 1
 
-      const freshCandidates = document.querySelectorAll(`[data-tour="${step.target}"]`)
-      let freshEl = null
-      for (const candidate of freshCandidates) {
-        if (candidate.offsetParent !== null) { freshEl = candidate; break }
-      }
-
-      if (freshEl) {
-        const r = freshEl.getBoundingClientRect()
-        if (r.width > 0 || r.height > 0) {
-          setRect(r)
-          return
-        }
+      const r = findVisibleRect(step.target)
+      if (r) {
+        setRect(r)
+        return
       }
 
       // Not ready yet — keep retrying for up to ~2.5s (drawer open animation,
