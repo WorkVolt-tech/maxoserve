@@ -3,6 +3,7 @@ import { CalendarCheck, Plus, Trash2, ShoppingBag } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -27,10 +28,11 @@ const STATUS_OPTION_KEYS = {
 
 export default function AdminReservations() {
   const { user } = useAuth()
-  const { currentLocationId } = useCurrentLocation()
+ const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [tables, setTables] = useState([])
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [reservations, setReservations] = useState([])
@@ -54,7 +56,7 @@ export default function AdminReservations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
 
   useEffect(() => {
     if (!businessId) return
@@ -67,20 +69,16 @@ export default function AdminReservations() {
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
 
-    const { data: tablesData } = await supabase.from('tables').select('*').eq('business_id', membership.business_id)
+    const { data: tablesData } = await supabase.from('tables').select('*').eq('business_id', currentBusinessId)
     setTables(tablesData || [])
 
     const { data: eventsData } = await supabase
-      .from('events').select('*').eq('business_id', membership.business_id).eq('is_active', true).order('starts_at', { ascending: false })
+      .from('events').select('*').eq('business_id', currentBusinessId).eq('is_active', true).order('starts_at', { ascending: false })
     setEvents(eventsData || [])
 
     const { data: catsData } = await supabase
-      .from('menu_categories').select('*').eq('business_id', membership.business_id).eq('is_active', true).order('display_order', { ascending: true })
+      .from('menu_categories').select('*').eq('business_id', currentBusinessId).eq('is_active', true).order('display_order', { ascending: true })
     setCategories(catsData || [])
 
     if (catsData && catsData.length > 0) {
@@ -94,7 +92,7 @@ export default function AdminReservations() {
       setMenuItems(itemsByCategory)
     }
 
-    await loadReservations(membership.business_id)
+    await loadReservations(currentBusinessId)
     setLoading(false)
   }
 
