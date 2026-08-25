@@ -3,6 +3,7 @@ import { Map, Plus, Trash2, Copy } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -16,9 +17,10 @@ import LoadingState from '../../components/ui/LoadingState'
 export default function AdminAreas() {
   const { user } = useAuth()
   const { currentLocationId, locations } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [areas, setAreas] = useState([])
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [name, setName] = useState('')
@@ -30,20 +32,11 @@ export default function AdminAreas() {
   const [duplicateTargetLocationId, setDuplicateTargetLocationId] = useState('')
   const [duplicating, setDuplicating] = useState(false)
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { setLoading(false) }, [currentBusinessId])
   useEffect(() => {
     if (currentLocationId) loadAreas(currentLocationId)
     else setAreas([])
   }, [currentLocationId])
-
-  async function loadInitial() {
-    setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    setLoading(false)
-  }
 
   async function loadAreas(locationId) {
     const { data, error: areasError } = await supabase
