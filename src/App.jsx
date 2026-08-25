@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import Login from './pages/Login'
+import ResetPassword from './pages/ResetPassword'
 import CreateBusiness from './pages/CreateBusiness'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminLayout from './layouts/AdminLayout'
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         path="/admin/create-business"
