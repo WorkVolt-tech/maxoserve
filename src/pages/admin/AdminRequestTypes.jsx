@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { roleLabel } from '../../lib/roleLabels'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -28,8 +30,10 @@ const PRESETS = [
 export default function AdminRequestTypes() {
   const { user } = useAuth()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [types, setTypes] = useState([])
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const [label, setLabel] = useState('')
   const [labelFr, setLabelFr] = useState('')
   const [routesToRole, setRoutesToRole] = useState('server')
@@ -81,9 +85,15 @@ export default function AdminRequestTypes() {
     loadTypes(businessId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this request button? Customers will no longer see it.')) return
-    await supabase.from('service_request_types').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('service_request_types').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Request button deleted')
     loadTypes(businessId)
   }
 
@@ -139,11 +149,21 @@ export default function AdminRequestTypes() {
                 <Button variant="secondary" size="sm" icon={rt.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(rt)}>
                   {rt.is_active ? t('hide') : t('show')}
                 </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(rt.id)}>{t('delete')}</Button>
+                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(rt)}>{t('delete')}</Button>
               </div>
             </Card>
           ))}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.label}"?`}
+          description="Customers will no longer see this button."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
