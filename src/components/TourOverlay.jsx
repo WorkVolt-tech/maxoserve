@@ -36,8 +36,12 @@ export default function TourOverlay() {
   useEffect(() => {
     if (!isActive || !step) return
 
+    // Always clear the previous step's highlight immediately — otherwise
+    // the old box briefly stays visible, pointing at the wrong element,
+    // while we search for the new target.
+    setRect(null)
+
     if (!step.target) {
-      setRect(null)
       return
     }
 
