@@ -4,7 +4,7 @@ import {
   LayoutDashboard, MapPin, Map, LayoutGrid, PanelsTopLeft,
   UtensilsCrossed, SlidersHorizontal, Users, UserRoundCog,
   CalendarCheck, PartyPopper, ShoppingBag, Bell, ScrollText,
-  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle, Users,
+  LogOut, Menu as MenuIcon, X, ChevronDown, Settings2, TrendingUp, HelpCircle,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { LocationProvider, useCurrentLocation } from '../contexts/LocationContext'
