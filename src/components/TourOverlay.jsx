@@ -40,13 +40,25 @@ export default function TourOverlay() {
     let attempts = 0
 
     function findVisibleRect(target) {
-      const candidates = document.querySelectorAll(`[data-tour="${target}"]`)
-      for (const candidate of candidates) {
-        if (candidate.offsetParent === null) continue
-        const r = candidate.getBoundingClientRect()
-        // Must have real size AND actually sit within the visible viewport —
-        // this rules out an off-canvas duplicate (e.g. the desktop sidebar
-        // copy while the mobile drawer copy is the one really on screen).
+      // There are up to two copies of each sidebar link in the DOM: one in
+      // the always-mounted desktop sidebar, one in the mobile drawer (only
+      // mounted while open). Rather than guessing which is "visible" via
+      // CSS checks, explicitly search the mobile drawer first if it's
+      // currently mounted, then the desktop sidebar, then the rest of the
+      // page (for topbar targets, which live outside both).
+      const scopes = []
+      const mobileDrawer = document.querySelector('.ms-sidebar-mobile')
+      if (mobileDrawer) scopes.push(mobileDrawer)
+      const desktopSidebar = document.querySelector('.ms-sidebar-desktop')
+      if (desktopSidebar) scopes.push(desktopSidebar)
+      scopes.push(document)
+
+      for (const scope of scopes) {
+        const el = scope.querySelector(`[data-tour="${target}"]`)
+        if (!el) continue
+        if (el.offsetParent === null) continue
+
+        const r = el.getBoundingClientRect()
         const onScreen =
           r.width > 0 && r.height > 0 &&
           r.right > 0 && r.left < window.innerWidth &&
