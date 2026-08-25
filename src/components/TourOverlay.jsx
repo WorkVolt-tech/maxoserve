@@ -35,24 +35,43 @@ export default function TourOverlay() {
     }
 
     el.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    const timer = setTimeout(() => {
-      // Re-query fresh in case the drawer just opened and DOM shifted.
+
+    let cancelled = false
+    let attempts = 0
+
+    function measure() {
+      if (cancelled) return
+      attempts += 1
+
       const freshCandidates = document.querySelectorAll(`[data-tour="${step.target}"]`)
       let freshEl = null
       for (const candidate of freshCandidates) {
         if (candidate.offsetParent !== null) { freshEl = candidate; break }
       }
-      if (!freshEl) { setRect(null); return }
 
-      const r = freshEl.getBoundingClientRect()
-      if (r.width === 0 && r.height === 0) {
-        setRect(null)
-      } else {
-        setRect(r)
+      if (freshEl) {
+        const r = freshEl.getBoundingClientRect()
+        if (r.width > 0 || r.height > 0) {
+          setRect(r)
+          return
+        }
       }
-    }, 450)
 
-    return () => clearTimeout(timer)
+      // Not ready yet — keep retrying for up to ~2.5s (drawer open animation,
+      // first paint, etc. can all take longer than a single fixed delay).
+      if (attempts < 12) {
+        setTimeout(measure, 200)
+      } else {
+        setRect(null)
+      }
+    }
+
+    const initialTimer = setTimeout(measure, 150)
+
+    return () => {
+      cancelled = true
+      clearTimeout(initialTimer)
+    }
   }, [isActive, stepIndex, step])
 
   if (!isActive || !step) return null
