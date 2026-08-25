@@ -3,6 +3,7 @@ import { ScrollText } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
@@ -28,20 +29,18 @@ function translateAction(action, t) {
 export default function AdminActivityLog() {
   const { user } = useAuth()
   const { t } = useAppLanguage()
+  const { currentBusinessId } = useCurrentBusiness()
   const [logs, setLogs] = useState([])
   const [profiles, setProfiles] = useState({})
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
 
     const { data: logsData } = await supabase
-      .from('activity_logs').select('*').eq('business_id', membership.business_id).order('created_at', { ascending: false }).limit(100)
+      .from('activity_logs').select('*').eq('business_id', currentBusinessId).order('created_at', { ascending: false }).limit(100)
     setLogs(logsData || [])
 
     if (logsData && logsData.length > 0) {
