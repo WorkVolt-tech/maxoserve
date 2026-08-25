@@ -6,19 +6,22 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 import { ToastProvider } from './contexts/ToastContext.jsx'
 import { AppLanguageProvider } from './contexts/AppLanguageContext.jsx'
 import { TourProvider } from './contexts/TourContext.jsx'
+import { BusinessProvider } from './contexts/BusinessContext.jsx'
 import './styles/index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <AppLanguageProvider>
-          <TourProvider>
-            <ToastProvider>
-              <App />
-            </ToastProvider>
-          </TourProvider>
-        </AppLanguageProvider>
+        <BusinessProvider>
+          <AppLanguageProvider>
+            <TourProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </TourProvider>
+          </AppLanguageProvider>
+        </BusinessProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
