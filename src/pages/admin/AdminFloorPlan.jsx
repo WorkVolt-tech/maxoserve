@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
 
 const STATUS_COLORS = {
   available: '#4caf50',
@@ -19,6 +20,7 @@ export default function AdminFloorPlan() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [areas, setAreas] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState('')
   const [tables, setTables] = useState([])
@@ -153,14 +155,15 @@ export default function AdminFloorPlan() {
 
   async function handleSaveLayout() {
     setSaving(true)
-    for (const t of tables) {
+    for (const tbl of tables) {
       await supabase
         .from('tables')
-        .update({ pos_x: t.pos_x, pos_y: t.pos_y, width: t.width, height: t.height })
-        .eq('id', t.id)
+        .update({ pos_x: tbl.pos_x, pos_y: tbl.pos_y, width: tbl.width, height: tbl.height })
+        .eq('id', tbl.id)
     }
     setSaving(false)
     setDirty(false)
+    showToast('Floor plan saved')
   }
 
   function handleFlipOrientation(tableId) {
