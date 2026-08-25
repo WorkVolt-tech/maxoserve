@@ -3,6 +3,7 @@ import { SlidersHorizontal, Plus, Trash2, Upload, X } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -18,9 +19,10 @@ import LoadingState from '../../components/ui/LoadingState'
 export default function AdminModifiers() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
+  const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
   const { showToast } = useToast()
-  const [businessId, setBusinessId] = useState(null)
+  const businessId = currentBusinessId
   const [groups, setGroups] = useState([])
   const [deleteGroupTarget, setDeleteGroupTarget] = useState(null)
   const [options, setOptions] = useState({})
@@ -36,21 +38,16 @@ export default function AdminModifiers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => { loadInitial() }, [])
+  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
   useEffect(() => {
     if (businessId && currentLocationId) loadGroups(businessId)
   }, [currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
-    setBusinessId(membership.business_id)
-    await loadGroups(membership.business_id)
+    await loadGroups(currentBusinessId)
     setLoading(false)
   }
-
   async function loadGroups(bizId) {
     if (!currentLocationId) { setGroups([]); return }
     const { data: groupsData, error: groupsError } = await supabase
