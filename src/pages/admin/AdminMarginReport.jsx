@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import EmptyState from '../../components/ui/EmptyState'
@@ -11,21 +12,19 @@ import LoadingState from '../../components/ui/LoadingState'
 export default function AdminMarginReport() {
   const { user } = useAuth()
   const { t } = useAppLanguage()
+  const { currentBusinessId } = useCurrentBusiness()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { if (currentBusinessId) loadData() }, [currentBusinessId])
 
   async function loadData() {
     setLoading(true)
-    const { data: membership } = await supabase
-      .from('business_members').select('business_id').eq('user_id', user.id).limit(1).single()
-    if (!membership) { setLoading(false); return }
 
     const { data } = await supabase
       .from('menu_items')
       .select('*')
-      .eq('business_id', membership.business_id)
+      .eq('business_id', currentBusinessId)
       .not('cost', 'is', null)
       .order('name', { ascending: true })
 
