@@ -36,32 +36,51 @@ export default function TourOverlay() {
 
     el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     const timer = setTimeout(() => {
-      const r = el.getBoundingClientRect()
-      // A zero-size rect (hidden/collapsed element) is as good as not found.
+      // Re-query fresh in case the drawer just opened and DOM shifted.
+      const freshCandidates = document.querySelectorAll(`[data-tour="${step.target}"]`)
+      let freshEl = null
+      for (const candidate of freshCandidates) {
+        if (candidate.offsetParent !== null) { freshEl = candidate; break }
+      }
+      if (!freshEl) { setRect(null); return }
+
+      const r = freshEl.getBoundingClientRect()
       if (r.width === 0 && r.height === 0) {
         setRect(null)
       } else {
         setRect(r)
       }
-    }, 250)
+    }, 450)
 
     return () => clearTimeout(timer)
   }, [isActive, stepIndex, step])
 
   if (!isActive || !step) return null
 
-  const tooltipStyle = rect
-    ? {
-        position: 'fixed',
-        top: Math.min(rect.bottom + 12, window.innerHeight - 220),
-        left: Math.min(Math.max(rect.left, 16), window.innerWidth - 336),
-      }
-    : {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-      }
+  const TOOLTIP_HEIGHT = 190
+  const TOOLTIP_WIDTH = 320
+
+  let tooltipStyle
+  if (rect) {
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    const placeBelow = spaceBelow >= TOOLTIP_HEIGHT + 20 || spaceBelow >= spaceAbove
+
+    tooltipStyle = {
+      position: 'fixed',
+      top: placeBelow
+        ? Math.min(rect.bottom + 14, window.innerHeight - TOOLTIP_HEIGHT - 12)
+        : Math.max(rect.top - TOOLTIP_HEIGHT - 14, 12),
+      left: Math.min(Math.max(rect.left, 16), window.innerWidth - TOOLTIP_WIDTH - 16),
+    }
+  } else {
+    tooltipStyle = {
+      position: 'fixed',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+    }
+  }
 
   return (
     <>
