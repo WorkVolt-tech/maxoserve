@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
+import { useToast } from '../../contexts/ToastContext'
+import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
@@ -16,8 +18,10 @@ export default function AdminEvents() {
   const { user } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { t } = useAppLanguage()
+  const { showToast } = useToast()
   const [businessId, setBusinessId] = useState(null)
   const [events, setEvents] = useState([])
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   const [name, setName] = useState('')
   const [startsAt, setStartsAt] = useState('')
@@ -62,9 +66,15 @@ export default function AdminEvents() {
     loadEvents(businessId)
   }
 
-  async function handleDelete(id) {
-    if (!confirm('Delete this event? Linked reservations will keep their info but lose the event link.')) return
-    await supabase.from('events').delete().eq('id', id)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const { error: deleteError } = await supabase.from('events').delete().eq('id', deleteTarget.id)
+    setDeleteTarget(null)
+    if (deleteError) {
+      showToast(`Could not delete: ${deleteError.message}`, 'error')
+      return
+    }
+    showToast('Event deleted')
     loadEvents(businessId)
   }
 
@@ -123,12 +133,22 @@ export default function AdminEvents() {
                   <Button variant="secondary" size="sm" onClick={() => handleToggleActive(event)}>
                     {event.is_active ? t('disable') : t('enable')}
                   </Button>
-                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => handleDelete(event.id)}>{t('delete')}</Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(event)}>{t('delete')}</Button>
                 </div>
               </Card>
             )
           })}
         </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmationModal
+          title={`Delete "${deleteTarget.name}"?`}
+          description="Linked reservations will keep their info but lose the event link."
+          confirmLabel={t('delete')}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
