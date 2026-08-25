@@ -492,7 +492,15 @@ function TablePageInner() {
                   )}
                   {(menuItems[activeCategoryId] || []).map((item) => (
                     <button key={item.id} onClick={() => openItemConfig(item)} style={styles.menuItemCard}>
-                      <div style={{ textAlign: 'left' }}>
+                      {item.image_url && (
+                        <img
+                          src={item.image_url}
+                          alt={localizedName(item, lang)}
+                          style={styles.menuItemImg}
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
+                      )}
+                      <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
                         <div style={styles.menuItemName}>{localizedName(item, lang)}</div>
                         {localizedDescription(item, lang) && <div style={styles.menuItemDesc}>{localizedDescription(item, lang)}</div>}
                       </div>
@@ -711,6 +719,9 @@ const styles = {
   categoryTabActive: { background: '#14161a', borderColor: '#14161a', color: '#fff' },
   menuItemList: { display: 'flex', flexDirection: 'column', gap: '0.6rem' },
   menuItemCard: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '1rem', cursor: 'pointer', textAlign: 'left' },
+  menuItemImg: {
+    width: '54px', height: '54px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0,
+  },
   menuItemName: { fontWeight: 700, fontSize: '0.95rem' },
   menuItemDesc: { color: '#888', fontSize: '0.8rem', marginTop: '0.2rem', maxWidth: '260px' },
   menuItemRight: { display: 'flex', alignItems: 'center', gap: '0.5rem' },
