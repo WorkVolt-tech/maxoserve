@@ -59,6 +59,7 @@ const NAV_GROUPS = [
       { to: '/admin/activity-log', labelKey: 'activityLog', section: 'activityLogs', icon: ScrollText },
       { to: '/admin/settings', labelKey: 'settings', section: 'settings', icon: Settings2 },
       { to: '/admin/margin-report', labelKey: 'marginReport', section: 'marginReport', icon: TrendingUp },
+      { to: '/admin/sales-report', labelKey: 'salesReport', section: 'salesReport', icon: TrendingUp },
       { to: '/admin/help', labelKey: 'help', section: 'help', icon: HelpCircle },
       { to: '/admin/about', labelKey: 'about', section: 'about', icon: Info },
     ],
