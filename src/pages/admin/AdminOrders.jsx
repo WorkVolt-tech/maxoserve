@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Bell } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { logActivity } from '../../lib/activityLog'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useCurrentBusiness } from '../../contexts/BusinessContext'
@@ -246,17 +247,20 @@ export default function AdminOrders() {
       return
     }
 
+    logActivity(businessId, user.id, `added ${qty}× "${item.name}" to an order`)
     await recalculateOrderTotal(editingOrder.id)
     await loadOrders(businessId)
     setAddQuantities((prev) => ({ ...prev, [item.id]: '' }))
   }
 
   async function handleRemoveOrderItem(orderItemId) {
+    const removedItem = (orderItems[editingOrder?.id] || []).find((i) => i.id === orderItemId)
     const { error } = await supabase.from('order_items').delete().eq('id', orderItemId)
     if (error) {
       showToast(`Could not remove item: ${error.message}`, 'error')
       return
     }
+    logActivity(businessId, user.id, `removed "${removedItem?.menu_items?.name || 'an item'}" from an order`)
     if (editingOrder) await recalculateOrderTotal(editingOrder.id)
     await loadOrders(businessId)
   }
