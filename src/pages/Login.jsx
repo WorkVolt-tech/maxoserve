@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import { useAuth } from '../contexts/AuthContext'
 import logo from '../assets/maxoserve-logo.png'
+
+const DEMO_EMAIL = 'demo@chezmaxo.ca'
+const DEMO_PASSWORD = 'MaxoDemo2026'
 
 async function tryAcceptInvite(email, userId) {
   const { data: invite } = await supabase
@@ -38,10 +41,19 @@ async function tryAcceptInvite(email, userId) {
 export default function Login() {
   const navigate = useNavigate()
   const { refreshRole } = useAuth()
+  const [searchParams] = useSearchParams()
   const [mode, setMode] = useState('login') // 'login' | 'signup' | 'forgot'
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    if (searchParams.get('demo') === 'true') {
+      setEmail(DEMO_EMAIL)
+      setPassword(DEMO_PASSWORD)
+      setMode('login')
+    }
+  }, [searchParams])
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
