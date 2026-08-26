@@ -6,6 +6,7 @@ import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useToast } from '../../contexts/ToastContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
+import { Pencil, Plus, X } from 'lucide-react'
 
 const STATUS_FLOW = {
   submitted: { next: 'accepted', color: '#e91e63' },
@@ -51,6 +52,10 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true)
   const [groupByTable, setGroupByTable] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState({})
+  const [editingOrder, setEditingOrder] = useState(null)
+  const [menuCategories, setMenuCategories] = useState([])
+  const [menuItemsByCategory, setMenuItemsByCategory] = useState({})
+  const [addQuantities, setAddQuantities] = useState({})
 
   function toggleGroup(key) {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -95,6 +100,29 @@ export default function AdminOrders() {
     const reservationsMap = {}
     for (const r of reservationsData || []) reservationsMap[r.id] = r
     setReservations(reservationsMap)
+
+    const { data: catsData } = await supabase
+      .from('menu_categories')
+      .select('*')
+      .eq('business_id', currentBusinessId)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true })
+    setMenuCategories(catsData || [])
+
+    if (catsData && catsData.length > 0) {
+      const catIds = catsData.map((c) => c.id)
+      const { data: itemsData } = await supabase
+        .from('menu_items')
+        .select('*')
+        .in('category_id', catIds)
+        .eq('is_available', true)
+      const byCategory = {}
+      for (const item of itemsData || []) {
+        if (!byCategory[item.category_id]) byCategory[item.category_id] = []
+        byCategory[item.category_id].push(item)
+      }
+      setMenuItemsByCategory(byCategory)
+    }
 
     await loadOrders(currentBusinessId)
     setLoading(false)
@@ -164,6 +192,65 @@ export default function AdminOrders() {
     await updateStatus(cancelTarget, 'cancelled')
     setCancelTarget(null)
     showToast('Order cancelled')
+  }
+
+  function openEditOrder(order) {
+    setEditingOrder(order)
+    setAddQuantities({})
+  }
+
+  async function handleAddItemToOrder(item, quantity) {
+    if (!editingOrder) return
+    const qty = parseInt(quantity) || 1
+
+    const { error } = await supabase.from('order_items').insert({
+      business_id: businessId,
+      order_id: editingOrder.id,
+      menu_item_id: item.id,
+      quantity: qty,
+      unit_price: item.price,
+    })
+
+    if (error) {
+      showToast(`Could not add item: ${error.message}`, 'error')
+      return
+    }
+
+    await recalculateOrderTotal(editingOrder.id)
+    await loadOrders(businessId)
+    setAddQuantities((prev) => ({ ...prev, [item.id]: '' }))
+  }
+
+  async function handleRemoveOrderItem(orderItemId) {
+    const { error } = await supabase.from('order_items').delete().eq('id', orderItemId)
+    if (error) {
+      showToast(`Could not remove item: ${error.message}`, 'error')
+      return
+    }
+    if (editingOrder) await recalculateOrderTotal(editingOrder.id)
+    await loadOrders(businessId)
+  }
+
+  async function recalculateOrderTotal(orderId) {
+    const { data: items } = await supabase
+      .from('order_items')
+      .select('quantity, unit_price')
+      .eq('order_id', orderId)
+
+    const subtotal = (items || []).reduce((sum, i) => sum + Number(i.unit_price) * i.quantity, 0)
+
+    const { data: orderRow } = await supabase.from('orders').select('tax, subtotal, total').eq('id', orderId).single()
+    // Preserve the existing tax rate proportionally if one was applied originally.
+    const taxRate = orderRow && Number(orderRow.subtotal) > 0 ? Number(orderRow.tax) / Number(orderRow.subtotal) : 0
+    const tax = subtotal * taxRate
+    const total = subtotal + tax
+
+    await supabase.from('orders').update({ subtotal, tax, total }).eq('id', orderId)
+  }
+
+  function closeEditOrder() {
+    setEditingOrder(null)
+    showToast(t('orderUpdated'))
   }
 
   function minutesAgo(dateStr) {
@@ -261,6 +348,11 @@ export default function AdminOrders() {
             </button>
           )}
           {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
+            <button onClick={() => openEditOrder(order)} style={styles.editButton}>
+              <Pencil size={14} /> {t('editOrder')}
+            </button>
+          )}
+          {!['delivered', 'cancelled', 'rejected'].includes(order.status) && (
             <button onClick={() => setCancelTarget(order)} style={styles.cancelButton}>{t('cancel')}</button>
           )}
         </div>
@@ -335,6 +427,59 @@ export default function AdminOrders() {
           onConfirm={confirmCancel}
           onCancel={() => setCancelTarget(null)}
         />
+      )}
+
+      {editingOrder && (
+        <div style={styles.editOverlay} onClick={closeEditOrder}>
+          <div style={styles.editModal} onClick={(e) => e.stopPropagation()}>
+            <div style={styles.editHeader}>
+              <h3 style={{ margin: 0 }}>{t('editOrder')}</h3>
+              <button onClick={closeEditOrder} style={styles.editCloseBtn}><X size={18} /></button>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={styles.editSectionTitle}>{t('currentItems')}</div>
+              {(orderItems[editingOrder.id] || []).length === 0 && (
+                <p style={{ color: '#888', fontSize: '0.85rem' }}>{t('noItemsInOrder')}</p>
+              )}
+              {(orderItems[editingOrder.id] || []).map((item) => (
+                <div key={item.id} style={styles.editItemRow}>
+                  <span>{item.quantity}× {item.menu_items?.name || 'Item'}</span>
+                  <button onClick={() => handleRemoveOrderItem(item.id)} style={styles.editRemoveBtn}>
+                    <X size={13} /> {t('removeItem')}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <div style={styles.editSectionTitle}>{t('addItems')}</div>
+              {menuCategories.map((cat) => (
+                <div key={cat.id} style={{ marginBottom: '0.75rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.3rem' }}>{cat.name}</div>
+                  {(menuItemsByCategory[cat.id] || []).map((item) => (
+                    <div key={item.id} style={styles.editAddRow}>
+                      <span style={{ fontSize: '0.85rem' }}>{item.name} · ${Number(item.price).toFixed(2)}</span>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <input
+                          type="number" min="1"
+                          value={addQuantities[item.id] ?? 1}
+                          onChange={(e) => setAddQuantities((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          style={styles.editQtyInput}
+                        />
+                        <button onClick={() => handleAddItemToOrder(item, addQuantities[item.id] ?? 1)} style={styles.editAddBtn}>
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <button onClick={closeEditOrder} style={styles.editDoneBtn}>{t('saveChanges')}</button>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -434,5 +579,60 @@ const styles = {
     color: '#d33',
     cursor: 'pointer',
     fontSize: '0.9rem',
+  },
+  editButton: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.6rem 1rem',
+    borderRadius: '8px',
+    border: '1px solid #e2e4e9',
+    background: '#fff',
+    color: '#4c8dff',
+    cursor: 'pointer',
+    fontSize: '0.9rem',
+  },
+  editOverlay: {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500, padding: '1rem',
+  },
+  editModal: {
+    background: '#fff', borderRadius: '16px', padding: '1.5rem',
+    maxWidth: '480px', width: '100%', maxHeight: '85vh', overflowY: 'auto',
+  },
+  editHeader: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem',
+  },
+  editCloseBtn: {
+    background: '#f1f2f5', border: 'none', borderRadius: '50%',
+    width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+  },
+  editSectionTitle: {
+    fontSize: '0.78rem', fontWeight: 700, color: '#888', textTransform: 'uppercase',
+    letterSpacing: '0.03em', marginBottom: '0.5rem',
+  },
+  editItemRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '0.5rem 0', borderBottom: '1px solid #f5f5f5', fontSize: '0.88rem',
+  },
+  editRemoveBtn: {
+    display: 'flex', alignItems: 'center', gap: '0.25rem',
+    background: 'transparent', border: 'none', color: '#dc2626',
+    cursor: 'pointer', fontSize: '0.8rem',
+  },
+  editAddRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.3rem 0',
+  },
+  editQtyInput: {
+    width: '44px', padding: '0.25rem', borderRadius: '6px', border: '1px solid #e2e4e9',
+    fontSize: '0.8rem', textAlign: 'center',
+  },
+  editAddBtn: {
+    width: '28px', height: '28px', borderRadius: '6px', border: 'none',
+    background: '#4c8dff', color: '#fff', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  editDoneBtn: {
+    width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none',
+    background: '#16a34a', color: '#fff', fontWeight: 700, cursor: 'pointer',
+    fontSize: '0.9rem', marginTop: '1rem',
   },
 }
