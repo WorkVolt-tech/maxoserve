@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { Bell } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
@@ -56,6 +57,11 @@ export default function AdminOrders() {
   const [menuCategories, setMenuCategories] = useState([])
   const [menuItemsByCategory, setMenuItemsByCategory] = useState({})
   const [addQuantities, setAddQuantities] = useState({})
+  const [notifPermission, setNotifPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+  )
+  const knownOrderIds = useRef(new Set())
+  const isFirstOrderLoad = useRef(true)
 
   function toggleGroup(key) {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -136,9 +142,19 @@ export default function AdminOrders() {
       .neq('status', 'draft')
       .order('created_at', { ascending: false })
 
-    setOrders(ordersData || [])
+    const fresh = ordersData || []
 
-    if (!ordersData || ordersData.length === 0) {
+    if (!isFirstOrderLoad.current) {
+      const newSubmitted = fresh.filter((o) => o.status === 'submitted' && !knownOrderIds.current.has(o.id))
+      for (const o of newSubmitted) notifyNewOrder(o)
+    }
+
+    knownOrderIds.current = new Set(fresh.map((o) => o.id))
+    isFirstOrderLoad.current = false
+
+    setOrders(fresh)
+
+    if (fresh.length === 0) {
       setOrderItems({})
       return
     }
@@ -169,6 +185,20 @@ export default function AdminOrders() {
       itemsByOrder[item.order_id].push({ ...item, modifiers: modsByItem[item.id] || [] })
     }
     setOrderItems(itemsByOrder)
+  }
+
+  function notifyNewOrder(order) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    const table = tables[order.table_id]
+    new Notification('MaxoServe', {
+      body: `${t('newOrderAlert')} ${table?.name || 'Unassigned'} · $${Number(order.total).toFixed(2)}`,
+    })
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+  }
+
+  function requestNotificationPermission() {
+    if (typeof Notification === 'undefined') return
+    Notification.requestPermission().then(setNotifPermission)
   }
 
   async function updateStatus(order, newStatus) {
@@ -364,8 +394,22 @@ export default function AdminOrders() {
 
   return (
     <div>
-      <h2>{t('orders')}</h2>
-      <p style={{ color: '#666' }}>{t('subtitleOrders')}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>{t('orders')}</h2>
+          <p style={{ color: '#666', margin: '0.25rem 0 0' }}>{t('subtitleOrders')}</p>
+        </div>
+        {notifPermission !== 'granted' && notifPermission !== 'unsupported' && (
+          <button onClick={requestNotificationPermission} style={styles.notifButton}>
+            <Bell size={14} /> {t('enableAlerts')}
+          </button>
+        )}
+        {notifPermission === 'granted' && (
+          <span style={styles.notifOnBadge}>
+            <Bell size={12} /> {t('alertsOn')}
+          </span>
+        )}
+      </div>
 
       <div style={styles.filterRow}>
         {FILTERS.map((f) => (
@@ -629,6 +673,16 @@ const styles = {
     width: '28px', height: '28px', borderRadius: '6px', border: 'none',
     background: '#4c8dff', color: '#fff', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
+  },
+  notifButton: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.5rem 0.9rem', borderRadius: '8px', border: 'none',
+    background: '#4c8dff', color: '#fff', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+  },
+  notifOnBadge: {
+    display: 'flex', alignItems: 'center', gap: '0.3rem',
+    padding: '0.45rem 0.8rem', borderRadius: '999px', background: '#dcfce7', color: '#166534',
+    fontSize: '0.8rem', fontWeight: 600,
   },
   editDoneBtn: {
     width: '100%', padding: '0.75rem', borderRadius: '10px', border: 'none',
