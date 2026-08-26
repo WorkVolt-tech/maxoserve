@@ -137,7 +137,22 @@ export default function AdminStaff() {
       setRemoveTarget(null)
       return
     }
-    await supabase.from('business_members').delete().eq('id', removeTarget.id)
+
+    const removedProfile = profiles[removeTarget.user_id]
+
+    const { error: deleteError } = await supabase.from('business_members').delete().eq('id', removeTarget.id)
+    if (deleteError) {
+      showToast(`Could not remove: ${deleteError.message}`, 'error')
+      setRemoveTarget(null)
+      return
+    }
+
+    // Also clean up any leftover pending invite for this same email, so they
+    // can be re-invited cleanly later without hitting a duplicate-invite error.
+    if (removedProfile?.email) {
+      await supabase.from('staff_invites').delete().eq('email', removedProfile.email.toLowerCase())
+    }
+
     setRemoveTarget(null)
     showToast('Staff member removed')
     loadMembers(businessId)
