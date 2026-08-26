@@ -97,6 +97,7 @@ function TablePageInner() {
   const [cartOpen, setCartOpen] = useState(false)
   const [placingOrder, setPlacingOrder] = useState(false)
   const [orderError, setOrderError] = useState('')
+  const [allergyNotes, setAllergyNotes] = useState('')
 
   const [myOrders, setMyOrders] = useState([])
 
@@ -350,6 +351,7 @@ function TablePageInner() {
       business_id: session.business_id, table_id: session.table_id, session_id: session.id,
       status: 'submitted', submitted_at: new Date().toISOString(),
       subtotal: cartSubtotal, tax: cartTax, total: cartTotal,
+      allergy_notes: allergyNotes.trim() || null,
     }).select().single()
 
     if (orderErr || !order) { setOrderError(orderErr?.message || 'Could not place order.'); setPlacingOrder(false); return }
@@ -372,10 +374,11 @@ function TablePageInner() {
     setCart([])
     setCartOpen(false)
     setPlacingOrder(false)
+    setAllergyNotes('')
     setActiveTab('orders')
     loadMyOrders(session.id)
   }
-
+  
   if (status === 'loading') {
     return <div style={styles.page}><div style={styles.loadingWrap}><span style={styles.spinner} /></div></div>
   }
@@ -654,6 +657,16 @@ function TablePageInner() {
                   ))}
                 </div>
 
+                <div style={styles.allergyWrap}>
+                  <label style={styles.allergyLabel}>{t('allergyLabel')}</label>
+                  <textarea
+                    placeholder={t('allergyPlaceholder')}
+                    value={allergyNotes}
+                    onChange={(e) => setAllergyNotes(e.target.value)}
+                    style={styles.allergyInput}
+                  />
+                </div>
+
                 <div style={styles.cartTotals}>
                   <div style={styles.cartTotalRow}><span>{t('subtotal')}</span><span>${cartSubtotal.toFixed(2)}</span></div>
                   <div style={styles.cartTotalRow}><span>{t('tax')}</span><span>${cartTax.toFixed(2)}</span></div>
@@ -743,6 +756,12 @@ const styles = {
   addToCartButton: { marginLeft: 'auto', flex: 1, padding: '0.8rem', borderRadius: '12px', border: 'none', background: '#3b6fe0', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '0.92rem' },
   cartLine: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f5f5f5', paddingBottom: '0.6rem' },
   removeButton: { border: 'none', background: '#f1f2f5', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#dc2626' },
+  allergyWrap: { marginBottom: '1rem' },
+  allergyLabel: { display: 'block', fontSize: '0.82rem', fontWeight: 600, marginBottom: '0.4rem', color: '#374151' },
+  allergyInput: {
+    width: '100%', padding: '0.65rem', borderRadius: '10px', border: '1.5px solid #e5e7eb',
+    fontSize: '0.85rem', fontFamily: 'inherit', minHeight: '55px',
+  },
   cartTotals: { borderTop: '1px solid #e5e7eb', paddingTop: '0.75rem', marginBottom: '1rem' },
   cartTotalRow: { display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', padding: '0.25rem 0' },
   placeOrderButton: { width: '100%', padding: '0.9rem', borderRadius: '12px', border: 'none', background: '#16a34a', color: '#fff', fontWeight: 700, fontSize: '0.98rem', cursor: 'pointer' },
