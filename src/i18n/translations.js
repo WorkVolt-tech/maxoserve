@@ -391,6 +391,7 @@ export const translations = {
     saveChanges: 'Save Changes',
     orderUpdated: 'Order updated',
     noItemsInOrder: 'No items in this order.',
+    newOrderAlert: 'New order —',
   },
   fr: {
     goodMorning: 'Bonjour',
@@ -766,6 +767,7 @@ export const translations = {
     saveChanges: 'Enregistrer les modifications',
     orderUpdated: 'Commande mise à jour',
     noItemsInOrder: 'Aucun article dans cette commande.',
+    newOrderAlert: 'Nouvelle commande —',
   },
 }
 
