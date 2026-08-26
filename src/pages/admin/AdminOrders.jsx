@@ -233,6 +233,12 @@ export default function AdminOrders() {
           </span>
         </div>
 
+        {order.allergy_notes && (
+          <div style={styles.allergyAlert}>
+            <strong>⚠ {t('allergyBadge')}:</strong> {order.allergy_notes}
+          </div>
+        )}
+
         <div style={styles.itemsList}>
           {items.map((item) => (
             <div key={item.id} style={styles.itemRow}>
@@ -392,6 +398,10 @@ const styles = {
     marginBottom: '0.75rem',
   },
   orderMeta: { color: '#888', fontSize: '0.85rem' },
+  allergyAlert: {
+    background: '#fef3c7', color: '#92400e', padding: '0.5rem 0.75rem',
+    borderRadius: '6px', fontSize: '0.83rem', marginBottom: '0.75rem', lineHeight: 1.4,
+  },
   statusBadge: {
     fontSize: '0.75rem',
     fontWeight: 700,
