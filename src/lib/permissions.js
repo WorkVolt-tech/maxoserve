@@ -31,6 +31,7 @@ const SECTION_ACCESS = {
   requestTypes: ['owner', 'admin'],
   settings: ['owner', 'admin'],
   marginReport: ['owner', 'admin'],
+  salesReport: ['owner', 'admin', 'manager'],
   help: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff'],
   about: ['owner', 'admin', 'manager', 'hostess', 'server', 'bartender', 'kitchen', 'staff'],
 }
