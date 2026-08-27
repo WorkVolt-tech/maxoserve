@@ -11,7 +11,9 @@ const ROLE_KEY_MAP = {
 
 export function roleLabel(role, t) {
   if (!role) return ''
-  return t(ROLE_KEY_MAP[role]) || role
+  const key = ROLE_KEY_MAP[role]
+  if (!key) return role
+  return t(key) || role
 }
 
 const SHAPE_KEY_MAP = {
@@ -27,5 +29,7 @@ const SHAPE_KEY_MAP = {
 
 export function shapeLabel(shape, t) {
   if (!shape) return ''
-  return t(SHAPE_KEY_MAP[shape]) || shape
+  const key = SHAPE_KEY_MAP[shape]
+  if (!key) return shape
+  return t(key) || shape
 }
