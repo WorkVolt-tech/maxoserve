@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { LanguageProvider, useLanguage } from '../../contexts/LanguageContext'
+import { cartLineTotal, cartTotals as computeCartTotals } from '../../lib/cartMath'
 
 const ORDER_STEPS = ['submitted', 'accepted', 'preparing', 'ready', 'delivered']
 
@@ -328,14 +329,7 @@ function TablePageInner() {
     setCart((prev) => prev.filter((c) => c.tempId !== tempId))
   }
 
-  function cartLineTotal(line) {
-    const optionsTotal = line.options.reduce((sum, o) => sum + Number(o.price_delta), 0)
-    return (Number(line.item.price) + optionsTotal) * line.quantity
-  }
-
-  const cartSubtotal = cart.reduce((sum, line) => sum + cartLineTotal(line), 0)
-  const cartTax = cartSubtotal * (taxRate || 0)
-  const cartTotal = cartSubtotal + cartTax
+  const { subtotal: cartSubtotal, tax: cartTax, total: cartTotal } = computeCartTotals(cart, taxRate)
 
   async function handlePlaceOrder() {
     setOrderError('')
