@@ -38,6 +38,7 @@ const SECTION_ACCESS = {
 
 export function canAccess(role, section) {
   if (!role) return false
+  if (!(section in SECTION_ACCESS)) return false
   if (role === 'owner' || role === 'admin') return true
   return SECTION_ACCESS[section]?.includes(role) ?? false
 }
