@@ -6,6 +6,7 @@ import ConfirmationModal from '../../components/ui/ConfirmationModal'
 import { useToast } from '../../contexts/ToastContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 import { useCurrentBusiness } from '../../contexts/BusinessContext'
+import { useCurrentLocation } from '../../contexts/LocationContext'
 import MenuImportModal from '../../components/MenuImportModal'
 import PageHeader from '../../components/ui/PageHeader'
 import Card from '../../components/ui/Card'
@@ -20,6 +21,7 @@ export default function AdminMenu() {
   const { showToast } = useToast()
   const { t } = useAppLanguage()
   const { currentBusinessId } = useCurrentBusiness()
+  const { currentLocationId } = useCurrentLocation()
   const businessId = currentBusinessId
   const [categories, setCategories] = useState([])
   const [name, setName] = useState('')
@@ -29,7 +31,9 @@ export default function AdminMenu() {
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
-  useEffect(() => { if (currentBusinessId) loadInitial() }, [currentBusinessId])
+  useEffect(() => {
+    if (currentBusinessId && currentLocationId) loadInitial()
+  }, [currentBusinessId, currentLocationId])
 
   async function loadInitial() {
     setLoading(true)
@@ -37,8 +41,13 @@ export default function AdminMenu() {
     setLoading(false)
   }
   async function loadCategories(bizId) {
+    if (!currentLocationId) { setCategories([]); return }
     const { data, error: catError } = await supabase
-      .from('menu_categories').select('*').eq('business_id', bizId).order('display_order', { ascending: true })
+      .from('menu_categories')
+      .select('*')
+      .eq('business_id', bizId)
+      .eq('location_id', currentLocationId)
+      .order('display_order', { ascending: true })
     if (catError) setError(catError.message)
     else setCategories(data)
   }
@@ -47,7 +56,7 @@ export default function AdminMenu() {
     e.preventDefault()
     setError('')
     const { error: insertError } = await supabase.from('menu_categories').insert({
-      business_id: businessId, name, name_fr: nameFr || null, display_order: categories.length,
+      business_id: businessId, location_id: currentLocationId, name, name_fr: nameFr || null, display_order: categories.length,
     })
     if (insertError) { setError(insertError.message); return }
     setName('')
