@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { UtensilsCrossed, Plus, Trash2, Upload, ChevronRight, EyeOff, Eye } from 'lucide-react'
+import { UtensilsCrossed, Plus, Trash2, Upload, ChevronRight, EyeOff, Eye, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import ConfirmationModal from '../../components/ui/ConfirmationModal'
@@ -30,6 +30,8 @@ export default function AdminMenu() {
   const [error, setError] = useState('')
   const [showImport, setShowImport] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({ name: '', nameFr: '' })
 
   useEffect(() => {
     if (currentBusinessId && currentLocationId) loadInitial()
@@ -83,6 +85,29 @@ export default function AdminMenu() {
     loadCategories(businessId)
   }
 
+  function startEdit(cat) {
+    setEditingId(cat.id)
+    setEditForm({ name: cat.name, nameFr: cat.name_fr || '' })
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditForm({ name: '', nameFr: '' })
+  }
+
+  async function saveEdit(catId) {
+    setError('')
+    const { error: updateError } = await supabase.from('menu_categories').update({
+      name: editForm.name,
+      name_fr: editForm.nameFr || null,
+    }).eq('id', catId)
+    if (updateError) { setError(updateError.message); return }
+    setEditingId(null)
+    setEditForm({ name: '', nameFr: '' })
+    showToast('Category updated')
+    loadCategories(businessId)
+  }
+
   if (loading) return <LoadingState label={t('loading')} />
 
   return (
@@ -119,25 +144,48 @@ export default function AdminMenu() {
         <EmptyState icon={UtensilsCrossed} title={t('noMenuCategoriesYet')} description={t('createFirstCategory')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {categories.map((cat) => (
-            <Card key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <a href={`/admin/menu/${cat.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit', flex: 1 }}>
-                <div style={styles.iconWrap}><UtensilsCrossed size={16} color="var(--color-primary)" /></div>
-                <div>
-                  <strong>{cat.name}</strong>
-                  {cat.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {cat.name_fr}</span>}
-                  {!cat.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
+          {categories.map((cat) => {
+            if (editingId === cat.id) {
+              return (
+                <Card key={cat.id}>
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <Input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} placeholder={t('phCategoryNameEn')} />
+                    </div>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <Input value={editForm.nameFr} onChange={(e) => setEditForm((f) => ({ ...f, nameFr: e.target.value }))} placeholder={t('phCategoryNameFr')} />
+                    </div>
+                  </div>
+                  {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.6rem' }}>{error}</p>}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <Button size="sm" onClick={() => saveEdit(cat.id)}>{t('saveChanges')}</Button>
+                    <Button variant="secondary" size="sm" onClick={cancelEdit}>{t('cancel')}</Button>
+                  </div>
+                </Card>
+              )
+            }
+
+            return (
+              <Card key={cat.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <a href={`/admin/menu/${cat.id}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit', flex: 1 }}>
+                  <div style={styles.iconWrap}><UtensilsCrossed size={16} color="var(--color-primary)" /></div>
+                  <div>
+                    <strong>{cat.name}</strong>
+                    {cat.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {cat.name_fr}</span>}
+                    {!cat.is_active && <Badge color="neutral" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
+                  </div>
+                  <ChevronRight size={16} color="var(--color-text-faint)" style={{ marginLeft: 'auto' }} />
+                </a>
+                <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.75rem' }}>
+                  <Button variant="secondary" size="sm" icon={Pencil} onClick={() => startEdit(cat)}>{t('edit')}</Button>
+                  <Button variant="secondary" size="sm" icon={cat.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(cat)}>
+                    {cat.is_active ? t('hide') : t('show')}
+                  </Button>
+                  <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(cat)}>{t('delete')}</Button>
                 </div>
-                <ChevronRight size={16} color="var(--color-text-faint)" style={{ marginLeft: 'auto' }} />
-              </a>
-              <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '0.75rem' }}>
-                <Button variant="secondary" size="sm" icon={cat.is_active ? EyeOff : Eye} onClick={() => handleToggleActive(cat)}>
-                  {cat.is_active ? t('hide') : t('show')}
-                </Button>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(cat)}>{t('delete')}</Button>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
       )}
 
