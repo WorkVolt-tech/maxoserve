@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SlidersHorizontal, Plus, Trash2, Upload, X } from 'lucide-react'
+import { SlidersHorizontal, Plus, Trash2, Upload, X, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useCurrentLocation } from '../../contexts/LocationContext'
@@ -34,6 +34,11 @@ export default function AdminModifiers() {
 
   const [optionForms, setOptionForms] = useState({})
   const [showImport, setShowImport] = useState(false)
+
+  const [editingGroupId, setEditingGroupId] = useState(null)
+  const [editGroupForm, setEditGroupForm] = useState({})
+  const [editingOptionId, setEditingOptionId] = useState(null)
+  const [editOptionForm, setEditOptionForm] = useState({})
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -89,6 +94,62 @@ export default function AdminModifiers() {
       return
     }
     showToast('Modifier group deleted')
+    loadGroups(businessId)
+  }
+
+  function startEditGroup(group) {
+    setEditingGroupId(group.id)
+    setEditGroupForm({
+      name: group.name,
+      nameFr: group.name_fr || '',
+      selectionType: group.selection_type,
+      isRequired: group.is_required,
+    })
+  }
+
+  function cancelEditGroup() {
+    setEditingGroupId(null)
+    setEditGroupForm({})
+  }
+
+  async function saveEditGroup(groupId) {
+    setError('')
+    const { error: updateError } = await supabase.from('modifier_groups').update({
+      name: editGroupForm.name,
+      name_fr: editGroupForm.nameFr || null,
+      selection_type: editGroupForm.selectionType,
+      is_required: editGroupForm.isRequired,
+    }).eq('id', groupId)
+    if (updateError) { setError(updateError.message); return }
+    setEditingGroupId(null)
+    setEditGroupForm({})
+    loadGroups(businessId)
+  }
+
+  function startEditOption(option) {
+    setEditingOptionId(option.id)
+    setEditOptionForm({
+      name: option.name,
+      nameFr: option.name_fr || '',
+      priceDelta: option.price_delta,
+    })
+  }
+
+  function cancelEditOption() {
+    setEditingOptionId(null)
+    setEditOptionForm({})
+  }
+
+  async function saveEditOption(optionId) {
+    setError('')
+    const { error: updateError } = await supabase.from('modifier_options').update({
+      name: editOptionForm.name,
+      name_fr: editOptionForm.nameFr || null,
+      price_delta: parseFloat(editOptionForm.priceDelta) || 0,
+    }).eq('id', optionId)
+    if (updateError) { setError(updateError.message); return }
+    setEditingOptionId(null)
+    setEditOptionForm({})
     loadGroups(businessId)
   }
 
@@ -169,61 +230,128 @@ export default function AdminModifiers() {
         <EmptyState icon={SlidersHorizontal} title={t('noModifierGroupsYet')} description={t('createFirstGroup')} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {groups.map((group) => (
-            <Card key={group.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <div>
-                  <strong>{group.name}</strong>
-                  {group.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {group.name_fr}</span>}
-                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                    {' '}· {group.selection_type === 'single' ? t('singleChoice') : t('multipleChoices')}{group.is_required ? ` · ${t('requiredCheckbox')}` : ''}
-                  </span>
-                </div>
-                <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteGroupTarget(group)}>{t('delete')}</Button>
-              </div>
+          {groups.map((group) => {
+            const isEditingGroup = editingGroupId === group.id
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.75rem' }}>
-                {(options[group.id] || []).map((opt) => (
-                  <div key={opt.id} style={styles.optionRow}>
-                    <span>
-                      {opt.name}
-                      {opt.name_fr && <span style={{ color: 'var(--color-text-muted)' }}> / {opt.name_fr}</span>}
-                      {opt.price_delta > 0 && <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}> +${Number(opt.price_delta).toFixed(2)}</span>}
-                      {!opt.is_available && <Badge color="danger" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
-                    </span>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <button onClick={() => handleToggleOptionAvailable(opt)} style={styles.smallToggleButton}>
-                        {opt.is_available ? t('hide') : t('show')}
-                      </button>
-                      <button onClick={() => handleDeleteOption(opt.id)} style={styles.smallDeleteButton}><X size={14} /></button>
+            return (
+              <Card key={group.id}>
+                {isEditingGroup ? (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <div style={{ flex: '1 1 180px' }}>
+                        <Input value={editGroupForm.name} onChange={(e) => setEditGroupForm((f) => ({ ...f, name: e.target.value }))} />
+                      </div>
+                      <div style={{ flex: '1 1 180px' }}>
+                        <Input value={editGroupForm.nameFr} onChange={(e) => setEditGroupForm((f) => ({ ...f, nameFr: e.target.value }))} />
+                      </div>
+                      <select value={editGroupForm.selectionType} onChange={(e) => setEditGroupForm((f) => ({ ...f, selectionType: e.target.value }))} style={styles.select}>
+                        <option value="single">{t('singleChoice')}</option>
+                        <option value="multiple">{t('multipleChoices')}</option>
+                      </select>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                        <input type="checkbox" checked={editGroupForm.isRequired} onChange={(e) => setEditGroupForm((f) => ({ ...f, isRequired: e.target.checked }))} />
+                        {t('requiredCheckbox')}
+                      </label>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.6rem' }}>
+                      <Button size="sm" onClick={() => saveEditGroup(group.id)}>{t('saveChanges')}</Button>
+                      <Button variant="secondary" size="sm" onClick={cancelEditGroup}>{t('cancel')}</Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <div>
+                      <strong>{group.name}</strong>
+                      {group.name_fr && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}> / {group.name_fr}</span>}
+                      <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                        {' '}· {group.selection_type === 'single' ? t('singleChoice') : t('multipleChoices')}{group.is_required ? ` · ${t('requiredCheckbox')}` : ''}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <Button variant="secondary" size="sm" icon={Pencil} onClick={() => startEditGroup(group)}>{t('edit')}</Button>
+                      <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteGroupTarget(group)}>{t('delete')}</Button>
+                    </div>
+                  </div>
+                )}
 
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                <input
-                  type="text" placeholder={t('phOptionEn')}
-                  value={optionForms[group.id]?.name || ''}
-                  onChange={(e) => updateOptionForm(group.id, 'name', e.target.value)}
-                  style={{ ...styles.optionInput, flex: '1 1 140px' }}
-                />
-                <input
-                  type="text" placeholder={t('phOptionFr')}
-                  value={optionForms[group.id]?.nameFr || ''}
-                  onChange={(e) => updateOptionForm(group.id, 'nameFr', e.target.value)}
-                  style={{ ...styles.optionInput, flex: '1 1 140px' }}
-                />
-                <input
-                  type="number" step="0.01" placeholder={t('phPriceAddon')}
-                  value={optionForms[group.id]?.priceDelta || ''}
-                  onChange={(e) => updateOptionForm(group.id, 'priceDelta', e.target.value)}
-                  style={{ ...styles.optionInput, flex: '0 1 100px' }}
-                />
-                <Button variant="secondary" size="sm" onClick={() => handleAddOption(group.id)}>{t('add')}</Button>
-              </div>
-            </Card>
-          ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginBottom: '0.75rem' }}>
+                  {(options[group.id] || []).map((opt) => {
+                    const isEditingOption = editingOptionId === opt.id
+
+                    if (isEditingOption) {
+                      return (
+                        <div key={opt.id} style={{ ...styles.optionRow, flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
+                          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <input
+                              type="text" value={editOptionForm.name}
+                              onChange={(e) => setEditOptionForm((f) => ({ ...f, name: e.target.value }))}
+                              style={{ ...styles.optionInput, flex: '1 1 120px' }}
+                            />
+                            <input
+                              type="text" value={editOptionForm.nameFr}
+                              onChange={(e) => setEditOptionForm((f) => ({ ...f, nameFr: e.target.value }))}
+                              style={{ ...styles.optionInput, flex: '1 1 120px' }}
+                            />
+                            <input
+                              type="number" step="0.01" value={editOptionForm.priceDelta}
+                              onChange={(e) => setEditOptionForm((f) => ({ ...f, priceDelta: e.target.value }))}
+                              style={{ ...styles.optionInput, flex: '0 1 90px' }}
+                            />
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.4rem' }}>
+                            <Button size="sm" onClick={() => saveEditOption(opt.id)}>{t('saveChanges')}</Button>
+                            <Button variant="secondary" size="sm" onClick={cancelEditOption}>{t('cancel')}</Button>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    return (
+                      <div key={opt.id} style={styles.optionRow}>
+                        <span>
+                          {opt.name}
+                          {opt.name_fr && <span style={{ color: 'var(--color-text-muted)' }}> / {opt.name_fr}</span>}
+                          {opt.price_delta > 0 && <span style={{ color: 'var(--color-primary)', fontWeight: 600 }}> +${Number(opt.price_delta).toFixed(2)}</span>}
+                          {!opt.is_available && <Badge color="danger" style={{ marginLeft: '0.5rem' }}>hidden</Badge>}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <button onClick={() => startEditOption(opt)} style={styles.smallToggleButton}>
+                            <Pencil size={12} />
+                          </button>
+                          <button onClick={() => handleToggleOptionAvailable(opt)} style={styles.smallToggleButton}>
+                            {opt.is_available ? t('hide') : t('show')}
+                          </button>
+                          <button onClick={() => handleDeleteOption(opt.id)} style={styles.smallDeleteButton}><X size={14} /></button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <input
+                    type="text" placeholder={t('phOptionEn')}
+                    value={optionForms[group.id]?.name || ''}
+                    onChange={(e) => updateOptionForm(group.id, 'name', e.target.value)}
+                    style={{ ...styles.optionInput, flex: '1 1 140px' }}
+                  />
+                  <input
+                    type="text" placeholder={t('phOptionFr')}
+                    value={optionForms[group.id]?.nameFr || ''}
+                    onChange={(e) => updateOptionForm(group.id, 'nameFr', e.target.value)}
+                    style={{ ...styles.optionInput, flex: '1 1 140px' }}
+                  />
+                  <input
+                    type="number" step="0.01" placeholder={t('phPriceAddon')}
+                    value={optionForms[group.id]?.priceDelta || ''}
+                    onChange={(e) => updateOptionForm(group.id, 'priceDelta', e.target.value)}
+                    style={{ ...styles.optionInput, flex: '0 1 100px' }}
+                  />
+                  <Button variant="secondary" size="sm" onClick={() => handleAddOption(group.id)}>{t('add')}</Button>
+                </div>
+              </Card>
+            )
+          })}
         </div>
       )}
 
@@ -247,6 +375,6 @@ const styles = {
     background: 'var(--color-bg)', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.9rem',
   },
   smallDeleteButton: { border: 'none', background: 'transparent', color: 'var(--color-danger)', cursor: 'pointer', padding: '0 0.3rem', display: 'flex', alignItems: 'center' },
-  smallToggleButton: { border: '1px solid var(--color-border)', background: '#fff', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '4px' },
+  smallToggleButton: { border: '1px solid var(--color-border)', background: '#fff', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '4px', display: 'flex', alignItems: 'center' },
   optionInput: { padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--color-border)', fontSize: '0.85rem' },
 }
