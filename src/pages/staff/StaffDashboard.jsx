@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck, ShoppingBag, ChefHat } from 'lucide-react'
+import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck, ShoppingBag, ChefHat, LayoutDashboard } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
@@ -316,6 +316,9 @@ export default function StaffDashboard() {
       <div style={styles.header}>
         <h1 style={styles.headerTitle}>{viewMode === 'requests' ? t('requests') : t('orders')}</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <a href="/admin" style={styles.dashboardLink}>
+            <LayoutDashboard size={14} /> {t('dashboard')}
+          </a>
           <button onClick={() => setLang(lang === 'en' ? 'fr' : 'en')} style={styles.langToggle}>
             {lang === 'en' ? 'FR' : 'EN'}
           </button>
@@ -571,6 +574,17 @@ const styles = {
     background: 'var(--color-sidebar-bg)',
   },
   headerTitle: { color: '#fff', margin: 0, fontSize: '1.3rem' },
+  dashboardLink: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.45rem 0.8rem',
+    borderRadius: '6px',
+    border: '1px solid var(--color-sidebar-border)',
+    background: 'transparent',
+    color: '#fff',
+    textDecoration: 'none',
+    fontSize: '0.8rem',
+    fontWeight: 700,
+  },
   langToggle: {
     padding: '0.45rem 0.7rem',
     borderRadius: '6px',
