@@ -42,7 +42,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
       { to: '/admin/tables', labelKey: 'tables', section: 'tables', icon: LayoutGrid },
-      { to: '/admin/orders', labelKey: 'orders', section: 'orders', icon: ShoppingBag },
+      { to: '/admin/orders', labelKey: 'requestsOrders', section: 'orders', icon: ShoppingBag },
     ],
   },
   {
