@@ -22,11 +22,12 @@ const NAV_GROUPS = [
     items: [{ to: '/admin', labelKey: 'dashboard', end: true, section: 'dashboard', icon: LayoutDashboard }],
   },
   {
-    labelKey: 'operations',
+    labelKey: 'venue',
     items: [
-      { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
-      { to: '/admin/tables', labelKey: 'tables', section: 'tables', icon: LayoutGrid },
-      { to: '/admin/orders', labelKey: 'orders', section: 'orders', icon: ShoppingBag },
+      { to: '/admin/locations', labelKey: 'locations', section: 'locations', icon: MapPin },
+      { to: '/admin/areas', labelKey: 'areas', section: 'areas', icon: Map },
+      { to: '/admin/reservations', labelKey: 'reservations', section: 'reservations', icon: CalendarCheck },
+      { to: '/admin/events', labelKey: 'events', section: 'events', icon: PartyPopper },
     ],
   },
   {
@@ -37,19 +38,18 @@ const NAV_GROUPS = [
     ],
   },
   {
+    labelKey: 'operations',
+    items: [
+      { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
+      { to: '/admin/tables', labelKey: 'tables', section: 'tables', icon: LayoutGrid },
+      { to: '/admin/orders', labelKey: 'orders', section: 'orders', icon: ShoppingBag },
+    ],
+  },
+  {
     labelKey: 'people',
     items: [
       { to: '/admin/staff', labelKey: 'staff', section: 'staff', icon: Users },
       { to: '/admin/assignments', labelKey: 'assignments', section: 'assignments', icon: UserRoundCog },
-    ],
-  },
-  {
-    labelKey: 'venue',
-    items: [
-      { to: '/admin/locations', labelKey: 'locations', section: 'locations', icon: MapPin },
-      { to: '/admin/areas', labelKey: 'areas', section: 'areas', icon: Map },
-      { to: '/admin/reservations', labelKey: 'reservations', section: 'reservations', icon: CalendarCheck },
-      { to: '/admin/events', labelKey: 'events', section: 'events', icon: PartyPopper },
     ],
   },
   {
