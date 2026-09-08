@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, SlidersHorizontal, EyeOff, Eye } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, SlidersHorizontal, EyeOff, Eye, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
@@ -25,6 +25,8 @@ export default function AdminMenuItems() {
   const [allModifierGroups, setAllModifierGroups] = useState([])
   const [itemModifierLinks, setItemModifierLinks] = useState({})
   const [expandedItemId, setExpandedItemId] = useState(null)
+  const [editingItemId, setEditingItemId] = useState(null)
+  const [editForm, setEditForm] = useState({})
 
   const [name, setName] = useState('')
   const [nameFr, setNameFr] = useState('')
@@ -116,6 +118,45 @@ export default function AdminMenuItems() {
     loadItems()
   }
 
+  function startEdit(item) {
+    setEditingItemId(item.id)
+    setExpandedItemId(null)
+    setEditForm({
+      name: item.name,
+      nameFr: item.name_fr || '',
+      description: item.description || '',
+      descriptionFr: item.description_fr || '',
+      price: item.price,
+      cost: item.cost != null ? item.cost : '',
+      imageUrl: item.image_url || '',
+      prepLocation: item.prep_location,
+    })
+  }
+
+  function cancelEdit() {
+    setEditingItemId(null)
+    setEditForm({})
+  }
+
+  async function saveEdit(itemId) {
+    setError('')
+    const { error: updateError } = await supabase.from('menu_items').update({
+      name: editForm.name,
+      name_fr: editForm.nameFr || null,
+      description: editForm.description || null,
+      description_fr: editForm.descriptionFr || null,
+      price: parseFloat(editForm.price) || 0,
+      cost: editForm.cost !== '' ? parseFloat(editForm.cost) : null,
+      image_url: editForm.imageUrl.trim() || null,
+      prep_location: editForm.prepLocation,
+    }).eq('id', itemId)
+
+    if (updateError) { setError(updateError.message); return }
+    setEditingItemId(null)
+    setEditForm({})
+    loadItems()
+  }
+
   if (loading) return <LoadingState label={t('loading')} />
 
   return (
@@ -159,6 +200,42 @@ export default function AdminMenuItems() {
           {items.map((item) => {
             const linkedGroupIds = itemModifierLinks[item.id] || []
             const isExpanded = expandedItemId === item.id
+            const isEditing = editingItemId === item.id
+
+            if (isEditing) {
+              return (
+                <Card key={item.id}>
+                  <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <Input placeholder={t('phCategoryNameEn')} value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} />
+                    </div>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <Input placeholder={t('phCategoryNameFr')} value={editForm.nameFr} onChange={(e) => setEditForm((f) => ({ ...f, nameFr: e.target.value }))} />
+                    </div>
+                    <div style={{ flex: '0 1 120px' }}>
+                      <Input type="number" step="0.01" placeholder={t('phItemPrice')} value={editForm.price} onChange={(e) => setEditForm((f) => ({ ...f, price: e.target.value }))} />
+                    </div>
+                    <div style={{ flex: '0 1 120px' }}>
+                      <Input type="number" step="0.01" placeholder={t('phCost')} value={editForm.cost} onChange={(e) => setEditForm((f) => ({ ...f, cost: e.target.value }))} />
+                    </div>
+                    <div style={{ flex: '1 1 220px' }}>
+                      <Input type="url" placeholder={t('phImageUrl')} value={editForm.imageUrl} onChange={(e) => setEditForm((f) => ({ ...f, imageUrl: e.target.value }))} />
+                    </div>
+                    <select value={editForm.prepLocation} onChange={(e) => setEditForm((f) => ({ ...f, prepLocation: e.target.value }))} style={styles.select}>
+                      {PREP_LOCATIONS.map((p) => <option key={p} value={p}>{p.replace('_', ' ')}</option>)}
+                    </select>
+                    <textarea placeholder={t('phDescriptionEn')} value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} style={styles.textarea} />
+                    <textarea placeholder={t('phDescriptionFr')} value={editForm.descriptionFr} onChange={(e) => setEditForm((f) => ({ ...f, descriptionFr: e.target.value }))} style={styles.textarea} />
+                  </div>
+                  {error && <p style={{ color: 'var(--color-danger)', fontSize: '0.85rem', marginTop: '0.6rem' }}>{error}</p>}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    <Button onClick={() => saveEdit(item.id)}>{t('saveChanges')}</Button>
+                    <Button variant="secondary" onClick={cancelEdit}>{t('cancel')}</Button>
+                  </div>
+                </Card>
+              )
+            }
+
             return (
               <Card key={item.id} padding="0">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', padding: '1rem 1.25rem' }}>
@@ -190,6 +267,9 @@ export default function AdminMenuItems() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <Button variant="secondary" size="sm" icon={Pencil} onClick={() => startEdit(item)}>
+                      {t('edit')}
+                    </Button>
                     <Button variant="secondary" size="sm" icon={SlidersHorizontal} onClick={() => setExpandedItemId(isExpanded ? null : item.id)}>
                       {isExpanded ? t('cancel') : t('modifiers')}
                     </Button>
