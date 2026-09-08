@@ -309,7 +309,7 @@ export default function StaffDashboard() {
 
   const counts = {
     new: allFeedItems.filter((i) => i.stage === 'new').length,
-    assigned_to_me: allFeedItems.filter((i) => i.assignedTo === user.id).length,
+    assigned_to_me: allFeedItems.filter((i) => i.assignedTo === user.id && i.stage !== 'completed').length,
     in_progress: allFeedItems.filter((i) => i.stage === 'in_progress').length,
     completed: allFeedItems.filter((i) => i.stage === 'completed').length,
     all: allFeedItems.length,
@@ -317,7 +317,7 @@ export default function StaffDashboard() {
 
   const visibleFeedItems =
     filter === 'all' ? allFeedItems :
-    filter === 'assigned_to_me' ? allFeedItems.filter((i) => i.assignedTo === user.id) :
+    filter === 'assigned_to_me' ? allFeedItems.filter((i) => i.assignedTo === user.id && i.stage !== 'completed') :
     allFeedItems.filter((i) => i.stage === filter)
 
   if (loading) {
