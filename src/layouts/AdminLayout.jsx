@@ -124,7 +124,7 @@ function SidebarContent({ visibleGroups, onNavigate }) {
           <LogOut size={15} /> {t('signOut')}
         </button>
         <a href="https://chezmaxo.ca" target="_blank" rel="noopener noreferrer" style={styles.creditLink}>
-          v1.0.2 · ChezMaxo
+          v1.0.3 · ChezMaxo
         </a>
       </div>
     </>
