@@ -7,10 +7,11 @@ import StatusBadge from '../../components/ui/StatusBadge'
 import EmptyState from '../../components/ui/EmptyState'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
 
-const FILTERS = ['new', 'in_progress', 'completed', 'all']
+const FILTERS = ['new', 'assigned_to_me', 'in_progress', 'completed', 'all']
 
 const FILTER_LABEL_KEYS = {
   new: 'new',
+  assigned_to_me: 'assignedToMe',
   in_progress: 'inProgress',
   completed: 'completed',
   all: 'all',
@@ -266,7 +267,7 @@ export default function StaffDashboard() {
   async function updateOrderStatus(order, newStatus) {
     const updates = { status: newStatus }
     const now = new Date().toISOString()
-    if (newStatus === 'accepted') updates.accepted_at = now
+    if (newStatus === 'accepted') { updates.accepted_at = now; updates.assigned_to = user.id }
     else if (newStatus === 'ready') updates.ready_at = now
     else if (newStatus === 'delivered') updates.delivered_at = now
     await supabase.from('orders').update(updates).eq('id', order.id)
@@ -295,12 +296,12 @@ export default function StaffDashboard() {
 
   const requestFeedItems = requestsForLocation
     .filter((r) => requestStage(r.status) !== 'other')
-    .map((r) => ({ type: 'request', data: r, stage: requestStage(r.status), createdAt: r.created_at }))
+    .map((r) => ({ type: 'request', data: r, stage: requestStage(r.status), createdAt: r.created_at, assignedTo: r.assigned_to }))
 
   const orderFeedItems = ordersForLocation
     .filter((o) => orderStage(o.status) !== 'other')
     .filter(orderMatchesStation)
-    .map((o) => ({ type: 'order', data: o, stage: orderStage(o.status), createdAt: o.created_at }))
+    .map((o) => ({ type: 'order', data: o, stage: orderStage(o.status), createdAt: o.created_at, assignedTo: o.assigned_to }))
 
   const allFeedItems = [...requestFeedItems, ...orderFeedItems].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -308,12 +309,16 @@ export default function StaffDashboard() {
 
   const counts = {
     new: allFeedItems.filter((i) => i.stage === 'new').length,
+    assigned_to_me: allFeedItems.filter((i) => i.assignedTo === user.id).length,
     in_progress: allFeedItems.filter((i) => i.stage === 'in_progress').length,
     completed: allFeedItems.filter((i) => i.stage === 'completed').length,
     all: allFeedItems.length,
   }
 
-  const visibleFeedItems = filter === 'all' ? allFeedItems : allFeedItems.filter((i) => i.stage === filter)
+  const visibleFeedItems =
+    filter === 'all' ? allFeedItems :
+    filter === 'assigned_to_me' ? allFeedItems.filter((i) => i.assignedTo === user.id) :
+    allFeedItems.filter((i) => i.stage === filter)
 
   if (loading) {
     return (
