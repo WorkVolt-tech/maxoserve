@@ -3,6 +3,7 @@ import { Bell } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { logActivity } from '../../lib/activityLog'
 import { useAuth } from '../../contexts/AuthContext'
+import { isOwnerOrAdmin } from '../../lib/permissions'
 import { useCurrentLocation } from '../../contexts/LocationContext'
 import { useCurrentBusiness } from '../../contexts/BusinessContext'
 import { useAppLanguage } from '../../contexts/AppLanguageContext'
@@ -39,7 +40,7 @@ const FLOW_LABEL_KEYS = {
 }
 
 export default function AdminOrders() {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const { currentLocationId } = useCurrentLocation()
   const { currentBusinessId } = useCurrentBusiness()
   const { t } = useAppLanguage()
@@ -63,6 +64,8 @@ export default function AdminOrders() {
   )
   const knownOrderIds = useRef(new Set())
   const isFirstOrderLoad = useRef(true)
+  const [staffMembers, setStaffMembers] = useState([])
+  const [profiles, setProfiles] = useState({})
 
   function toggleGroup(key) {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -107,6 +110,20 @@ export default function AdminOrders() {
     const reservationsMap = {}
     for (const r of reservationsData || []) reservationsMap[r.id] = r
     setReservations(reservationsMap)
+
+    const { data: membersData } = await supabase
+      .from('business_members')
+      .select('*')
+      .eq('business_id', currentBusinessId)
+    setStaffMembers(membersData || [])
+
+    if (membersData && membersData.length > 0) {
+      const userIds = membersData.map((m) => m.user_id)
+      const { data: profilesData } = await supabase.from('profiles').select('*').in('id', userIds)
+      const pMap = {}
+      for (const p of profilesData || []) pMap[p.id] = p
+      setProfiles(pMap)
+    }
 
     const { data: catsData } = await supabase
       .from('menu_categories')
@@ -223,6 +240,17 @@ export default function AdminOrders() {
     await updateStatus(cancelTarget, 'cancelled')
     setCancelTarget(null)
     showToast('Order cancelled')
+  }
+
+  async function handleReassign(order, newUserId) {
+    const { error } = await supabase.from('orders').update({ assigned_to: newUserId || null }).eq('id', order.id)
+    if (error) {
+      showToast(`Could not reassign: ${error.message}`, 'error')
+      return
+    }
+    logActivity(businessId, user.id, `reassigned an order`)
+    showToast(t('reassign'))
+    loadOrders(businessId)
   }
 
   function openEditOrder(order) {
@@ -359,6 +387,28 @@ export default function AdminOrders() {
             <strong>⚠ {t('allergyBadge')}:</strong> {order.allergy_notes}
           </div>
         )}
+
+        <div style={styles.assignedRow}>
+          <span style={{ color: '#888', fontSize: '0.82rem' }}>
+            {t('assignedTo')}: {order.assigned_to
+              ? (profiles[order.assigned_to]?.full_name || profiles[order.assigned_to]?.email || '—')
+              : t('unassignedStaff')}
+          </span>
+          {isOwnerOrAdmin(role) && (
+            <select
+              value={order.assigned_to || ''}
+              onChange={(e) => handleReassign(order, e.target.value)}
+              style={styles.reassignSelect}
+            >
+              <option value="">{t('unassignedStaff')}</option>
+              {staffMembers.map((m) => (
+                <option key={m.user_id} value={m.user_id}>
+                  {profiles[m.user_id]?.full_name || profiles[m.user_id]?.email || 'Unknown'}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
 
         <div style={styles.itemsList}>
           {items.map((item) => (
@@ -594,6 +644,13 @@ const styles = {
   allergyAlert: {
     background: '#fef3c7', color: '#92400e', padding: '0.5rem 0.75rem',
     borderRadius: '6px', fontSize: '0.83rem', marginBottom: '0.75rem', lineHeight: 1.4,
+  },
+  assignedRow: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem',
+  },
+  reassignSelect: {
+    padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid #e2e4e9', fontSize: '0.8rem',
   },
   statusBadge: {
     fontSize: '0.75rem',
