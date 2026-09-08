@@ -504,6 +504,11 @@ export default function StaffDashboard() {
                       <div style={styles.requestType}>
                         {table?.name || (reservation ? `${t('reservationPrefix')} ${reservation.customer_name}` : t('unassignedTable'))}
                       </div>
+                      {!table && reservation?.table_id && tables[reservation.table_id] && (
+                        <div style={styles.requestTable}>
+                          <MapPin size={12} /> {tables[reservation.table_id].name}
+                        </div>
+                      )}
                       <div style={styles.requestTable}>${Number(order.total).toFixed(2)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
