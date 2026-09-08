@@ -437,3 +437,67 @@ export default function AdminFloorPlan() {
           <input
             type="text"
             value={selectedShape.label}
+            onChange={(e) => handleUpdateShapeLabel(selectedShape.id, e.target.value)}
+            style={styles.labelInput}
+          />
+          <select
+            value={selectedShape.shape_type}
+            onChange={(e) => handleUpdateShapeType(selectedShape.id, e.target.value)}
+            style={styles.select}
+          >
+            <option value="rectangle">{t('rectangleShape')}</option>
+            <option value="oval">{t('ovalShape')}</option>
+          </select>
+          <span style={styles.meta}>{Math.round(selectedShape.width)} × {Math.round(selectedShape.height)}</span>
+          <button onClick={() => handleDeleteShape(selectedShape.id)} style={styles.deleteShapeButton}>
+            <Trash2 size={14} /> {t('deleteShape')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const styles = {
+  pickerRow: { display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' },
+  label: { display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '0.25rem' },
+  select: { padding: '0.5rem', borderRadius: '8px', border: '1px solid #e2e4e9', fontSize: '0.95rem' },
+  saveButton: { padding: '0.6rem 1.2rem', borderRadius: '8px', border: 'none', background: '#4c8dff', color: '#fff', cursor: 'pointer', fontSize: '0.95rem' },
+  addShapeButton: {
+    display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #e2e4e9',
+    background: '#fff', color: '#333', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600,
+  },
+  menuOverlay: { position: 'fixed', inset: 0, zIndex: 20 },
+  shapeMenu: {
+    position: 'absolute', top: 'calc(100% + 0.4rem)', left: 0, zIndex: 21,
+    background: '#fff', border: '1px solid #e2e4e9', borderRadius: '10px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: '0.4rem', minWidth: '180px',
+  },
+  shapeMenuItem: {
+    display: 'flex', alignItems: 'center', gap: '0.6rem', width: '100%',
+    padding: '0.5rem 0.6rem', borderRadius: '6px', border: 'none', background: 'transparent',
+    cursor: 'pointer', fontSize: '0.88rem', textAlign: 'left',
+  },
+  shapeSwatch: { width: '14px', height: '14px', borderRadius: '3px', flexShrink: 0 },
+  canvasWrap: { background: '#fff', border: '1px solid #e2e4e9', borderRadius: '8px', overflow: 'hidden', position: 'relative' },
+  zoomControls: {
+    position: 'absolute', top: '0.75rem', right: '0.75rem', zIndex: 10,
+    display: 'flex', alignItems: 'center', gap: '0.3rem', background: '#fff',
+    border: '1px solid #e2e4e9', borderRadius: '8px', padding: '0.3rem', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+  },
+  zoomButton: {
+    width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+    border: '1px solid #e2e4e9', borderRadius: '6px', background: '#fff', cursor: 'pointer', color: '#333',
+  },
+  zoomPercent: { fontSize: '0.75rem', color: '#888', minWidth: '36px', textAlign: 'center' },
+  flipButton: { marginLeft: 'auto', padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #e2e4e9', background: '#f5f6f8', cursor: 'pointer', fontSize: '0.85rem' },
+  deleteShapeButton: {
+    marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.35rem',
+    padding: '0.4rem 0.8rem', borderRadius: '6px', border: '1px solid #fca5a5', background: '#fef2f2',
+    color: '#dc2626', cursor: 'pointer', fontSize: '0.85rem',
+  },
+  labelInput: { padding: '0.4rem 0.6rem', borderRadius: '6px', border: '1px solid #e2e4e9', fontSize: '0.88rem', fontWeight: 600 },
+  infoBar: { marginTop: '1rem', padding: '0.75rem 1rem', background: '#fff', border: '1px solid #e2e4e9', borderRadius: '8px', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' },
+  meta: { color: '#666', fontSize: '0.9rem' },
+}
