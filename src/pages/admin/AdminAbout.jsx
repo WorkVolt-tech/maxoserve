@@ -4,7 +4,7 @@ import Card from '../../components/ui/Card'
 import PageHeader from '../../components/ui/PageHeader'
 import chezmaxoLogo from '../../assets/chezmaxo-logo.png'
 
-const APP_VERSION = '1.0.2'
+const APP_VERSION = '1.0.3'
 
 export default function AdminAbout() {
   const { t } = useAppLanguage()
