@@ -69,6 +69,7 @@ export default function StaffDashboard() {
 
   const [orders, setOrders] = useState([])
   const [orderItems, setOrderItems] = useState({})
+  const [reservations, setReservations] = useState({})
   const [showAllOrders, setShowAllOrders] = useState(true)
   const knownOrderIds = useRef(new Set())
   const isFirstOrderLoad = useRef(true)
@@ -146,6 +147,14 @@ export default function StaffDashboard() {
     const tablesMap = {}
     for (const t of tablesData || []) tablesMap[t.id] = t
     setTables(tablesMap)
+
+    const { data: reservationsData } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('business_id', membership.business_id)
+    const reservationsMap = {}
+    for (const r of reservationsData || []) reservationsMap[r.id] = r
+    setReservations(reservationsMap)
 
     await loadRequests(membership.business_id)
     await loadOrders(membership.business_id)
@@ -485,13 +494,16 @@ export default function StaffDashboard() {
             {activeOrders.map((order) => {
               const items = orderItems[order.id] || []
               const table = tables[order.table_id]
+              const reservation = order.reservation_id ? reservations[order.reservation_id] : null
               const flow = ORDER_STATUS_FLOW[order.status]
 
               return (
                 <div key={order.id} style={styles.requestCard}>
                   <div style={styles.requestTop}>
                     <div>
-                      <div style={styles.requestType}>{table?.name || t('unassignedTable')}</div>
+                      <div style={styles.requestType}>
+                        {table?.name || (reservation ? `${t('reservationPrefix')} ${reservation.customer_name}` : t('unassignedTable'))}
+                      </div>
                       <div style={styles.requestTable}>${Number(order.total).toFixed(2)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
