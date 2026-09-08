@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck } from 'lucide-react'
+import { LogOut, Bell, MapPin, Check, X, Truck, CheckCheck, ShoppingBag, ChefHat } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
 import { useAuth } from '../../contexts/AuthContext'
 import { logActivity } from '../../lib/activityLog'
@@ -15,6 +15,18 @@ const FILTER_LABEL_KEYS = {
   in_progress: 'inProgress',
   completed: 'completed',
   all: 'all',
+}
+
+const STATION_BY_ROLE = {
+  kitchen: ['kitchen'],
+  bartender: ['bar', 'bottle_service'],
+}
+
+const ORDER_STATUS_FLOW = {
+  submitted: { next: 'accepted', labelKey: 'accept', color: 'var(--color-primary)' },
+  accepted: { next: 'preparing', labelKey: 'startPreparing', color: 'var(--color-warning)' },
+  preparing: { next: 'ready', labelKey: 'markReady', color: 'var(--color-info)' },
+  ready: { next: 'delivered', labelKey: 'markDelivered', color: 'var(--color-success)' },
 }
 
 function urgency(createdAt) {
@@ -36,9 +48,11 @@ function localizedLabel(item, lang) {
 }
 
 export default function StaffDashboard() {
-  const { user, signOut } = useAuth()
+  const { user, signOut, role } = useAuth()
   const { t, lang, setLang } = useAppLanguage()
   const [businessId, setBusinessId] = useState(null)
+  const [viewMode, setViewMode] = useState('requests')
+
   const [requests, setRequests] = useState([])
   const [requestTypes, setRequestTypes] = useState({})
   const [tables, setTables] = useState({})
@@ -53,9 +67,19 @@ export default function StaffDashboard() {
   const [locations, setLocations] = useState([])
   const [selectedLocationId, setSelectedLocationId] = useState('all')
 
+  const [orders, setOrders] = useState([])
+  const [orderItems, setOrderItems] = useState({})
+  const [showAllOrders, setShowAllOrders] = useState(true)
+  const knownOrderIds = useRef(new Set())
+  const isFirstOrderLoad = useRef(true)
+
   useEffect(() => {
     init()
   }, [])
+
+  useEffect(() => {
+    if (role && STATION_BY_ROLE[role]) setShowAllOrders(false)
+  }, [role])
 
   useEffect(() => {
     if (!businessId) return
@@ -65,6 +89,19 @@ export default function StaffDashboard() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'service_requests', filter: `business_id=eq.${businessId}` },
         () => loadRequests(businessId)
+      )
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [businessId])
+
+  useEffect(() => {
+    if (!businessId) return
+    const channel = supabase
+      .channel(`staff-orders-${businessId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `business_id=eq.${businessId}` },
+        () => loadOrders(businessId)
       )
       .subscribe()
     return () => supabase.removeChannel(channel)
@@ -111,6 +148,7 @@ export default function StaffDashboard() {
     setTables(tablesMap)
 
     await loadRequests(membership.business_id)
+    await loadOrders(membership.business_id)
     setLoading(false)
   }
 
@@ -133,12 +171,55 @@ export default function StaffDashboard() {
     setRequests(fresh)
   }
 
+  async function loadOrders(bizId) {
+    const { data } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('business_id', bizId)
+      .neq('status', 'draft')
+      .order('created_at', { ascending: false })
+
+    const fresh = data || []
+
+    if (!isFirstOrderLoad.current) {
+      const newSubmitted = fresh.filter((o) => o.status === 'submitted' && !knownOrderIds.current.has(o.id))
+      for (const o of newSubmitted) notifyNewOrder(o)
+    }
+    knownOrderIds.current = new Set(fresh.map((o) => o.id))
+    isFirstOrderLoad.current = false
+    setOrders(fresh)
+
+    if (fresh.length === 0) { setOrderItems({}); return }
+
+    const orderIds = fresh.map((o) => o.id)
+    const { data: itemsData } = await supabase
+      .from('order_items')
+      .select('*, menu_items(name, prep_location)')
+      .in('order_id', orderIds)
+
+    const byOrder = {}
+    for (const item of itemsData || []) {
+      if (!byOrder[item.order_id]) byOrder[item.order_id] = []
+      byOrder[item.order_id].push(item)
+    }
+    setOrderItems(byOrder)
+  }
+
   function notifyNewRequest(request) {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
     const type = requestTypes[request.request_type_id]
     const table = tables[request.table_id]
     new Notification('New request', {
       body: `${localizedLabel(type, lang) || 'Request'} — ${table?.name || 'Unknown table'}`,
+    })
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+  }
+
+  function notifyNewOrder(order) {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
+    const table = tables[order.table_id]
+    new Notification('New order', {
+      body: `${table?.name || 'Table'} · $${Number(order.total).toFixed(2)}`,
     })
     if (navigator.vibrate) navigator.vibrate([200, 100, 200])
   }
@@ -161,6 +242,16 @@ export default function StaffDashboard() {
     loadRequests(businessId)
   }
 
+  async function updateOrderStatus(order, newStatus) {
+    const updates = { status: newStatus }
+    const now = new Date().toISOString()
+    if (newStatus === 'accepted') updates.accepted_at = now
+    else if (newStatus === 'ready') updates.ready_at = now
+    else if (newStatus === 'delivered') updates.delivered_at = now
+    await supabase.from('orders').update(updates).eq('id', order.id)
+    loadOrders(businessId)
+  }
+
   function minutesWaiting(createdAt) {
     return Math.max(0, Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000))
   }
@@ -172,6 +263,14 @@ export default function StaffDashboard() {
     if (filter === 'in_progress') return ['accepted', 'on_the_way'].includes(r.status)
     if (filter === 'completed') return r.status === 'completed'
     return true
+  }
+
+  function orderMatchesStation(order) {
+    if (showAllOrders) return true
+    const stations = STATION_BY_ROLE[role]
+    if (!stations) return true
+    const items = orderItems[order.id] || []
+    return items.some((i) => stations.includes(i.menu_items?.prep_location))
   }
 
   const requestsForLocation = selectedLocationId === 'all'
@@ -187,6 +286,14 @@ export default function StaffDashboard() {
     all: requestsForLocation.length,
   }
 
+  const ordersForLocation = selectedLocationId === 'all'
+    ? orders
+    : orders.filter((o) => tables[o.table_id]?.location_id === selectedLocationId)
+
+  const activeOrders = ordersForLocation
+    .filter((o) => !['delivered', 'cancelled', 'rejected'].includes(o.status))
+    .filter(orderMatchesStation)
+
   if (loading) {
     return (
       <div style={styles.page}>
@@ -198,7 +305,7 @@ export default function StaffDashboard() {
   return (
     <div style={styles.page}>
       <div style={styles.header}>
-        <h1 style={styles.headerTitle}>{t('requests')}</h1>
+        <h1 style={styles.headerTitle}>{viewMode === 'requests' ? t('requests') : t('orders')}</h1>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <button onClick={() => setLang(lang === 'en' ? 'fr' : 'en')} style={styles.langToggle}>
             {lang === 'en' ? 'FR' : 'EN'}
@@ -219,6 +326,23 @@ export default function StaffDashboard() {
         </div>
       </div>
 
+      <div style={styles.modeToggleRow}>
+        <button
+          onClick={() => setViewMode('requests')}
+          style={{ ...styles.modeButton, ...(viewMode === 'requests' ? styles.modeButtonActive : {}) }}
+        >
+          <Bell size={15} /> {t('requests')}
+          {counts.new > 0 && <span style={styles.modeCount}>{counts.new}</span>}
+        </button>
+        <button
+          onClick={() => setViewMode('orders')}
+          style={{ ...styles.modeButton, ...(viewMode === 'orders' ? styles.modeButtonActive : {}) }}
+        >
+          <ShoppingBag size={15} /> {t('orders')}
+          {activeOrders.length > 0 && <span style={styles.modeCount}>{activeOrders.length}</span>}
+        </button>
+      </div>
+
       {locations.length > 1 && (
         <div style={styles.locationBar}>
           <MapPin size={14} color="#fff" />
@@ -235,96 +359,182 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      <div style={styles.filterRow}>
-        {FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
-          >
-            {t(FILTER_LABEL_KEYS[f])}
-            {counts[f] > 0 && (
-              <span style={{ ...styles.filterCount, ...(filter === f ? styles.filterCountActive : {}) }}>
-                {counts[f]}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div style={styles.list}>
-        {visibleRequests.length === 0 && (
-          <EmptyState
-            icon={Bell}
-            title={t('noRequestsHere')}
-            description={t('allCaughtUp')}
-          />
-        )}
-
-        {visibleRequests.map((r) => {
-          const type = requestTypes[r.request_type_id]
-          const table = tables[r.table_id]
-          const isNew = r.status === 'pending'
-          const level = urgency(r.created_at)
-          const urgencyStyle = URGENCY_STYLES[level]
-
-          return (
-            <div
-              key={r.id}
-              style={{
-                ...styles.requestCard,
-                borderColor: isNew ? urgencyStyle.border : 'var(--color-border)',
-                borderWidth: isNew && level !== 'normal' ? '2px' : '1px',
-              }}
-            >
-              {isNew && <div style={{ ...styles.newTag, background: urgencyStyle.accent }}>NEW</div>}
-
-              <div style={styles.requestTop}>
-                <div>
-                  <div style={styles.requestType}>{localizedLabel(type, lang) || 'Request'}</div>
-                  <div style={styles.requestTable}>
-                    <MapPin size={12} /> {table?.name || 'Unknown table'}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <StatusBadge status={r.status} />
-                  <div style={{ ...styles.waitTime, color: isNew ? urgencyStyle.accent : 'var(--color-text-faint)' }}>
-                    {t('waiting')} {minutesWaiting(r.created_at)}m
-                  </div>
-                </div>
-              </div>
-
-              <div style={styles.actions}>
-                {r.status === 'pending' && (
-                  <>
-                    <button onClick={() => updateStatus(r, 'accepted')} style={styles.acceptButton}>
-                      <Check size={16} /> {t('accept')}
-                    </button>
-                    <button onClick={() => updateStatus(r, 'rejected')} style={styles.rejectButton}>
-                      <X size={16} /> {t('decline')}
-                    </button>
-                  </>
-                )}
-                {r.status === 'accepted' && (
-                  <button onClick={() => updateStatus(r, 'on_the_way')} style={styles.acceptButton}>
-                    <Truck size={16} /> {t('onMyWay')}
-                  </button>
-                )}
-                {r.status === 'on_the_way' && (
-                  <button onClick={() => updateStatus(r, 'completed')} style={styles.completeButton}>
-                    <CheckCheck size={16} /> {t('complete')}
-                  </button>
-                )}
-                {r.status === 'completed' && (
-                  <span style={styles.doneText}>
-                    <CheckCheck size={15} /> {t('completed')}
+      {viewMode === 'requests' && (
+        <>
+          <div style={styles.filterRow}>
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                style={{ ...styles.filterButton, ...(filter === f ? styles.filterButtonActive : {}) }}
+              >
+                {t(FILTER_LABEL_KEYS[f])}
+                {counts[f] > 0 && (
+                  <span style={{ ...styles.filterCount, ...(filter === f ? styles.filterCountActive : {}) }}>
+                    {counts[f]}
                   </span>
                 )}
-              </div>
+              </button>
+            ))}
+          </div>
+
+          <div style={styles.list}>
+            {visibleRequests.length === 0 && (
+              <EmptyState
+                icon={Bell}
+                title={t('noRequestsHere')}
+                description={t('allCaughtUp')}
+              />
+            )}
+
+            {visibleRequests.map((r) => {
+              const type = requestTypes[r.request_type_id]
+              const table = tables[r.table_id]
+              const isNew = r.status === 'pending'
+              const level = urgency(r.created_at)
+              const urgencyStyle = URGENCY_STYLES[level]
+
+              return (
+                <div
+                  key={r.id}
+                  style={{
+                    ...styles.requestCard,
+                    borderColor: isNew ? urgencyStyle.border : 'var(--color-border)',
+                    borderWidth: isNew && level !== 'normal' ? '2px' : '1px',
+                  }}
+                >
+                  {isNew && <div style={{ ...styles.newTag, background: urgencyStyle.accent }}>NEW</div>}
+
+                  <div style={styles.requestTop}>
+                    <div>
+                      <div style={styles.requestType}>{localizedLabel(type, lang) || 'Request'}</div>
+                      <div style={styles.requestTable}>
+                        <MapPin size={12} /> {table?.name || 'Unknown table'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <StatusBadge status={r.status} />
+                      <div style={{ ...styles.waitTime, color: isNew ? urgencyStyle.accent : 'var(--color-text-faint)' }}>
+                        {t('waiting')} {minutesWaiting(r.created_at)}m
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={styles.actions}>
+                    {r.status === 'pending' && (
+                      <>
+                        <button onClick={() => updateStatus(r, 'accepted')} style={styles.acceptButton}>
+                          <Check size={16} /> {t('accept')}
+                        </button>
+                        <button onClick={() => updateStatus(r, 'rejected')} style={styles.rejectButton}>
+                          <X size={16} /> {t('decline')}
+                        </button>
+                      </>
+                    )}
+                    {r.status === 'accepted' && (
+                      <button onClick={() => updateStatus(r, 'on_the_way')} style={styles.acceptButton}>
+                        <Truck size={16} /> {t('onMyWay')}
+                      </button>
+                    )}
+                    {r.status === 'on_the_way' && (
+                      <button onClick={() => updateStatus(r, 'completed')} style={styles.completeButton}>
+                        <CheckCheck size={16} /> {t('complete')}
+                      </button>
+                    )}
+                    {r.status === 'completed' && (
+                      <span style={styles.doneText}>
+                        <CheckCheck size={15} /> {t('completed')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {viewMode === 'orders' && (
+        <>
+          {STATION_BY_ROLE[role] && (
+            <div style={styles.stationToggleRow}>
+              <button
+                onClick={() => setShowAllOrders(false)}
+                style={{ ...styles.filterButton, ...(!showAllOrders ? styles.filterButtonActive : {}) }}
+              >
+                {t('myStationOnly')}
+              </button>
+              <button
+                onClick={() => setShowAllOrders(true)}
+                style={{ ...styles.filterButton, ...(showAllOrders ? styles.filterButtonActive : {}) }}
+              >
+                {t('showAllOrders')}
+              </button>
             </div>
-          )
-        })}
-      </div>
+          )}
+
+          <div style={styles.list}>
+            {activeOrders.length === 0 && (
+              <EmptyState
+                icon={ShoppingBag}
+                title={t('noOrdersHere')}
+                description=""
+              />
+            )}
+
+            {activeOrders.map((order) => {
+              const items = orderItems[order.id] || []
+              const table = tables[order.table_id]
+              const flow = ORDER_STATUS_FLOW[order.status]
+
+              return (
+                <div key={order.id} style={styles.requestCard}>
+                  <div style={styles.requestTop}>
+                    <div>
+                      <div style={styles.requestType}>{table?.name || t('unassignedTable')}</div>
+                      <div style={styles.requestTable}>${Number(order.total).toFixed(2)}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <StatusBadge status={order.status} />
+                      <div style={styles.waitTime}>{minutesWaiting(order.created_at)}m</div>
+                    </div>
+                  </div>
+
+                  {order.allergy_notes && (
+                    <div style={styles.allergyAlert}>
+                      <strong>⚠ {t('allergyBadge')}:</strong> {order.allergy_notes}
+                    </div>
+                  )}
+
+                  <div style={styles.orderItemsList}>
+                    {items.map((item) => (
+                      <div key={item.id} style={styles.orderItemRow}>
+                        <span>{item.quantity}× {item.menu_items?.name || 'Item'}</span>
+                        <span style={styles.prepTag}>
+                          {item.menu_items?.prep_location === 'kitchen' && t('kitchen')}
+                          {item.menu_items?.prep_location === 'bar' && t('bar')}
+                          {item.menu_items?.prep_location === 'bottle_service' && t('bottleService')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={styles.actions}>
+                    {flow && (
+                      <button
+                        onClick={() => updateOrderStatus(order, flow.next)}
+                        style={{ ...styles.acceptButton, background: flow.color }}
+                      >
+                        <ChefHat size={16} /> {t(flow.labelKey)}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -385,6 +595,36 @@ const styles = {
     cursor: 'pointer',
     fontSize: '0.82rem',
   },
+  modeToggleRow: {
+    display: 'flex',
+    gap: '0.5rem',
+    padding: '0.9rem 1.25rem 0',
+  },
+  modeButton: {
+    display: 'flex', alignItems: 'center', gap: '0.4rem',
+    flex: 1,
+    justifyContent: 'center',
+    padding: '0.65rem',
+    borderRadius: '10px',
+    border: '1px solid var(--color-border)',
+    background: 'var(--color-surface)',
+    color: 'var(--color-text-muted)',
+    cursor: 'pointer',
+    fontSize: '0.88rem',
+    fontWeight: 700,
+  },
+  modeButtonActive: {
+    background: 'var(--color-primary)',
+    borderColor: 'var(--color-primary)',
+    color: '#fff',
+  },
+  modeCount: {
+    background: 'rgba(255,255,255,0.25)',
+    borderRadius: '999px',
+    padding: '0.05rem 0.5rem',
+    fontSize: '0.75rem',
+    fontWeight: 700,
+  },
   locationBar: {
     display: 'flex',
     alignItems: 'center',
@@ -411,6 +651,11 @@ const styles = {
     gap: '0.5rem',
     padding: '1rem 1.25rem',
     overflowX: 'auto',
+  },
+  stationToggleRow: {
+    display: 'flex',
+    gap: '0.5rem',
+    padding: '1rem 1.25rem',
   },
   filterButton: {
     display: 'flex', alignItems: 'center', gap: '0.4rem',
@@ -446,7 +691,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
-    padding: '0 1.25rem',
+    padding: '1rem 1.25rem',
   },
   requestCard: {
     position: 'relative',
@@ -479,6 +724,16 @@ const styles = {
     color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem',
   },
   waitTime: { fontSize: '0.75rem', marginTop: '0.35rem', fontWeight: 600 },
+  allergyAlert: {
+    background: '#fef3c7', color: '#92400e', padding: '0.5rem 0.75rem',
+    borderRadius: '6px', fontSize: '0.83rem', marginBottom: '0.75rem', lineHeight: 1.4,
+  },
+  orderItemsList: { marginBottom: '0.75rem' },
+  orderItemRow: {
+    display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem',
+    padding: '0.3rem 0', borderBottom: '1px solid var(--color-border)',
+  },
+  prepTag: { color: 'var(--color-text-muted)', fontSize: '0.75rem', textTransform: 'capitalize' },
   actions: { display: 'flex', gap: '0.5rem' },
   acceptButton: {
     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
