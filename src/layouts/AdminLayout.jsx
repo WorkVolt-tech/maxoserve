@@ -40,8 +40,8 @@ const NAV_GROUPS = [
   {
     labelKey: 'operations',
     items: [
-      { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
       { to: '/admin/tables', labelKey: 'tables', section: 'tables', icon: LayoutGrid },
+      { to: '/admin/floor-plan', labelKey: 'floorPlan', section: 'floorPlan', icon: PanelsTopLeft },
       { to: '/admin/orders', labelKey: 'requestsOrders', section: 'orders', icon: ShoppingBag },
     ],
   },
